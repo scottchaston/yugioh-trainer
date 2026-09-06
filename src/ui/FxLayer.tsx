@@ -6,6 +6,8 @@ import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 're
 import { getCard } from '../cards';
 import type { FxEvent, GameState } from '../engine';
 import { CardView } from './CardView';
+import { CardArt } from './art';
+import { tokenDefinition } from '../engine/game';
 
 interface Rect {
   x: number;
@@ -23,8 +25,8 @@ interface ActiveFx {
 }
 
 const DURATION: Record<FxEvent['type'], number> = {
-  attack: 1100,
-  activate: 1400,
+  attack: 1700,
+  activate: 1500,
   destroy: 800,
   damage: 1100,
   heal: 1100,
@@ -40,8 +42,8 @@ const DURATION: Record<FxEvent['type'], number> = {
 };
 /** How long to wait before starting the next effect (lets effects overlap slightly). */
 const LEAD: Record<FxEvent['type'], number> = {
-  attack: 850,
-  activate: 1000,
+  attack: 1300,
+  activate: 1100,
   destroy: 450,
   damage: 350,
   heal: 350,
@@ -164,10 +166,25 @@ function Effect({ entry, view }: { entry: ActiveFx; view: GameState }) {
       const dy = b.y - a.y;
       const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
       const len = Math.hypot(dx, dy);
+      const attacker = view.cards[fx.attacker];
+      const target = fx.target ? view.cards[fx.target] : null;
+      const defOf = (c: typeof attacker) => (c.token ? tokenDefinition(c.token) : getCard(c.cardId));
+      // Creatures meet part-way: the attacker lunges most of the distance towards the target.
+      const lungeX = dx * 0.55;
+      const lungeY = dy * 0.55;
       return (
         <>
           <div className="fx-beam" style={{ left: a.x, top: a.y, width: len, transform: `rotate(${angle}deg)` }} />
-          <div className="fx-bolt" style={{ left: a.x, top: a.y, ['--dx' as string]: `${dx}px`, ['--dy' as string]: `${dy}px` }} />
+          {target && target.faceUp !== false && (
+            <div className="fx-creature fx-defender" style={{ left: b.x, top: b.y, position: 'absolute' }}>
+              <CardArt def={defOf(target)} />
+            </div>
+          )}
+          {attacker && (
+            <div className="fx-creature fx-lunge" style={{ left: a.x, top: a.y, position: 'absolute', ['--dx' as string]: `${lungeX}px`, ['--dy' as string]: `${lungeY}px`, transform: dx < 0 ? 'scaleX(-1)' : undefined }}>
+              <CardArt def={defOf(attacker)} style={dx < 0 ? { transform: 'scaleX(-1)' } : undefined} />
+            </div>
+          )}
           <div className="fx-impact" style={{ left: b.x, top: b.y }} />
           <div className="fx-shake" style={{ left: to.x, top: to.y, width: to.w, height: to.h }} />
         </>
@@ -176,14 +193,19 @@ function Effect({ entry, view }: { entry: ActiveFx; view: GameState }) {
     case 'activate': {
       const c = view.cards[fx.uid];
       if (!c) return null;
-      const d = getCard(c.cardId);
+      const d = c.token ? tokenDefinition(c.token) : getCard(c.cardId);
       const label = fx.what === 'trap' ? 'TRAP ACTIVATED' : fx.what === 'spell' ? 'SPELL ACTIVATED' : 'MONSTER EFFECT';
       return (
         <>
           {from && <div className={`fx-beacon fx-beacon-${fx.what}`} style={{ left: from.x, top: from.y, width: from.w, height: from.h }} />}
           <div className={`fx-spotlight fx-spot-${fx.what}`}>
             <div className="fx-spot-ring" />
-            <CardView def={d} size="lg" />
+            <div className="fx-spot-row">
+              <div className="fx-spot-art">
+                <CardArt def={d} />
+              </div>
+              <CardView def={d} size="lg" />
+            </div>
             <div className="fx-spot-label">
               <span>{label}</span>
               <b>{d.name}</b>

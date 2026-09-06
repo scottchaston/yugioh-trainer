@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { getCard } from '../cards';
 import { getLegalActions, PHASE_LABEL, type LegalActionInfo, type PlayerId, type ZoneRef } from '../engine';
 import { answer, cancelPending, clearGame, committedState, currentView, dispatch, newGame, rewindTo, setNotice, undo, updateSettings, useStore } from '../state/store';
 import { Board } from './Board';
@@ -9,6 +8,9 @@ import { LogPanel } from './LogPanel';
 import { PileModal } from './PileModal';
 import { PromptPanel } from './PromptPanel';
 import { Setup } from './Setup';
+import { CardArt } from './art';
+import { defOf } from './cardDef';
+import { allCards } from '../cards';
 
 const PHASES = ['DRAW', 'STANDBY', 'MAIN1', 'BATTLE', 'MAIN2', 'END'] as const;
 const PHASE_SHORT: Record<string, string> = { DRAW: 'Draw', STANDBY: 'Standby', MAIN1: 'Main 1', BATTLE: 'Battle', MAIN2: 'Main 2', END: 'End' };
@@ -58,6 +60,18 @@ export function App() {
 
   const legal = useMemo(() => (committed ? getLegalActions(committed, committed.turnPlayer) : []), [committed]);
 
+  if (new URLSearchParams(window.location.search).has('gallery')) {
+    return (
+      <div className="gallery">
+        {allCards().map((d) => (
+          <div key={d.id} className="gallery-item">
+            <CardArt def={d} />
+            <span>{d.name}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
   if (!view || !committed) {
     return <Setup onStart={(cfg) => newGame({ players: [{ name: cfg.names[0] || 'Player 1', deckId: cfg.decks[0] }, { name: cfg.names[1] || 'Player 2', deckId: cfg.decks[1] }], firstPlayer: cfg.first, seed: cfg.seed })} />;
   }
@@ -325,7 +339,7 @@ function TeachList({ actions, view, onAction }: { actions: LegalActionInfo[]; vi
   const [openWhy, setOpenWhy] = useState<number | null>(null);
   const legal = actions.filter((a) => a.legal);
   const illegal = actions.filter((a) => !a.legal);
-  const name = (uid?: string) => (uid ? getCard(view.cards[uid].cardId).name : '');
+  const name = (uid?: string) => (uid ? defOf(view.cards[uid]).name : '');
   const row = (a: LegalActionInfo, i: number) => (
     <div key={i} className={`teach-row${a.legal ? '' : ' illegal'}`}>
       <button className={`btn ${a.legal ? 'btn-primary' : 'btn-disabled'}`} disabled={!a.legal} onClick={() => onAction(a)}>

@@ -5,10 +5,12 @@ sharing one screen. The rules engine enforces the rules, tells you what is legal
 now, explains *why* something is or is not allowed, pauses at response windows, keeps a
 readable game log, and lets you undo mistakes.
 
-Supported decks (official TCG card text):
+Supported decks (official TCG card text, all effects implemented):
 
-* **Saga of Blue-Eyes White Dragon** (Structure Deck, 41 cards)
-* **Legend of the Crystal Beasts** (Structure Deck, 46 cards)
+* **Saga of Blue-Eyes White Dragon** (Structure Deck: 40 Main Deck + 1 Extra Deck card)
+* **Legend of the Crystal Beasts** (Structure Deck: 44 Main Deck + 2 Extra Deck cards)
+
+A Main Deck must have 40 to 60 cards, so both preconstructed decks are legal as printed.
 
 See `PROJECT_STATUS.md` for what works today and what is planned.
 
@@ -41,6 +43,12 @@ Double-click it to open it in Chrome, Edge, Firefox or Safari. (It is produced b
 * Click a Graveyard, Banished pile or Extra Deck to look through it. Extra Deck monsters such as
   Azure-Eyes Silver Dragon are Synchro Summoned from there (open the Extra Deck, click the card).
 * A Gemini monster (Darkstorm Dragon) shows a **Gemini Summon** action once it is face-up on the field.
+* Crystal Master and Crystal Keeper can be placed in your Pendulum Zones (the leftmost and rightmost
+  Spell & Trap Zones); with both placed, a **Pendulum Summon** button appears.
+* Rainbow Dragon, Rainbow Dark Dragon, Hamon, Rainbow Overdragon and Overdrive offer their own
+  **Special Summon** actions when their conditions are met (click the card, or open the Extra Deck).
+* Every card has a generated illustration (no official artwork): monsters charge across the board when
+  they attack, and Spells/Traps are revealed with their emblem when activated.
 * **Settings**: reveal all hands/face-down cards (learning mode), pause at the quieter
   phase windows, board perspective.
 

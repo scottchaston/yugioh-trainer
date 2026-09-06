@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { getCard } from '../cards';
 import { Game, type GameState, type PlayerId, type Prompt, type ZoneRef } from '../engine';
 import { CardView } from './CardView';
+import { defOf } from './cardDef';
 
 export interface BoardProps {
   view: GameState;
@@ -65,7 +65,7 @@ export function Board(props: BoardProps) {
     const stats = c.faceUp && (c.zone === 'monster' || c.zone === 'extraMonster') ? g.stats(uid) : null;
     const inPrompt = selectableCards?.has(uid);
     const dimmed = selectableCards ? !inPrompt : false;
-    const badge = c.treatedAsSpell === 'continuous' ? 'Continuous Spell' : c.treatedAsSpell === 'equip' ? 'Equip Spell' : c.equippedTo ? 'Equipped' : c.flags['effectsNegated'] ? 'Negated' : undefined;
+    const badge = c.treatedAsSpell === 'continuous' ? 'Continuous Spell' : c.treatedAsSpell === 'equip' ? 'Equip Spell' : c.treatedAsSpell === 'pendulum' ? 'Pendulum Zone' : c.equippedTo ? 'Equipped' : c.flags['effectsNegated'] ? 'Negated' : c.counters['Crystal Counter'] ? `${c.counters['Crystal Counter']} Crystal Counter${c.counters['Crystal Counter'] > 1 ? 's' : ''}` : undefined;
     return (
       <CardView
         key={uid}
@@ -224,5 +224,5 @@ export function Board(props: BoardProps) {
 }
 
 export function cardName(view: GameState, uid: string): string {
-  return getCard(view.cards[uid].cardId).name;
+  return defOf(view.cards[uid]).name;
 }

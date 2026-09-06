@@ -1,0 +1,13 @@
+import { chromium } from 'playwright';
+import { mkdirSync } from 'node:fs';
+const dir = process.env.SHOTS_DIR ?? '/tmp/ygo-shots';
+mkdirSync(dir, { recursive: true });
+const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', args: ['--no-sandbox'] });
+const page = await browser.newPage({ viewport: { width: 1500, height: 1000 } });
+const errors = [];
+page.on('pageerror', (e) => errors.push(e.message));
+await page.goto('http://localhost:5173/?gallery=1');
+await page.waitForSelector('.gallery-item');
+await page.screenshot({ path: `${dir}/gallery.png`, fullPage: true });
+console.log('gallery items:', await page.$$eval('.gallery-item', (e) => e.length), 'errors:', errors);
+await browser.close();

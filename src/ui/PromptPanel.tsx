@@ -1,6 +1,6 @@
-import { getCard } from '../cards';
 import type { GameState, Prompt } from '../engine';
 import { CardView } from './CardView';
+import { defOf } from './cardDef';
 
 interface Props {
   view: GameState;
@@ -31,7 +31,7 @@ export function PromptPanel({ view, prompt, selection, onToggleCard, onConfirmCa
               <div key={`${o.uid}-${o.effectId}`} className="response-option">
                 <CardView card={c} size="sm" />
                 <div className="response-text">
-                  <div className="response-name">{getCard(c.cardId).name}</div>
+                  <div className="response-name">{defOf(c).name}</div>
                   <div className="response-label">{o.label}</div>
                   {o.why && <div className="why why-rule">{o.why}</div>}
                 </div>
@@ -115,7 +115,7 @@ export function PromptPanel({ view, prompt, selection, onToggleCard, onConfirmCa
           return (
             <div key={uid} className="pick-item" onClick={() => onToggleCard(uid)}>
               <CardView card={c} size="sm" selected={selection.includes(uid)} />
-              <div className="pick-name">{getCard(c.cardId).name}</div>
+              <div className="pick-name">{defOf(c).name}</div>
             </div>
           );
         })}

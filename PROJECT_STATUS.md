@@ -12,9 +12,9 @@ response windows, logs everything, and supports Undo. Accuracy over feature coun
 | --- | --- | --- |
 | 1 | Board, decks, turns/phases, summons, battle, Spell/Trap setting + timing, chains, GY/banished/Extra Deck, log, Undo, tests | **Done** |
 | 2 | All Saga of Blue-Eyes card effects (Synchro, Gemini, Azure-Eyes, Honest, Kaiser Glider, traps…) + tests | **Done** (all 41 cards) |
-| 3 | Legend of the Crystal Beasts incl. Crystal Beasts as Continuous Spells, Rainbow Ruins, Rainbow Dragon, Fusion | Started: shared "place in S/T Zone instead of destruction" mechanic done; individual effects pending |
+| 3 | Legend of the Crystal Beasts incl. Crystal Beasts as Continuous Spells, Rainbow Ruins, Rainbow Dragon, Fusion | **Done** (all 46 cards) |
 | 4 | Chains/timing refinement, teaching explanations, "What can I do?" polish, strategy suggestions | Foundations exist |
-| 5 | Interface polish, animations, adding more decks | Basic animations exist |
+| 5 | Interface polish, animations, adding more decks | Card art + battle/activation animations done; more polish possible |
 
 ## What works now (Phase 1)
 * Two players, deck lists for both Structure Decks with official TCG text (86 cards),
@@ -43,9 +43,22 @@ response windows, logs everything, and supports Undo. Accuracy over feature coun
   Condenser, Castle of Dragon Souls, Soul Exchange (forced Tribute), Burst Stream, Stamping Destruction, Wingbeat,
   White Elephant's Gift, One for One, Dragonic Tactics, Trade-In, Cards of Consonance, Dragon Shrine, Silver's Cry,
   Monster Reborn, Swords of Revealing Light, Enemy Controller, Compulsory Evacuation Device, Kunai with Chain.
-* Crystal Beasts (all 7 + Crystal Beast Rainbow Dragon): when destroyed face-up in a Monster Zone their controller may
-  place them face-up in the Spell & Trap Zone as a Continuous Spell (`src/effects/crystalBeasts/beasts.ts`). Rainbow
-  Dragon / Rainbow Dark Dragon cannot be Normal Summoned. Other Crystal Beast deck effects show "not implemented yet".
+* **All Legend of the Crystal Beasts cards are implemented** (`src/effects/crystalBeasts`): the seven Crystal Beasts
+  (placement instead of destruction, Pegasus placement, Ruby mass summon, Amethyst Cat direct attack, Tortoise, Topaz
+  Tiger Damage Step bonus, Amber Mammoth redirect, Cobalt Eagle), Crystal Beast Rainbow Dragon, Rainbow Dragon (summon
+  condition, first-turn effect restriction, boost/reset), Rainbow Dark Dragon, Rainbow Overdragon (Tribute summon,
+  Fusion via Ultimate Crystal Magic), Ultimate Crystal Rainbow Dragon Overdrive, Hamon, Crystal Master / Keeper
+  (Pendulum Zones, Pendulum Summon, Pendulum effects), Dimension Shifter, Contact "C", Ash Blossom, Ghost Belle,
+  Ancient City - Rainbow Ruins (counts Crystal Beasts in the S/T Zone; all five thresholds), Advanced Dark, every
+  "Crystal" Spell/Trap, Rainbow Bridge (+ of the Heart), Awakening of the Crystal Ultimates, Rare Value, Melody,
+  Foolish Burial Goods, Cosmic Cyclone, Counter Gem, Ferret Flames, Metaverse, Crystal Aegis (Tokens).
+* Engine features added for it: Pendulum Zones/Summon, Extra Monster Zone use, Pendulum monsters to the Extra Deck,
+  Tokens, Attribute changes, effect-allowed direct attacks, battle-damage modifiers (halve / none), "banish instead"
+  replacement (Dimension Shifter), effect tags for hand traps, extra Normal Summons, damage-step start hooks.
+* Card art (`src/ui/art`): every monster has a procedurally drawn creature (dragon, feline, tortoise, bird, pegasus,
+  mammoth, carbuncle, angel, warrior, mage, serpent, insect, ghost, titan, stone) with a per-card palette and
+  features; every Spell/Trap has its own emblem. Used on card faces, in the attack animation (attacker charges the
+  defender) and in the activation spotlight. `?gallery=1` shows all illustrations.
 * Visual effects layer (`src/ui/FxLayer.tsx`): attack beam + impact, spotlight reveal for Spell/Trap/monster effect
   activations, destruction shatter, floating LP damage, summon glow, NEGATED stamp, ATK/DEF boosts, "Continuous Spell"
   placement. Driven by the engine's `state.fx` event stream (Settings → Animations turns it off).
@@ -69,17 +82,21 @@ response windows, logs everything, and supports Undo. Accuracy over feature coun
 * Legal actions + explanations: `src/engine/legality.ts`.
 
 ## Tests
-`npm test` → 71 Vitest tests in `tests/` (setup, turns, summons, battle, Spell/Trap timing, legality listing,
-all Blue-Eyes card interactions in `phase2-blueeyes.test.ts`, Crystal Beast placement in `crystal-beasts-base.test.ts`).
+`npm test` → 101 Vitest tests in `tests/` (setup, turns, summons, battle, Spell/Trap timing, legality listing,
+Blue-Eyes interactions in `phase2-blueeyes.test.ts`, Crystal Beast placement in `crystal-beasts-base.test.ts`,
+the Crystal Beast deck in `phase3-crystal-beasts.test.ts`). The harness deals neutral hands by default
+(`keepHands: true` to keep the dealt cards) and matches answers to prompt types.
 Helpers in `tests/harness.ts` (`makeGame`, `put`, `start`, `endTurn`, answer builders `A`).
 Browser smoke tests: `e2e/` (needs `npm run dev` running).
 
-## Known gaps / bugs
-* Legend of the Crystal Beasts effects other than the shared placement mechanic are not implemented yet (Phase 3):
-  Sapphire Pegasus, Rainbow Ruins, Rainbow Dragon's Special Summon, Fusion Summoning (Rainbow Overdragon, Overdrive),
-  Pendulum Zones (Crystal Master / Keeper), Crystal Spells/Traps, hand traps (Ash Blossom, Ghost Belle, Dimension
-  Shifter, Contact "C"), Cosmic Cyclone, Foolish Burial Goods, Metaverse, Rare Value, Hamon.
+## Known gaps / simplifications
 * Summon negation (Champion's Vigilance) is offered only to the opponent of the summoning player.
+* Crystal Conclave's "cannot activate these effects in the same Chain" clause is not enforced.
+* Ultimate Crystal Magic's Graveyard effect detects "left the field because of an opponent's card effect" by the
+  resolving chain link's controller only.
+* Contact "C"'s material restriction is enforced for Synchro Summons (the only Extra Deck summons in these decks
+  that use field materials).
+* Effects that "shuffle all cards on the field into the Deck" place cards at the bottom and then shuffle.
 * "Once per turn" / effect-use counters reset at the start of each turn (correct) but are keyed per player.
 * Response windows: the turn player is not asked to respond to their *own* actions in Main Phases
   (they can act freely instead). This matches practical play but means the turn player cannot chain
@@ -89,11 +106,7 @@ Browser smoke tests: `e2e/` (needs `npm run dev` running).
 * Card artwork is a clean generated frame (no copyrighted art), by design.
 
 ## Suggested next steps
-1. Phase 3: Crystal Beast effects (Sapphire Pegasus placement, Ruby Carbuncle, Amethyst Cat direct attack, Emerald
-   Tortoise, Topaz Tiger, Amber Mammoth attack redirect, Cobalt Eagle), Ancient City - Rainbow Ruins (count Crystal
-   Beast cards in the S/T Zone; cumulative effects), Rainbow Dragon Special Summon + effects, Rainbow Bridge cards,
-   Crystal Beacon/Boon/Promise/Tree/Release/Abundance/Blessing/Miracle/Brilliance/Pair/Conclave/Aegis/Bond,
-   Ultimate Crystal Magic, Awakening of the Crystal Ultimates, Advanced Dark, Crystal Master/Keeper (Pendulum Zones),
-   Fusion Summoning (Rainbow Overdragon, Ultimate Crystal Rainbow Dragon Overdrive), generic staples
-   (Ash Blossom, Ghost Belle, Cosmic Cyclone, Metaverse, Foolish Burial Goods, Rare Value, Melody of Awakening Dragon).
-2. Phase 4/5 per plan.
+1. Phase 4: "Suggest move" strategy helper (clearly separated from rules), richer teaching explanations of chains
+   (visual chain stack), a rules glossary panel, per-turn checklist for beginners, and play-testing feedback fixes.
+2. Phase 5: deck editor / adding more decks (card data pipeline exists; effects need scripts), mobile layout,
+   sound, save/load of games.

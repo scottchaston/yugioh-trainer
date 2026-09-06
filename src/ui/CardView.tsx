@@ -1,5 +1,7 @@
 import type { CSSProperties } from 'react';
 import { getCard, hasType, type CardDefinition } from '../cards';
+import { CardArt } from './art';
+import { tokenDefinition } from '../engine/game';
 import type { CardInstance } from '../engine';
 
 export function frameClass(d: CardDefinition): string {
@@ -70,7 +72,7 @@ interface Props {
 }
 
 export function CardView({ card, def, faceDown, size = 'md', stats, selected, highlighted, dimmed, anim, onClick, style, title, badge }: Props) {
-  const d = def ?? (card ? getCard(card.cardId) : undefined);
+  const d = def ?? (card ? (card.token ? tokenDefinition(card.token) : getCard(card.cardId)) : undefined);
   const classes = ['card', `card-${size}`];
   if (faceDown || !d) classes.push('facedown');
   else classes.push(frameClass(d));
@@ -99,7 +101,7 @@ export function CardView({ card, def, faceDown, size = 'md', stats, selected, hi
             </div>
           )}
           <div className="card-art">
-            <span className="card-art-glyph">{d.cardType === 'Monster' ? (d.race ?? '').slice(0, 1) : d.cardType === 'Spell' ? 'S' : 'T'}</span>
+            <CardArt def={d} className="card-art-svg" />
           </div>
           <div className="card-type">{typeLine(d)}</div>
           {d.cardType === 'Monster' && (

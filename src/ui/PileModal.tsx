@@ -1,6 +1,6 @@
-import { getCard } from '../cards';
 import type { GameState, PlayerId } from '../engine';
 import { CardView } from './CardView';
+import { defOf } from './cardDef';
 
 interface Props {
   view: GameState;
@@ -37,7 +37,7 @@ export function PileModal({ view, player, pile, revealAll, onSelect, onClose }: 
             {shown.map((uid) => (
               <div key={uid} className="pick-item" onClick={() => onSelect(uid)}>
                 <CardView card={view.cards[uid]} size="sm" faceDown={false} />
-                <div className="pick-name">{getCard(view.cards[uid].cardId).name}</div>
+                <div className="pick-name">{defOf(view.cards[uid]).name}</div>
               </div>
             ))}
           </div>

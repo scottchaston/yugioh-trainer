@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { getCard } from '../cards';
 import { Game, actionsForCard, type GameState, type LegalActionInfo, type PlayerId } from '../engine';
 import { CardView, typeLine } from './CardView';
+import { defOf } from './cardDef';
 
 interface Props {
   view: GameState;
@@ -23,7 +23,7 @@ export function Inspector({ view, committed, uid, hidden, onAction, disabledBeca
     );
   }
   const c = view.cards[uid];
-  const d = getCard(c.cardId);
+  const d = defOf(c);
   if (hidden) {
     return (
       <div className="panel inspector">
@@ -77,7 +77,7 @@ export function Inspector({ view, committed, uid, hidden, onAction, disabledBeca
           <div className="fact muted">{where}</div>
           {c.summonedThisTurn && <div className="fact muted">Summoned this turn</div>}
           {c.setThisTurn && <div className="fact muted">Set this turn</div>}
-          {c.equippedTo && view.cards[c.equippedTo] && <div className="fact muted">Equipped to {getCard(view.cards[c.equippedTo].cardId).name}</div>}
+          {c.equippedTo && view.cards[c.equippedTo] && <div className="fact muted">Equipped to {defOf(view.cards[c.equippedTo]).name}</div>}
         </div>
       </div>
       {d.materials && <p className="card-text materials">{d.materials}</p>}
