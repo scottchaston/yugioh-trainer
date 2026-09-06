@@ -14,7 +14,7 @@ response windows, logs everything, and supports Undo. Accuracy over feature coun
 | 2 | All Saga of Blue-Eyes card effects (Synchro, Gemini, Azure-Eyes, Honest, Kaiser Glider, traps…) + tests | **Done** (all 41 cards) |
 | 3 | Legend of the Crystal Beasts incl. Crystal Beasts as Continuous Spells, Rainbow Ruins, Rainbow Dragon, Fusion | **Done** (all 46 cards) |
 | 4 | Chains/timing refinement, teaching explanations, "What can I do?" polish, strategy suggestions | **Done**: chain stack panel, turn checklist, Rules help, "Suggest move" (strategy, clearly separated) |
-| 5 | Interface polish, animations, adding more decks | Shaded card art with scene backdrops, creature battle animations, particles, screen shake, synthesised sound; adding decks still needs scripts |
+| 5 | Interface polish, animations, adding more decks | Shaded card art with scene backdrops, creature battle animations, particles, screen shake, per-creature voices and per-card Spell/Trap sounds, optional procedural duel music; adding decks still needs scripts |
 
 ## What works now (Phase 1)
 * Two players, deck lists for both Structure Decks with official TCG text (86 cards),
@@ -59,8 +59,22 @@ response windows, logs everything, and supports Undo. Accuracy over feature coun
   modal) and `src/strategy/suggest.ts` (heuristic suggestions labelled STRATEGY; never used for legality). Board
   orientation defaults to "turn player at the bottom" so highlighted zones stay on the owner's side; highlighted
   zones are labelled with the deciding player's name and rows carry "Player X's side" tags.
-* Effects/sound: `src/ui/sound.ts` synthesises all sounds with the Web Audio API (toggle in Settings);
-  `src/ui/Particles.tsx` draws impact/shatter/sparkle bursts on a canvas; damage shakes the board.
+* Sound (`src/ui/sound.ts`): a small Web Audio synth toolkit (tones with slides/vibrato/FM/distortion, filtered
+  noise, chimes, swooshes, thuds) builds every sound at runtime, so there are no audio files. `playCreature(archetype,
+  'attack' | 'call')` gives each of the 15 creature archetypes a voice (dragon roar, feline roar, tortoise thud, bird
+  screech, pegasus whinny and hooves, mammoth trumpet, carbuncle chirp, angel chimes, sword swing and ring, mage zap,
+  serpent hiss, insect buzz, ghost wail, titan thunder, stone rumble). `playMotif(kind, isTrap)` gives each of the 45
+  Spell/Trap emblems its own sound (chain rattle for Kunai with Chain / Fiendish Chain / Crystal Release, sword
+  swooshes, Burst Stream charge and blast, Stamping Destruction stomp, wing flaps, card shuffles, crystal chimes,
+  cyclone, horns, soul wail, device beeps, and so on). Generic sounds (draw, set, summon, attack, impact, damage,
+  heal, negate, flip, boost, swoosh, click) cover everything else; bounces, banishes, control swaps and position
+  changes use the swoosh. `src/ui/FxLayer.tsx` picks the sound from the same `artFor(def)` lookup that picks the
+  card's illustration, so a card's look and voice always match. Settings → Sound effects toggles it.
+* Music (`src/ui/music.ts`): a procedural, loop-based duel theme (150 BPM, E minor, drums, sawtooth bass, pads and a
+  lead melody with vibrato) scheduled with a look-ahead timer on the Web Audio clock; a "battle" intensity adds
+  arpeggios and fills during the Battle Phase. It starts after the first click (browser autoplay rules) while a Duel
+  is running and stops at the winner screen or on returning to setup. Settings → Background music and volume.
+* Particles/shake: `src/ui/Particles.tsx` draws impact/shatter/sparkle bursts on a canvas; damage shakes the board.
 * Card art (`src/ui/art`): every monster has a procedurally drawn creature (dragon, feline, tortoise, bird, pegasus,
   mammoth, carbuncle, angel, warrior, mage, serpent, insect, ghost, titan, stone) with a per-card palette and
   features; every Spell/Trap has its own emblem. Used on card faces, in the attack animation (attacker charges the
@@ -71,7 +85,8 @@ response windows, logs everything, and supports Undo. Accuracy over feature coun
 * Interface: board with all zones incl. Extra Monster Zones, hands, piles (click to inspect), LP, turn/phase track,
   card inspector with legal/illegal actions and Why?/Why not?, "What can I do?", RESPONSE AVAILABLE panel,
   decision prompts (targets, zones, options), game log, Undo (per step, incl. choices inside an action),
-  Rewind to any earlier point, settings (reveal all, phase-window pauses, perspective, animations), winner screen.
+  Rewind to any earlier point, settings (reveal all, phase-window pauses, perspective, animations, sound effects,
+  background music + volume), winner screen.
 * Single-file build: `npm run build:single` → `dist/single/practice-table.html`.
 
 ## Architecture (see README for folders)
@@ -117,3 +132,7 @@ Browser smoke tests: `e2e/` (needs `npm run dev` running).
 3. More decks: the card data pipeline (`scripts/extract-cards.py`) and script registry make this straightforward;
    each new card needs a script and tests.
 4. Mobile/tablet layout (the board is designed for a laptop screen or larger).
+5. Online play between two private players: the engine is deterministic and the whole Duel is plain JSON with a
+   replayable action/answer log, so a small relay server (WebSocket, room code) that holds the authoritative state
+   and sends each player a redacted view (hidden hands/face-down cards) is the natural design. See README's
+   "Online play" note for the outline.

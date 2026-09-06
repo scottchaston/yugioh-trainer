@@ -7,7 +7,8 @@ import { getCard } from '../cards';
 import type { FxEvent, GameState } from '../engine';
 import { CardView } from './CardView';
 import { CardArt } from './art';
-import { playSound } from './sound';
+import { playCreature, playMotif, playSound } from './sound';
+import { artFor } from './art';
 import { emitBurst } from './Particles';
 import { tokenDefinition } from '../engine/game';
 
@@ -41,6 +42,8 @@ const DURATION: Record<FxEvent['type'], number> = {
   control: 800,
   draw: 300,
   toSpellZone: 900,
+  position: 400,
+  set: 300,
 };
 /** How long to wait before starting the next effect (lets effects overlap slightly). */
 const LEAD: Record<FxEvent['type'], number> = {
@@ -58,6 +61,8 @@ const LEAD: Record<FxEvent['type'], number> = {
   control: 400,
   draw: 100,
   toSpellZone: 500,
+  position: 250,
+  set: 150,
 };
 
 export function FxLayer({ view, enabled, container }: { view: GameState; enabled: boolean; container: RefObject<HTMLDivElement | null> }) {
@@ -126,15 +131,17 @@ export function FxLayer({ view, enabled, container }: { view: GameState; enabled
           from = now.get(`lp:${fx.player}`) ?? old.get(`lp:${fx.player}`);
           break;
         case 'draw':
+        case 'position':
+        case 'set':
           break;
       }
-      if (!from && fx.type !== 'activate') continue;
+      if (!from && fx.type !== 'activate' && fx.type !== 'position' && fx.type !== 'set' && fx.type !== 'draw') continue;
       const entry: ActiveFx = { fx, key: keyRef.current++, from, to, duration: DURATION[fx.type] };
       const start = offset;
       timers.current.push(
         window.setTimeout(() => {
           setActive((a) => [...a, entry]);
-          startSideEffects(entry, container.current);
+          startSideEffects(entry, container.current, view);
         }, start),
         window.setTimeout(() => setActive((a) => a.filter((x) => x.key !== entry.key)), start + entry.duration),
       );
@@ -157,8 +164,17 @@ export function FxLayer({ view, enabled, container }: { view: GameState; enabled
 }
 
 /** Sounds, particles and screen shake for an effect that just started. */
-function startSideEffects(entry: ActiveFx, host: HTMLDivElement | null): void {
+function startSideEffects(entry: ActiveFx, host: HTMLDivElement | null, view: GameState): void {
   const { fx, from, to } = entry;
+  const cardArt = (uid: string) => {
+    const c = view.cards[uid];
+    if (!c) return null;
+    return artFor(c.token ? tokenDefinition(c.token) : getCard(c.cardId));
+  };
+  const creatureVoice = (uid: string, mode: 'attack' | 'call') => {
+    const a = cardArt(uid);
+    if (a?.kind === 'creature') playCreature(a.spec.archetype, mode);
+  };
   const c = (r?: Rect) => (r ? { x: r.x + r.w / 2, y: r.y + r.h / 2 } : null);
   const shake = (strength: 'light' | 'heavy') => {
     if (!host) return;
@@ -169,7 +185,8 @@ function startSideEffects(entry: ActiveFx, host: HTMLDivElement | null): void {
   };
   switch (fx.type) {
     case 'attack': {
-      playSound('attack');
+      creatureVoice(fx.attacker, 'attack');
+      window.setTimeout(() => playSound('attack'), 250);
       const t = c(to);
       window.setTimeout(() => {
         playSound('impact');
@@ -179,7 +196,18 @@ function startSideEffects(entry: ActiveFx, host: HTMLDivElement | null): void {
       break;
     }
     case 'activate':
-      playSound(fx.what === 'trap' ? 'trap' : fx.what === 'spell' ? 'spell' : 'monsterEffect');
+      {
+        const a = cardArt(fx.uid);
+        if (a?.kind === 'motif') {
+          playSound(fx.what === 'trap' ? 'trap' : 'spell');
+          window.setTimeout(() => playMotif(a.motif, fx.what === 'trap'), 180);
+        } else if (a?.kind === 'creature') {
+          playSound('monsterEffect');
+          window.setTimeout(() => playCreature(a.spec.archetype, 'call'), 150);
+        } else {
+          playSound(fx.what === 'trap' ? 'trap' : fx.what === 'spell' ? 'spell' : 'monsterEffect');
+        }
+      }
       {
         const f = c(from);
         if (f) emitBurst({ x: f.x, y: f.y, color: fx.what === 'trap' ? '#ff5c8a' : fx.what === 'spell' ? '#3ee3b6' : '#ffb347', kind: 'sparkle' });
@@ -201,6 +229,7 @@ function startSideEffects(entry: ActiveFx, host: HTMLDivElement | null): void {
       break;
     case 'summon': {
       playSound(fx.method === 'special' ? 'specialSummon' : 'summon');
+      window.setTimeout(() => creatureVoice(fx.uid, 'call'), 350);
       const f = c(from);
       if (f) emitBurst({ x: f.x, y: f.y, color: fx.method === 'special' ? '#4cc9f0' : '#ffd166', kind: 'sparkle' });
       break;
@@ -225,10 +254,15 @@ function startSideEffects(entry: ActiveFx, host: HTMLDivElement | null): void {
       break;
     case 'bounce':
     case 'banish':
-      playSound('flip');
+    case 'position':
+      playSound('swoosh');
+      break;
+    case 'set':
+      playSound('set');
       break;
     case 'control':
-      playSound('monsterEffect');
+      playSound('swoosh');
+      window.setTimeout(() => playSound('monsterEffect'), 200);
       break;
   }
 }

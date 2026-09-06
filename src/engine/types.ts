@@ -202,6 +202,8 @@ export type FxBody = (
   | { type: 'control'; uid: string }
   | { type: 'draw'; player: PlayerId; count: number }
   | { type: 'toSpellZone'; uid: string }
+  | { type: 'position'; uid: string }
+  | { type: 'set'; uid: string }
 );
 
 /** Something that must happen later (e.g. "until the End Phase", "destroy during the End Phase of your opponent's 3rd turn"). */

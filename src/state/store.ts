@@ -31,6 +31,8 @@ export interface Settings {
   perspective: PlayerId | 'auto' | 'turn';
   animations: boolean;
   sound: boolean;
+  music: boolean;
+  musicVolume: number;
 }
 
 export interface StoreState {
@@ -44,7 +46,7 @@ export interface StoreState {
 
 type Listener = () => void;
 
-const defaultSettings: Settings = { askAtPhaseWindows: false, revealAll: false, perspective: 'turn', animations: true, sound: true };
+const defaultSettings: Settings = { askAtPhaseWindows: false, revealAll: false, perspective: 'turn', animations: true, sound: true, music: true, musicVolume: 0.22 };
 
 let store: StoreState = { history: [], pending: null, settings: loadSettings(), notice: null, config: null };
 const listeners = new Set<Listener>();

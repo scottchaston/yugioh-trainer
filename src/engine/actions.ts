@@ -145,6 +145,7 @@ export function* normalSummonOrSet(g: Game, player: PlayerId, uid: string, asSet
   if (asSet) {
     c.setThisTurn = true;
     g.log(`${g.playerName(player)} Sets a monster${tributes > 0 ? ` (Tribute Set)` : ''} in face-down Defense Position.`, 'action');
+    g.fx({ type: 'set', uid });
     g.emit({ type: 'set', uid, player });
     yield* afterAction(g, `${g.playerName(player)} Set a monster`);
   } else {
@@ -400,6 +401,7 @@ export function* changePosition(g: Game, player: PlayerId, uid: string): Process
   c.position = c.position === 'ATK' ? 'DEF' : 'ATK';
   c.positionChangedThisTurn = true;
   g.log(`${g.name(uid)} is changed to ${c.position === 'ATK' ? 'Attack' : 'Defense'} Position.`, 'action');
+  g.fx({ type: 'position', uid });
   g.emit({ type: 'positionChanged', uid });
   yield* afterAction(g, `${g.name(uid)} changed battle position`);
 }
@@ -438,6 +440,7 @@ export function* setSpellTrap(g: Game, player: PlayerId, uid: string): Process<v
   const c = g.card(uid);
   c.setThisTurn = true;
   g.log(`${g.playerName(player)} Sets a ${d.cardType} Card${d.property === 'Field' ? ' in the Field Zone' : ''}.`, 'action');
+  g.fx({ type: 'set', uid });
   g.emit({ type: 'set', uid, player });
 }
 

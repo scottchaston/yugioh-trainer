@@ -54,8 +54,25 @@ Double-click it to open it in Chrome, Edge, Firefox or Safari. (It is produced b
   costs versus effects, Crystal Beasts, Pendulum and Gemini monsters).
 * The right-hand panel shows a turn checklist and, while cards respond to each other, the chain and its
   resolution order.
+* **Sound**: every monster has its own voice (dragons roar, the Crystal Beast tiger and cat growl, warriors
+  swing swords, the pegasus whinnies, the tortoise thuds), each Spell/Trap has a fitting sound (a chain rattles
+  for Kunai with Chain and Fiendish Chain, Swords of Revealing Light swooshes, Burst Stream charges and blasts,
+  Crystal cards chime), and swaps, bounces and position changes swoosh. Browsers only allow audio after you
+  click something, so the first click on the page turns it on.
+* **Music**: an optional looping "duel theme" in the spirit of the anime soundtracks (composed and played by
+  the app itself, no copyrighted recordings). It gets more intense during the Battle Phase. Turn it on/off
+  and set the volume in Settings.
 * **Settings**: reveal all hands/face-down cards (learning mode), pause at the quieter
-  phase windows, board perspective (turn player at the bottom by default), animations, sound.
+  phase windows, board perspective (turn player at the bottom by default), animations, sound effects,
+  background music and its volume.
+
+## Online play (not built yet)
+
+The rules engine is deterministic and a Duel is plain data (JSON) plus a log of the actions and choices each
+player made, so two-player play over the internet is a natural extension: a small server holds the one true
+Duel state, each player's browser sends only "I do X / I choose Y", and the server sends each player back a view
+with the other player's hand and face-down cards hidden. A room code would connect two private opponents; the same
+code base could be wrapped as a phone/tablet app. See PROJECT_STATUS.md, "Suggested next steps".
 
 ## For developers
 

@@ -569,6 +569,7 @@ export class Game {
     if (!c.faceUp) c.faceUp = true;
     c.position = position;
     this.log(`${this.name(uid)} is changed to ${position === 'ATK' ? 'Attack' : 'Defense'} Position.`, 'effect');
+    this.fx({ type: 'position', uid });
     this.emit({ type: 'positionChanged', uid });
   }
 

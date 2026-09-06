@@ -5,6 +5,7 @@ import { Board } from './Board';
 import { FxLayer } from './FxLayer';
 import { ParticleCanvas } from './Particles';
 import { setSoundEnabled, unlockAudio } from './sound';
+import { setMusicIntensity, setMusicVolume, startMusic, stopMusic } from './music';
 import { Inspector } from './Inspector';
 import { LogPanel } from './LogPanel';
 import { PileModal } from './PileModal';
@@ -49,11 +50,27 @@ export function App() {
   useEffect(() => {
     setSoundEnabled(store.settings.sound);
   }, [store.settings.sound]);
+  const [audioUnlocked, setAudioUnlocked] = useState(false);
   useEffect(() => {
-    const unlock = () => unlockAudio();
+    const unlock = () => {
+      unlockAudio();
+      setAudioUnlocked(true);
+    };
     window.addEventListener('pointerdown', unlock, { once: true });
     return () => window.removeEventListener('pointerdown', unlock);
   }, []);
+  const inDuel = store.history.length > 0;
+  useEffect(() => {
+    if (store.settings.music && audioUnlocked && inDuel) startMusic();
+    else stopMusic();
+  }, [store.settings.music, audioUnlocked, inDuel]);
+  useEffect(() => {
+    setMusicVolume(store.settings.musicVolume);
+  }, [store.settings.musicVolume]);
+  const phaseForMusic = view?.phase;
+  useEffect(() => {
+    setMusicIntensity(phaseForMusic === 'BATTLE' ? 'battle' : 'calm');
+  }, [phaseForMusic]);
 
   // Keyboard: Ctrl/Cmd+Z = undo, Escape = clear selection
   useEffect(() => {
@@ -339,7 +356,17 @@ export function App() {
               <span>
                 <b>Sound effects</b>
                 <br />
-                <small>Synthesised sounds for draws, summons, attacks, damage, Spells and Traps.</small>
+                <small>Synthesised sounds: dragon roars, tiger snarls, sword swings, chains, chimes, blasts, damage...</small>
+              </span>
+            </label>
+            <label className="setting">
+              <input type="checkbox" checked={store.settings.music} onChange={(e) => updateSettings({ music: e.target.checked })} />
+              <span>
+                <b>Background music</b>
+                <br />
+                <small>A generated duel-anime style loop that intensifies during the Battle Phase.</small>
+                <br />
+                <input type="range" min={0} max={0.6} step={0.02} value={store.settings.musicVolume} onChange={(e) => updateSettings({ musicVolume: Number(e.target.value) })} /> volume
               </span>
             </label>
             <label className="setting">
