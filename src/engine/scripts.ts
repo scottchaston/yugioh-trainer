@@ -49,8 +49,13 @@ export interface EffectDef {
   mandatory?: boolean;
   /** Optional trigger effects that use "When ... you can" miss the timing if the event was not the last thing to happen. */
   whenYouCan?: boolean;
-  /** Can this effect be activated during the Damage Step? 'calc' = only during damage calculation window (ATK/DEF modifiers), 'any' = any damage step window. */
-  damageStep?: 'any' | 'calc' | false;
+  /**
+   * Can this effect be activated during the Damage Step, and when? See DAMAGE_STEP_WINDOWS in flow.ts.
+   * 'beforeCalc' = ATK/DEF modifiers and "during the Damage Step" effects (start / before damage calculation only),
+   * 'calc' = "during damage calculation" effects only, 'untilCalc' = battle-damage modifiers (up to and including
+   * damage calculation), 'any' = every Damage Step window (Counter Traps), false/undefined = never.
+   */
+  damageStep?: 'any' | 'beforeCalc' | 'calc' | 'untilCalc' | false;
   /** Extra activation requirements. Return null if OK, otherwise a beginner-friendly reason. */
   condition?: (g: Game, card: CardInstance, ctx: ActivationContext) => string | null;
   /** Activation cost, paid before the effect goes on the chain. */

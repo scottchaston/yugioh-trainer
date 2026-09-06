@@ -159,7 +159,7 @@ registerScript({
         const pool = handCards(g, ctx.player, (d) => d.cardType === 'Monster' && d.level === 8);
         const [c] = yield* g.selectCards(ctx.player, 'Discard 1 Level 8 monster (cost)', pool, 1, 1);
         g.log(`${g.playerName(ctx.player)} discards ${g.name(c)} as the cost.`, 'effect');
-        g.sendToGraveyard(c, 'cost', card.uid);
+        g.sendToGraveyard(c, 'discard', card.uid);
       },
       resolve: function* (g, card, ctx) {
         g.draw(ctx.player, 2, 'draws');
@@ -189,7 +189,7 @@ registerScript({
         const pool = handCards(g, ctx.player, (d) => d.cardType === 'Monster' && d.race === 'Dragon' && hasType(d, 'Tuner') && (d.atk ?? 0) <= 1000);
         const [c] = yield* g.selectCards(ctx.player, 'Discard 1 Dragon Tuner with 1000 or less ATK (cost)', pool, 1, 1);
         g.log(`${g.playerName(ctx.player)} discards ${g.name(c)} as the cost.`, 'effect');
-        g.sendToGraveyard(c, 'cost', card.uid);
+        g.sendToGraveyard(c, 'discard', card.uid);
       },
       resolve: function* (g, card, ctx) {
         g.draw(ctx.player, 2, 'draws');
@@ -427,12 +427,12 @@ registerScript({
       spellSpeed: 1,
       from: SPELL_FROM,
       condition: (g, card, ctx) => {
-        if (!g.fieldMonsters(ctx.player).some((m) => m.faceUp && g.isNormalMonster(m.uid))) return 'You need a face-up non-Effect Monster (a Normal Monster, or a Gemini monster without its effect) to send to the Graveyard as the cost.';
+        if (!g.fieldMonsters(ctx.player).some((m) => m.faceUp && g.isNormalMonster(m.uid) && g.canBeSentToGraveyard(m.uid))) return 'You need a face-up non-Effect Monster (a Normal Monster, or a Gemini monster without its effect) that can be sent to the Graveyard as the cost.';
         if (g.player(ctx.player).deck.length < 2) return 'You need at least 2 cards in your Deck to draw.';
         return null;
       },
       cost: function* (g, card, ctx) {
-        const pool = g.fieldMonsters(ctx.player).filter((m) => m.faceUp && g.isNormalMonster(m.uid)).map((m) => m.uid);
+        const pool = g.fieldMonsters(ctx.player).filter((m) => m.faceUp && g.isNormalMonster(m.uid) && g.canBeSentToGraveyard(m.uid)).map((m) => m.uid);
         const [c] = yield* g.selectCards(ctx.player, 'Send 1 face-up non-Effect Monster you control to the Graveyard (cost)', pool, 1, 1);
         g.log(`${g.name(c)} is sent to the Graveyard as the cost.`, 'effect');
         g.sendToGraveyard(c, 'cost', card.uid);

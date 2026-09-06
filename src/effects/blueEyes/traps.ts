@@ -139,7 +139,7 @@ registerScript({
       spellSpeed: 2,
       from: TRAP_FROM,
       oncePerTurn: true,
-      damageStep: 'calc',
+      damageStep: 'beforeCalc',
       tags: ['banishFromGY'],
       condition: (g, card, ctx) => {
         if (!card.faceUp) return 'Castle of Dragon Souls must be face-up (activated) first.';

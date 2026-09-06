@@ -48,11 +48,13 @@ registerScript({
       kind: 'quick',
       spellSpeed: 2,
       from: ['monster'],
-      damageStep: 'calc',
+      damageStep: 'beforeCalc',
       condition: (g, card) => {
         if (card.summonedThisTurn) return 'Rainbow Dragon cannot activate its effects during the turn it was Special Summoned.';
         if (!card.faceUp) return 'Rainbow Dragon must be face-up.';
         if (cbMonstersOnField(g, card.controller).length === 0) return 'You control no Crystal Beast monster to send to the Graveyard.';
+        const blocked = cbMonstersOnField(g, card.controller).find((m) => !g.canBeSentToGraveyard(m.uid));
+        if (blocked) return g.whyCannotBeSentToGraveyard(blocked.uid);
         return null;
       },
       cost: function* (g, card, ctx) {
@@ -328,9 +330,9 @@ registerScript({
       label: 'Special Summon by sending 3 face-up Continuous Spells you control to the GY',
       description: 'Hamon can be Special Summoned from your hand by sending 3 face-up Continuous Spells you control to the Graveyard. Crystal Beasts placed in your Spell & Trap Zone are Continuous Spells.',
       from: ['hand'],
-      condition: (g, card, player) => (continuousSpells(g, player).length < 3 ? `You need 3 face-up Continuous Spells you control (you have ${continuousSpells(g, player).length}).` : null),
+      condition: (g, card, player) => (continuousSpells(g, player).filter((u) => g.canBeSentToGraveyard(u)).length < 3 ? `You need 3 face-up Continuous Spells you control that can be sent to the Graveyard (you have ${continuousSpells(g, player).filter((u) => g.canBeSentToGraveyard(u)).length}).` : null),
       perform: function* (g, card, player) {
-        const chosen = yield* g.selectCards(player, 'Send 3 face-up Continuous Spells you control to the Graveyard', continuousSpells(g, player), 3, 3, undefined, true);
+        const chosen = yield* g.selectCards(player, 'Send 3 face-up Continuous Spells you control to the Graveyard', continuousSpells(g, player).filter((u) => g.canBeSentToGraveyard(u)), 3, 3, undefined, true);
         for (const u of chosen) {
           g.log(`${g.name(u)} is sent to the Graveyard.`, 'effect');
           g.sendToGraveyard(u, 'cost', card.uid);
@@ -478,7 +480,11 @@ registerScript({
       spellSpeed: 2,
       from: ['hand'],
       hidden: true,
-      condition: (g, card, ctx) => (g.player(ctx.player).graveyard.length > 0 ? 'You must have no cards in your Graveyard.' : null),
+      condition: (g, card, ctx) => {
+        if (g.player(ctx.player).graveyard.length > 0) return 'You must have no cards in your Graveyard.';
+        if (!g.canBeSentToGraveyard(card.uid)) return g.whyCannotBeSentToGraveyard(card.uid);
+        return null;
+      },
       cost: function* (g, card) {
         g.log('Dimension Shifter is sent from the hand to the Graveyard (cost).', 'effect');
         g.sendToGraveyard(card.uid, 'cost');
