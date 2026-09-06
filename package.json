@@ -11,9 +11,12 @@
     "test:watch": "vitest",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "build:single": "npm run build && node scripts/build-single.mjs",
-    "e2e": "node e2e/smoke.mjs && node e2e/scenario.mjs && node e2e/gallery.mjs"
+    "e2e": "node e2e/smoke.mjs && node e2e/scenario.mjs && node e2e/gallery.mjs",
+    "e2e:online": "node e2e/online.mjs",
+    "peerserver": "node e2e/peerserver.mjs"
   },
   "dependencies": {
+    "peerjs": "^1.5.5",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },
@@ -22,6 +25,7 @@
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
+    "peer": "^1.0.2",
     "playwright": "^1.63.0",
     "typescript": "^7.0.2",
     "vite": "^8.2.2",

@@ -14,7 +14,7 @@ response windows, logs everything, and supports Undo. Accuracy over feature coun
 | 2 | All Saga of Blue-Eyes card effects (Synchro, Gemini, Azure-Eyes, Honest, Kaiser Glider, traps…) + tests | **Done** (all 41 cards) |
 | 3 | Legend of the Crystal Beasts incl. Crystal Beasts as Continuous Spells, Rainbow Ruins, Rainbow Dragon, Fusion | **Done** (all 46 cards) |
 | 4 | Chains/timing refinement, teaching explanations, "What can I do?" polish, strategy suggestions | **Done**: chain stack panel, turn checklist, Rules help, "Suggest move" (strategy, clearly separated) |
-| 5 | Interface polish, animations, adding more decks | Shaded card art with scene backdrops, creature battle animations, particles, screen shake, per-creature voices and per-card Spell/Trap sounds, optional procedural duel music; adding decks still needs scripts |
+| 5 | Interface polish, animations, online play, adding more decks | Shaded card art with scene backdrops, creature battle animations, particles, screen shake, per-creature voices and per-card Spell/Trap sounds, optional procedural duel music; adding decks still needs scripts |
 
 ## What works now (Phase 1)
 * Two players, deck lists for both Structure Decks with official TCG text (86 cards),
@@ -89,6 +89,27 @@ response windows, logs everything, and supports Undo. Accuracy over feature coun
   background music + volume), winner screen.
 * Single-file build: `npm run build:single` → `dist/single/practice-table.html`.
 
+## Online play (two browsers)
+
+* `src/net/`: `protocol.ts` (JSON messages), `transport.ts` (channel interface + in-memory loopback for tests),
+  `view.ts` (per-seat redaction: opponent hand, both Decks, opponent Extra Deck and face-down cards become a
+  `__hidden__` placeholder; cards a player is choosing from are revealed to that player; Deck order and RNG state
+  are not sent), `session.ts` (HostSession runs the normal store and validates every guest intent through the
+  engine, sends `PlayerView`s (redacted state, the prompt if it is theirs, legal actions computed by the host,
+  a "waiting for…" text); GuestSession is a thin client that forwards intents), `peer.ts` (WebRTC via PeerJS,
+  free public signalling, STUN + a free TURN relay; `?peerhost=` for a local PeerServer in tests).
+* Card uids are opaque (`p0-17`, numbering shuffled per Duel) so hidden cards leak nothing.
+* Undo needs the opponent's consent (request/allow/deny); Rewind and Reveal all are disabled online; the host's
+  phase-window setting applies to both players; the guest asks the host for strategy suggestions.
+* The host saves the Duel (setup + every action with its answers) to localStorage after each step; it can be
+  resumed after a page reload and the guest re-joins with the same code. `saveDuel()/replayDuel()` in the store
+  are the general save format (replaying is deterministic).
+* Deployment: `.github/workflows/pages.yml` publishes `dist/` to GitHub Pages; `vite.config.ts` uses relative
+  asset paths so the same build works on any host, in a sub-folder, or opened from disk.
+* Tests: `tests/online.test.ts` (opaque ids, redaction rules, save/replay, host and guest sessions over the
+  loopback transport); `e2e/online.mjs` drives two Chromium contexts through a room over real WebRTC with a
+  local PeerServer (`e2e/peerserver.mjs`).
+
 ## Architecture (see README for folders)
 * `GameState` is plain JSON. Every player action runs as a generator "process" (`src/engine/actions.ts`)
   that `yield`s a `Prompt` whenever a player must decide; `execute(base, action, answers)` replays the process
@@ -132,7 +153,6 @@ Browser smoke tests: `e2e/` (needs `npm run dev` running).
 3. More decks: the card data pipeline (`scripts/extract-cards.py`) and script registry make this straightforward;
    each new card needs a script and tests.
 4. Mobile/tablet layout (the board is designed for a laptop screen or larger).
-5. Online play between two private players: the engine is deterministic and the whole Duel is plain JSON with a
-   replayable action/answer log, so a small relay server (WebSocket, room code) that holds the authoritative state
-   and sends each player a redacted view (hidden hands/face-down cards) is the natural design. See README's
-   "Online play" note for the outline.
+5. Online play improvements: a chat line, a "spectator" third connection, and an optional relay server for
+   networks where WebRTC cannot connect directly (the transport interface makes this a drop-in).
+6. Save/load for hot-seat Duels (the replayable save format already exists in the store).

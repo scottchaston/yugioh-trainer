@@ -509,7 +509,9 @@ describe('Other Blue-Eyes cards', () => {
     expect(tg.state.players[0].hand.length).toBe(handBefore - 1 + 2);
     // Herald of Creation: discard 1, add Blue-Eyes (Level 8) from GY
     const herald = put(tg, 0, 'Herald of Creation', 'monster');
-    const discard = tg.state.players[0].hand[0];
+    // Make sure the discard is a real choice (2+ cards in hand), otherwise the cost resolves without a prompt.
+    const discard = put(tg, 0, 'Rabidragon', 'hand');
+    expect(tg.state.players[0].hand.length).toBeGreaterThanOrEqual(2);
     tg.run({ type: 'ACTIVATE', player: 0, uid: herald, effectId: 'recover' }, A.cards(discard), A.cards(bewd));
     expect(tg.card(bewd).zone).toBe('hand');
     // Dragonic Tactics: tribute 2 Dragons (White Stone + Luster), summon Rabidragon? It's in GY; need Level 8 Dragon in Deck -> Darkstorm Dragon

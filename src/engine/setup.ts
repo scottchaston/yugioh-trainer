@@ -53,11 +53,16 @@ export function createGame(config: GameConfig): GameState {
     const deckDef = getDeck(pc.deckId);
     const deck: string[] = [];
     const extra: string[] = [];
+    // Card ids are opaque labels: the numbering is shuffled so a uid reveals nothing about which
+    // card it is (online play sends uids of hidden cards to the opponent).
+    const total = [...deckDef.main, ...deckDef.extra].reduce((acc, e) => acc + e.qty, 0);
+    const labels = shuffleWithState(Array.from({ length: total }, (_, i) => i + 1), rngState);
+    rngState = labels.state;
     let n = 0;
     for (const entry of [...deckDef.main, ...deckDef.extra]) {
       const def = getCardByName(entry.name);
       for (let i = 0; i < entry.qty; i++) {
-        const uid = `p${p}-${++n}-${def.id}`;
+        const uid = `p${p}-${labels.result[n++]}`;
         const isExtra = isExtraDeckMonster(def);
         cards[uid] = blankInstance(uid, def.id, p, isExtra ? 'extra' : 'deck');
         (isExtra ? extra : deck).push(uid);

@@ -318,3 +318,19 @@ button { font: inherit; }
 .shake-heavy { animation: shakeHeavy .5s ease-out; }
 @keyframes shakeLight { 0%,100% { transform: translate(0,0); } 20% { transform: translate(-3px, 2px); } 40% { transform: translate(3px,-2px); } 60% { transform: translate(-2px,1px); } 80% { transform: translate(2px,-1px); } }
 @keyframes shakeHeavy { 0%,100% { transform: translate(0,0); } 15% { transform: translate(-7px, 4px); } 30% { transform: translate(7px,-4px); } 45% { transform: translate(-5px,3px); } 60% { transform: translate(5px,-3px); } 80% { transform: translate(-2px,1px); } }
+
+/* Online play */
+.online-box { margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--line); }
+.online-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 8px 0; }
+.online-actions input { padding: 8px 10px; background: #0d1117; color: var(--text); border: 1px solid var(--line); border-radius: 6px; width: 170px; text-transform: uppercase; letter-spacing: .06em; }
+.room-box { background: #121722; border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px; margin: 12px 0; text-align: center; }
+.room-code-label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .1em; }
+.room-code { font-size: 34px; font-weight: 800; letter-spacing: .12em; color: var(--accent); margin: 4px 0 8px; }
+.room-link { display: flex; gap: 8px; justify-content: center; }
+.room-link input { flex: 1; max-width: 520px; padding: 6px 8px; background: #0d1117; color: var(--text); border: 1px solid var(--line); border-radius: 6px; font-size: 12px; }
+.error-text { color: var(--danger); }
+.online-chip { margin-left: 10px; font-size: 12px; padding: 2px 8px; border-radius: 999px; background: #10243a; border: 1px solid var(--accent2); color: var(--text); }
+.online-chip.online-disconnected, .online-chip.online-connecting, .online-chip.online-error { border-color: var(--danger); background: #2a1420; }
+.waiting-banner { background: #2c3446; color: var(--text); font-weight: 500; }
+.waiting-banner b { color: var(--accent2); }
+.undo-wait { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); background: #10243a; border: 1px solid var(--accent2); border-radius: 8px; padding: 8px 14px; z-index: 20; }

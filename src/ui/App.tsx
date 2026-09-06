@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { getLegalActions, PHASE_LABEL, type LegalActionInfo, type PlayerId, type ZoneRef } from '../engine';
-import { answer, cancelPending, clearGame, committedState, currentView, dispatch, newGame, rewindTo, setNotice, undo, updateSettings, useStore } from '../state/store';
+import { actionsForCard, getLegalActions, PHASE_LABEL, type LegalActionInfo, type PlayerId, type ZoneRef } from '../engine';
+import { answer, cancelPending, clearGame, committedState, currentView, dispatch, getStore, newGame, rewindTo, setNotice, undo, updateSettings, useStore } from '../state/store';
+
+// For browser tests and debugging: read the store from the console.
+(window as unknown as { __ygoStore: typeof getStore }).__ygoStore = getStore;
+import { redactState, waitingText } from '../net/view';
+import { currentSession } from '../net/session';
+import { ConnectionOverlay, OnlineLobby, UndoRequestModal, leaveOnline, type LobbyMode } from './Online';
 import { Board } from './Board';
 import { FxLayer } from './FxLayer';
 import { ParticleCanvas } from './Particles';
@@ -30,8 +36,20 @@ const PHASE_HELP: Record<string, string> = {
 
 export function App() {
   const store = useStore();
-  const view = currentView(store);
-  const committed = committedState(store);
+  const online = store.online;
+  const isGuest = online?.role === 'guest';
+  const remote = isGuest ? online.remote : null;
+  const seat: PlayerId | null = online ? online.seat : null;
+  // The guest renders what the host sent; the host (and hot-seat play) renders the local engine state.
+  const rawView = isGuest ? (remote?.view ?? null) : currentView(store);
+  const committed = isGuest ? rawView : committedState(store);
+  const fullPrompt = isGuest ? (remote?.prompt ?? null) : (store.pending?.prompt ?? null);
+  // Online, the host hides the guest's hidden cards from its own screen too.
+  const view = useMemo(() => (online && !isGuest && rawView ? redactState(rawView, online.seat, fullPrompt) : rawView), [online, isGuest, rawView, fullPrompt]);
+  const [lobby, setLobby] = useState<LobbyMode | null>(() => {
+    const join = new URLSearchParams(window.location.search).get('join');
+    return join ? { mode: 'join', code: join } : null;
+  });
   const [selectedUid, setSelectedUid] = useState<string | null>(null);
   const [promptSelection, setPromptSelection] = useState<string[]>([]);
   const [whatCanIDo, setWhatCanIDo] = useState(false);
@@ -45,7 +63,7 @@ export function App() {
 
   useEffect(() => {
     setPromptSelection([]);
-  }, [store.pending?.prompt]);
+  }, [fullPrompt]);
 
   useEffect(() => {
     setSoundEnabled(store.settings.sound);
@@ -59,7 +77,7 @@ export function App() {
     window.addEventListener('pointerdown', unlock, { once: true });
     return () => window.removeEventListener('pointerdown', unlock);
   }, []);
-  const inDuel = store.history.length > 0;
+  const inDuel = !!rawView;
   useEffect(() => {
     if (store.settings.music && audioUnlocked && inDuel) startMusic();
     else stopMusic();
@@ -89,7 +107,15 @@ export function App() {
     return () => window.removeEventListener('keydown', h);
   }, []);
 
-  const legal = useMemo(() => (committed ? getLegalActions(committed, committed.turnPlayer) : []), [committed]);
+  const legal = useMemo(() => {
+    if (isGuest) return remote?.legal ?? [];
+    if (!committed) return [];
+    return getLegalActions(committed, seat ?? committed.turnPlayer);
+  }, [isGuest, remote, committed, seat]);
+  // Guest: strategy suggestions are computed by the host on request.
+  useEffect(() => {
+    if (showSuggest && isGuest) currentSession()?.requestSuggestions();
+  }, [showSuggest, isGuest, rawView]);
 
   if (new URLSearchParams(window.location.search).has('gallery')) {
     return (
@@ -104,12 +130,40 @@ export function App() {
     );
   }
   if (!view || !committed) {
-    return <Setup onStart={(cfg) => newGame({ players: [{ name: cfg.names[0] || 'Player 1', deckId: cfg.decks[0] }, { name: cfg.names[1] || 'Player 2', deckId: cfg.decks[1] }], firstPlayer: cfg.first, seed: cfg.seed })} />;
+    if (lobby || online) {
+      return (
+        <OnlineLobby
+          lobby={lobby ?? { mode: 'host' }}
+          onBack={() => {
+            leaveOnline();
+            setLobby(null);
+            if (window.location.search.includes('join=')) window.history.replaceState(null, '', window.location.pathname);
+          }}
+        />
+      );
+    }
+    return (
+      <Setup
+        onStart={(cfg) => newGame({ players: [{ name: cfg.names[0] || 'Player 1', deckId: cfg.decks[0] }, { name: cfg.names[1] || 'Player 2', deckId: cfg.decks[1] }], firstPlayer: cfg.first, seed: cfg.seed })}
+        onOnline={(m) => setLobby(m)}
+      />
+    );
   }
 
-  const prompt = store.pending?.prompt ?? null;
-  const actingPlayer: PlayerId = prompt ? prompt.player : view.turnPlayer;
-  const bottom: PlayerId = store.settings.perspective === 'auto' ? actingPlayer : store.settings.perspective === 'turn' ? view.turnPlayer : store.settings.perspective;
+  const me = seat;
+  // Online, only questions for this seat are shown as questions; the rest is "waiting for…".
+  const prompt = online && fullPrompt && fullPrompt.player !== me ? null : fullPrompt;
+  const waiting = online ? (isGuest ? (remote?.waiting ?? null) : waitingText(rawView!, fullPrompt, me!)) : null;
+  const actingPlayer: PlayerId = fullPrompt ? fullPrompt.player : view.turnPlayer;
+  const bottom: PlayerId = online ? me! : store.settings.perspective === 'auto' ? actingPlayer : store.settings.perspective === 'turn' ? view.turnPlayer : store.settings.perspective;
+  const revealAll = online ? false : store.settings.revealAll;
+  const canUndo = online ? !online.undoRequest && (isGuest ? !!remote?.canUndo : store.history.length > 1 || !!store.pending) && online.status === 'playing' : store.history.length > 1 || !!store.pending;
+  const endDuel = () => {
+    if (online) {
+      leaveOnline();
+      setLobby(null);
+    } else clearGame();
+  };
   const legalOnly = legal.filter((a) => a.legal);
   const highlightUids = new Set<string>();
   if (whatCanIDo) for (const a of legalOnly) if (a.uid) highlightUids.add(a.uid);
@@ -146,7 +200,16 @@ export function App() {
   };
 
   const selectedCard = selectedUid ? view.cards[selectedUid] : null;
-  const selectedHidden = !!selectedCard && !selectedCard.faceUp && !store.settings.revealAll && (selectedCard.zone === 'hand' ? selectedCard.owner !== bottom : selectedCard.controller !== bottom) && selectedCard.zone !== 'deck';
+  const selectedHidden = !!selectedCard && !selectedCard.faceUp && !revealAll && (selectedCard.zone === 'hand' ? selectedCard.owner !== bottom : selectedCard.controller !== bottom) && selectedCard.zone !== 'deck';
+  const selectedActions: LegalActionInfo[] = !selectedCard
+    ? []
+    : isGuest
+      ? legal.filter((a) => a.uid === selectedUid)
+      : online && selectedCard.controller !== me
+        ? []
+        : committed.cards[selectedUid!]
+          ? actionsForCard(committed, selectedCard.controller, selectedUid!)
+          : [];
 
   return (
     <div className="app">
@@ -160,6 +223,12 @@ export function App() {
             </button>
           ))}
           <span className="turn-player">{view.players[view.turnPlayer].name}'s turn</span>
+          {online && (
+            <span className={`online-chip online-${online.status}`} title={`Room code ${online.code}`}>
+              Online · {online.code} · you are {view.players[me!].name}
+              {online.status !== 'playing' && ' · reconnecting'}
+            </span>
+          )}
         </div>
         <div className="topbar-actions">
           {(['TO_BATTLE_PHASE', 'TO_MAIN2', 'END_TURN'] as const).map((t) => {
@@ -186,12 +255,14 @@ export function App() {
           <button className="btn" onClick={() => setShowHelp(true)} title="Beginner rules reference">
             Rules help
           </button>
-          <button className="btn" onClick={() => undo()} title="Undo (Ctrl+Z)" disabled={store.history.length <= 1 && !store.pending}>
-            Undo
+          <button className="btn" onClick={() => undo()} title={online ? 'Ask your opponent to allow an undo' : 'Undo (Ctrl+Z)'} disabled={!canUndo}>
+            {online ? 'Ask to undo' : 'Undo'}
           </button>
-          <button className="btn" onClick={() => setShowHistory(!showHistory)}>
-            Rewind
-          </button>
+          {!online && (
+            <button className="btn" onClick={() => setShowHistory(!showHistory)}>
+              Rewind
+            </button>
+          )}
           <button className="btn" onClick={() => setShowSettings(!showSettings)}>
             Settings
           </button>
@@ -207,10 +278,15 @@ export function App() {
       )}
       <div className="main">
         <div className="board-wrap" ref={boardWrapRef}>
+          {waiting && !prompt && (
+            <div className="decision-banner waiting-banner">
+              WAITING — <b>{waiting.text}</b>
+            </div>
+          )}
           {prompt && (
             <div className={`decision-banner${prompt.type === 'fastEffects' ? ' decision-response' : ''}`}>
               {prompt.type === 'fastEffects' ? 'RESPONSE AVAILABLE — ' : 'DECISION — '}
-              <b>{view.players[prompt.player].name}</b>: {prompt.type === 'fastEffects' ? 'you may respond (see the panel on the right)' : prompt.title}
+              <b>{online ? 'You' : view.players[prompt.player].name}</b>: {prompt.type === 'fastEffects' ? 'you may respond (see the panel on the right)' : prompt.title}
               {prompt.type === 'selectZone' && <span className="banner-hint"> · the highlighted zones are on {view.players[prompt.player].name}'s side ({prompt.player === bottom ? 'bottom' : 'top'} of the board)</span>}
               {prompt.type === 'selectCards' && prompt.cards.some((u) => view.cards[u] && ['monster', 'spellTrap', 'field', 'extraMonster'].includes(view.cards[u].zone)) && <span className="banner-hint"> · highlighted cards can be clicked on the board</span>}
             </div>
@@ -218,7 +294,7 @@ export function App() {
           <Board
             view={view}
             bottom={bottom}
-            revealAll={store.settings.revealAll}
+            revealAll={revealAll}
             selectedUid={selectedUid}
             highlightUids={highlightUids}
             prompt={prompt}
@@ -236,11 +312,11 @@ export function App() {
                 <h2>{view.players[view.winner].name} wins the Duel!</h2>
                 <p>{view.winReason}</p>
                 <div className="prompt-buttons">
-                  <button className="btn" onClick={() => undo()}>
-                    Undo last action
+                  <button className="btn" onClick={() => undo()} disabled={!canUndo}>
+                    {online ? 'Ask to undo the last action' : 'Undo last action'}
                   </button>
-                  <button className="btn btn-primary" onClick={() => clearGame()}>
-                    New Duel
+                  <button className="btn btn-primary" onClick={endDuel}>
+                    {online ? 'Leave the Duel' : 'New Duel'}
                   </button>
                 </div>
               </div>
@@ -258,7 +334,7 @@ export function App() {
           {whatCanIDo && !prompt && (
             <div className="panel teach-panel">
               <div className="modal-head">
-                <h3>What can {view.players[view.turnPlayer].name} do right now?</h3>
+                <h3>What can {online ? 'you' : view.players[view.turnPlayer].name} do right now?</h3>
                 <button className="btn" onClick={() => setWhatCanIDo(false)}>
                   Close
                 </button>
@@ -274,8 +350,9 @@ export function App() {
           {showSuggest && (
             <SuggestPanel
               view={view}
-              player={prompt ? prompt.player : view.turnPlayer}
+              player={online ? me! : prompt ? prompt.player : view.turnPlayer}
               prompt={prompt}
+              suggestions={isGuest ? (online.suggestions ?? []) : undefined}
               onAct={(sg) => {
                 if (sg.action) {
                   setShowSuggest(false);
@@ -303,7 +380,7 @@ export function App() {
               onUndo={() => undo()}
             />
           )}
-          <Inspector view={view} committed={committed} uid={selectedUid} hidden={selectedHidden} onAction={runAction} disabledBecausePending={!!prompt} />
+          <Inspector view={view} uid={selectedUid} hidden={selectedHidden} actions={selectedActions} revealHint={!online} onAction={runAction} disabledBecausePending={!!fullPrompt} />
           <LogPanel view={view} />
         </aside>
       </div>
@@ -312,7 +389,7 @@ export function App() {
           view={view}
           player={pileModal.player}
           pile={pileModal.pile}
-          revealAll={store.settings.revealAll}
+          revealAll={revealAll}
           onSelect={(uid) => {
             setSelectedUid(uid);
             setPileModal(null);
@@ -329,14 +406,22 @@ export function App() {
                 Close
               </button>
             </div>
+            {online && (
+              <p className="muted small">
+                Online Duel (room code {online.code}). You are {view.players[me!].name}; hands and face-down cards are hidden from the other player, and "Reveal all" is not available.
+              </p>
+            )}
+            {!isGuest && (
             <label className="setting">
               <input type="checkbox" checked={store.settings.askAtPhaseWindows} onChange={(e) => updateSettings({ askAtPhaseWindows: e.target.checked })} />
               <span>
                 <b>Also pause during the Draw Phase, Standby Phase and Battle Phase steps when a response is possible.</b>
                 <br />
-                <small>The table always pauses for summons, attacks, card activations and the End Phase. Rules-accurate play also allows Traps and Quick-Play Spells at these quieter moments; turn this on once you are comfortable.</small>
+                <small>The table always pauses for summons, attacks, card activations and the End Phase. Rules-accurate play also allows Traps and Quick-Play Spells at these quieter moments; turn this on once you are comfortable.{online ? ' (Host setting: applies to both players.)' : ''}</small>
               </span>
             </label>
+            )}
+            {!online && (
             <label className="setting">
               <input type="checkbox" checked={store.settings.revealAll} onChange={(e) => updateSettings({ revealAll: e.target.checked })} />
               <span>
@@ -345,6 +430,7 @@ export function App() {
                 <small>Show both hands and all face-down cards. Useful when learning together.</small>
               </span>
             </label>
+            )}
             <label className="setting">
               <input type="checkbox" checked={store.settings.animations} onChange={(e) => updateSettings({ animations: e.target.checked })} />
               <span>
@@ -369,6 +455,7 @@ export function App() {
                 <input type="range" min={0} max={0.6} step={0.02} value={store.settings.musicVolume} onChange={(e) => updateSettings({ musicVolume: Number(e.target.value) })} /> volume
               </span>
             </label>
+            {!online && (
             <label className="setting">
               <span>
                 <b>Board perspective</b>
@@ -381,15 +468,18 @@ export function App() {
                 </select>
               </span>
             </label>
+            )}
             <div className="prompt-buttons">
-              <button className="btn btn-warn" onClick={() => { if (confirm('Abandon this Duel and return to setup?')) { clearGame(); setShowSettings(false); } }}>
-                New Duel
+              <button className="btn btn-warn" onClick={() => { if (confirm(online ? 'Leave this online Duel?' : 'Abandon this Duel and return to setup?')) { endDuel(); setShowSettings(false); } }}>
+                {online ? 'Leave the Duel' : 'New Duel'}
               </button>
             </div>
           </div>
         </div>
       )}
       {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
+      {online && <UndoRequestModal />}
+      {online && <ConnectionOverlay onLeave={endDuel} />}
       {showHistory && (
         <div className="modal-backdrop" onClick={() => setShowHistory(false)}>
           <div className="modal history" onClick={(e) => e.stopPropagation()}>

@@ -10,7 +10,22 @@ for (const c of CARDS) {
   byName.set(c.name, c);
 }
 
+/** Placeholder id used for cards whose identity is hidden from the viewer (online play). */
+export const HIDDEN_CARD_ID = '__hidden__';
+const HIDDEN_CARD: CardDefinition = {
+  id: HIDDEN_CARD_ID,
+  name: 'Face-down card',
+  cardType: 'Monster',
+  text: 'This card is hidden from you.',
+  setNumbers: [],
+  monsterTypes: [],
+  level: 0,
+  atk: 0,
+  def: 0,
+};
+
 export function getCard(id: string): CardDefinition {
+  if (id === HIDDEN_CARD_ID) return HIDDEN_CARD;
   const c = byId.get(id);
   if (!c) throw new Error(`Unknown card id ${id}`);
   return c;

@@ -4,9 +4,10 @@
  */
 import { useSyncExternalStore } from 'react';
 import { createGame, execute, type GameConfig } from '../engine';
-import type { Action, Answer, GameState, PlayerId, Prompt } from '../engine';
+import type { Action, Answer, GameState, LegalActionInfo, PlayerId, Prompt } from '../engine';
 import '../effects';
 import { getCard } from '../cards';
+import type { Suggestion } from '../strategy/suggest';
 
 export interface Pending {
   action: Action;
@@ -20,6 +21,46 @@ export interface HistoryEntry {
   state: GameState;
   /** Short description of the action that produced this state. */
   label: string;
+  /** The action and the answers that produced this state (replayable; absent for the initial state). */
+  step?: DuelStep;
+}
+
+export interface DuelStep {
+  action: Action;
+  answers: Answer[];
+}
+
+/** A whole Duel as replayable data: the setup plus every action with its answers. */
+export interface SavedDuel {
+  config: GameConfig;
+  steps: DuelStep[];
+}
+
+/** What a remote player sees: a redacted state plus only the decisions that are theirs. */
+export interface PlayerView {
+  view: GameState;
+  /** The question for this player, or null (then `waiting` says who is deciding). */
+  prompt: Prompt | null;
+  /** Legal actions for this player, computed by the host from the full state. */
+  legal: LegalActionInfo[];
+  waiting: { player: PlayerId; text: string } | null;
+  canUndo: boolean;
+}
+
+export interface OnlineState {
+  role: 'host' | 'guest';
+  /** The local player's seat. */
+  seat: PlayerId;
+  code: string;
+  status: 'connecting' | 'waiting' | 'lobby' | 'playing' | 'disconnected' | 'error';
+  error?: string;
+  opponent: { name: string; deckId: string } | null;
+  /** Guest only: the latest view received from the host. */
+  remote: PlayerView | null;
+  /** An undo request in flight: asked by us ('outgoing') or by the opponent ('incoming'). */
+  undoRequest: 'outgoing' | 'incoming' | null;
+  /** Guest only: strategy suggestions computed by the host on request. */
+  suggestions: Suggestion[] | null;
 }
 
 export interface Settings {
@@ -42,13 +83,27 @@ export interface StoreState {
   /** Last illegal-move explanation to show. */
   notice: { title: string; text: string; kind: 'error' | 'info' } | null;
   config: GameConfig | null;
+  /** Set while playing (or setting up) an online Duel. */
+  online: OnlineState | null;
 }
 
 type Listener = () => void;
 
+/** Online play routes player intents through the session layer instead of the local engine. */
+export interface Interceptor {
+  dispatch?: (a: Action) => void;
+  answer?: (a: Answer) => void;
+  cancelPending?: () => void;
+  undo?: () => void;
+}
+let interceptor: Interceptor | null = null;
+export function setInterceptor(i: Interceptor | null): void {
+  interceptor = i;
+}
+
 const defaultSettings: Settings = { askAtPhaseWindows: false, revealAll: false, perspective: 'turn', animations: true, sound: true, music: true, musicVolume: 0.22 };
 
-let store: StoreState = { history: [], pending: null, settings: loadSettings(), notice: null, config: null };
+let store: StoreState = { history: [], pending: null, settings: loadSettings(), notice: null, config: null, online: null };
 const listeners = new Set<Listener>();
 
 function loadSettings(): Settings {
@@ -64,6 +119,14 @@ function loadSettings(): Settings {
 function set(partial: Partial<StoreState>): void {
   store = { ...store, ...partial };
   for (const l of listeners) l();
+}
+
+export function setOnline(online: OnlineState | null): void {
+  set({ online });
+}
+
+export function updateOnline(partial: Partial<OnlineState>): void {
+  if (store.online) set({ online: { ...store.online, ...partial } });
 }
 
 export function subscribe(l: Listener): () => void {
@@ -137,6 +200,30 @@ export function newGame(config: GameConfig): void {
   set({ history: [{ state, label: 'Duel start' }], pending: null, notice: null, config });
 }
 
+/** The Duel so far as replayable data. */
+export function saveDuel(s: StoreState = store): SavedDuel | null {
+  if (!s.config || s.history.length === 0) return null;
+  return { config: s.config, steps: s.history.slice(1).map((h) => h.step!).filter(Boolean) };
+}
+
+/** Rebuild a history by replaying saved steps through the engine (deterministic). */
+export function replayDuel(saved: SavedDuel): HistoryEntry[] {
+  const initial = createGame(saved.config);
+  const r0 = execute(initial, { type: 'START_GAME' }, []);
+  const history: HistoryEntry[] = [{ state: r0.done ? r0.state : initial, label: 'Duel start' }];
+  for (const step of saved.steps) {
+    const base = history[history.length - 1].state;
+    const r = execute(base, step.action, step.answers);
+    if (!r.done) break;
+    history.push({ state: r.state, label: describeAction(step.action, base), step });
+  }
+  return history;
+}
+
+export function restoreDuel(saved: SavedDuel): void {
+  set({ history: replayDuel(saved), pending: null, notice: null, config: saved.config });
+}
+
 /** Should the store answer this prompt automatically (per settings)? */
 function autoAnswer(prompt: Prompt): Answer | null {
   if (prompt.type === 'fastEffects' && prompt.windowKind === 'phase' && !store.settings.askAtPhaseWindows) {
@@ -158,7 +245,7 @@ function runPending(base: GameState, action: Action, answers: Answer[], label: s
       return;
     }
     if (r.done) {
-      set({ history: [...store.history, { state: r.state, label }], pending: null, notice: null });
+      set({ history: [...store.history, { state: r.state, label, step: { action, answers: all } }], pending: null, notice: null });
       return;
     }
     const auto = autoAnswer(r.prompt!);
@@ -172,6 +259,11 @@ function runPending(base: GameState, action: Action, answers: Answer[], label: s
 }
 
 export function dispatch(action: Action): void {
+  if (interceptor?.dispatch) return interceptor.dispatch(action);
+  localDispatch(action);
+}
+
+export function localDispatch(action: Action): void {
   const base = committedState();
   if (!base) return;
   if (store.pending) {
@@ -182,6 +274,11 @@ export function dispatch(action: Action): void {
 }
 
 export function answer(a: Answer): void {
+  if (interceptor?.answer) return interceptor.answer(a);
+  localAnswer(a);
+}
+
+export function localAnswer(a: Answer): void {
   const p = store.pending;
   const base = committedState();
   if (!p || !base) return;
@@ -189,11 +286,21 @@ export function answer(a: Answer): void {
 }
 
 export function cancelPending(): void {
+  if (interceptor?.cancelPending) return interceptor.cancelPending();
+  localCancelPending();
+}
+
+export function localCancelPending(): void {
   if (store.pending) set({ pending: null });
 }
 
 /** Undo one step: the last answer, the pending action, or the last committed action. */
 export function undo(): void {
+  if (interceptor?.undo) return interceptor.undo();
+  localUndo();
+}
+
+export function localUndo(): void {
   const p = store.pending;
   if (p) {
     if (p.answers.length === 0) {
@@ -228,7 +335,7 @@ export function updateSettings(partial: Partial<Settings>): void {
   // If a phase window is pending and the user just disabled asking, auto-pass it.
   const p = store.pending;
   if (p && !settings.askAtPhaseWindows && p.prompt.type === 'fastEffects' && p.prompt.windowKind === 'phase') {
-    answer({ activation: null });
+    localAnswer({ activation: null });
   }
 }
 
@@ -239,3 +346,5 @@ export function setNotice(notice: StoreState['notice']): void {
 export function clearGame(): void {
   set({ history: [], pending: null, notice: null, config: null });
 }
+
+export { describeAction };

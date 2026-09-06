@@ -1,12 +1,16 @@
 import { useState } from 'react';
 import { DECKS } from '../cards/decks';
 import type { PlayerId } from '../engine';
+import { useHostSave, type LobbyMode } from './Online';
 
 interface Props {
   onStart: (cfg: { names: [string, string]; decks: [string, string]; first: PlayerId; seed?: number }) => void;
+  onOnline: (mode: LobbyMode) => void;
 }
 
-export function Setup({ onStart }: Props) {
+export function Setup({ onStart, onOnline }: Props) {
+  const hostSave = useHostSave();
+  const [joinCode, setJoinCode] = useState('');
   const [names, setNames] = useState<[string, string]>(['Player 1', 'Player 2']);
   const [decks, setDecks] = useState<[string, string]>([DECKS[0].id, DECKS[1].id]);
   const [first, setFirst] = useState<PlayerId | 'coin'>('coin');
@@ -76,6 +80,28 @@ export function Setup({ onStart }: Props) {
         <button className="btn btn-primary btn-big" onClick={start}>
           Start Duel
         </button>
+        <div className="online-box">
+          <h3>Play online with a friend</h3>
+          <p className="muted small">One of you hosts and gets a room code; the other joins with it. Each player sees only their own hand and choices, and waits while the other decides.</p>
+          <div className="online-actions">
+            <button className="btn btn-primary" onClick={() => onOnline({ mode: 'host' })}>
+              Host a duel
+            </button>
+            <span className="muted">or</span>
+            <input value={joinCode} placeholder="Room code" onChange={(e) => setJoinCode(e.target.value.toUpperCase())} onKeyDown={(e) => e.key === 'Enter' && onOnline({ mode: 'join', code: joinCode })} />
+            <button className="btn" onClick={() => onOnline({ mode: 'join', code: joinCode })}>
+              Join a duel
+            </button>
+          </div>
+          {hostSave && (
+            <p className="small">
+              You hosted a Duel earlier (code <b>{hostSave.code}</b>, {new Date(hostSave.savedAt).toLocaleString()}).{' '}
+              <button className="btn btn-link" onClick={() => onOnline({ mode: 'resume', save: hostSave })}>
+                Resume it
+              </button>
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );

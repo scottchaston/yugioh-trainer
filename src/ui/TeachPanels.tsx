@@ -56,8 +56,8 @@ export function TurnChecklist({ view }: { view: GameState }) {
   );
 }
 
-export function SuggestPanel({ view, player, prompt, onAct, onActivate, onClose }: { view: GameState; player: PlayerId; prompt: Prompt | null; onAct: (s: Suggestion) => void; onActivate: (a: { uid: string; effectId: string }) => void; onClose: () => void }) {
-  const suggestions = suggestMoves(view, player, prompt);
+export function SuggestPanel({ view, player, prompt, suggestions: given, onAct, onActivate, onClose }: { view: GameState; player: PlayerId; prompt: Prompt | null; suggestions?: Suggestion[]; onAct: (s: Suggestion) => void; onActivate: (a: { uid: string; effectId: string }) => void; onClose: () => void }) {
+  const suggestions = given ?? suggestMoves(view, player, prompt);
   return (
     <div className="panel suggest-panel">
       <div className="modal-head">

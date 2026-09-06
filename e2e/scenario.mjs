@@ -6,12 +6,19 @@ const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromi
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
 const errors = [];
 page.on('pageerror', (e) => errors.push('PAGEERROR ' + e.message));
-await page.goto('http://localhost:5173/?seed=173');
+await page.goto('http://localhost:5173/?seed=3380');
 await page.click('text=Player 1 first');
 await page.click('text=Start Duel');
 await page.waitForSelector('.board');
 const clickAction = async (text) => {
   await page.waitForTimeout(250);
+  // Clear any response window / optional trigger that is still open before choosing the next action.
+  for (let i = 0; i < 6; i++) {
+    if (await page.$('.prompt-response')) { await page.click('text=Decline (do not respond)'); await page.waitForTimeout(300); continue; }
+    const dont = await page.$('.btn-option:has-text("Do not activate")');
+    if (dont) { await dont.click(); await page.waitForTimeout(300); continue; }
+    break;
+  }
   if (!(await page.$('.teach-panel'))) await page.locator('button.btn-teach').click();
   await page.waitForSelector('.teach-panel');
   await page.locator('.teach-list .btn-primary', { hasText: text }).first().click();

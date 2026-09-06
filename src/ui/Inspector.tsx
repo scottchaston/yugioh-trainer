@@ -1,18 +1,21 @@
 import { useState } from 'react';
-import { Game, actionsForCard, type GameState, type LegalActionInfo, type PlayerId } from '../engine';
+import { Game, type GameState, type LegalActionInfo } from '../engine';
 import { CardView, typeLine } from './CardView';
 import { defOf } from './cardDef';
 
 interface Props {
   view: GameState;
-  committed: GameState;
   uid: string | null;
   hidden: boolean;
+  /** Legal/illegal actions for this card (computed by the rules engine, or sent by the host online). */
+  actions: LegalActionInfo[];
+  /** Hot-seat play: mention the "Reveal all" learning setting. */
+  revealHint?: boolean;
   onAction: (a: LegalActionInfo) => void;
   disabledBecausePending: boolean;
 }
 
-export function Inspector({ view, committed, uid, hidden, onAction, disabledBecausePending }: Props) {
+export function Inspector({ view, uid, hidden, actions, revealHint = true, onAction, disabledBecausePending }: Props) {
   const [whyOpen, setWhyOpen] = useState<string | null>(null);
   if (!uid || !view.cards[uid]) {
     return (
@@ -28,7 +31,7 @@ export function Inspector({ view, committed, uid, hidden, onAction, disabledBeca
     return (
       <div className="panel inspector">
         <h3>Face-down card</h3>
-        <p className="muted">This card is face-down and belongs to the other player. Its identity is hidden (turn on "Reveal all" in Settings for learning games).</p>
+        <p className="muted">This card is face-down and belongs to the other player. Its identity is hidden{revealHint ? ' (turn on "Reveal all" in Settings for learning games)' : ''}.</p>
       </div>
     );
   }
@@ -36,7 +39,6 @@ export function Inspector({ view, committed, uid, hidden, onAction, disabledBeca
   const stats = c.zone === 'monster' || c.zone === 'extraMonster' ? g.stats(uid) : null;
   const owner = view.players[c.owner].name;
   const controller = view.players[c.controller].name;
-  const actions = committed.cards[uid] ? actionsForCard(committed, c.controller as PlayerId, uid) : [];
   const where =
     c.zone === 'hand'
       ? `${owner}'s hand`

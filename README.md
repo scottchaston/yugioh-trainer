@@ -21,6 +21,10 @@ See `PROJECT_STATUS.md` for what works today and what is planned.
 Double-click it to open it in Chrome, Edge, Firefox or Safari. (It is produced by
 `npm run build:single`; if the folder is missing, use option B once to create it.)
 
+### Option C – on the internet
+See "Playing online with a friend" below: once the app is published (free), anyone with the address can open
+it, and two people can duel each other from different places.
+
 ### Option B – run from source
 1. Install **Node.js** (LTS version) from https://nodejs.org – accept the defaults.
 2. Open a terminal (on Windows: search for "Command Prompt"; on Mac: "Terminal").
@@ -66,13 +70,43 @@ Double-click it to open it in Chrome, Edge, Firefox or Safari. (It is produced b
   phase windows, board perspective (turn player at the bottom by default), animations, sound effects,
   background music and its volume.
 
-## Online play (not built yet)
+## Playing online with a friend
 
-The rules engine is deterministic and a Duel is plain data (JSON) plus a log of the actions and choices each
-player made, so two-player play over the internet is a natural extension: a small server holds the one true
-Duel state, each player's browser sends only "I do X / I choose Y", and the server sends each player back a view
-with the other player's hand and face-down cards hidden. A room code would connect two private opponents; the same
-code base could be wrapped as a phone/tablet app. See PROJECT_STATUS.md, "Suggested next steps".
+Open the app, and under **Play online with a friend**:
+
+1. One player presses **Host a duel**. A room code such as `DRAGON-4821` appears, with a link.
+2. Send the code or the link to your friend (text message, email, chat).
+3. The friend opens the link (or presses **Join a duel** and types the code), picks a name and deck, and
+   presses **Join**.
+4. The host sees the friend appear, chooses who goes first, and presses **Start Duel**.
+
+During the Duel each player sees only their own hand and their own decisions. When the other player is
+deciding, a grey **WAITING** banner says what they are doing ("Guesty is choosing: Choose a Monster Zone…",
+"Hosty is deciding whether to respond…"). Response windows still pause the game for whoever may respond.
+**Ask to undo** asks the other player to allow the take-back; **Reveal all** and **Rewind** are not available
+online. If a connection drops, the guest presses **Reconnect** (or re-joins with the same code) and the Duel
+continues where it was; the host's page keeps the Duel, and even after a page reload the setup screen offers
+**Resume it**.
+
+How it works: the rules engine runs on the host's browser only. The guest's browser sends "I do X / I choose Y",
+the host applies it through the same rules engine you use offline, and sends back a view with the host's hand,
+face-down cards and both Decks hidden. The two browsers talk directly (WebRTC); a free public introduction
+service (PeerJS) only helps them find each other, and no game data is stored anywhere.
+
+### Putting it on the internet for free
+
+Online play needs the page to be reachable by both players. Any of these is free:
+
+* **GitHub Pages** (public repositories): `.github/workflows/pages.yml` builds and publishes the app. One-time
+  setup: repository Settings → Pages → Source: **GitHub Actions**. Then every push to `main` deploys, or use
+  "Run workflow" on the Actions tab for any branch. The site appears at
+  `https://<your-user>.github.io/yugioh-trainer/`.
+* **Cloudflare Pages / Netlify / Vercel** (private repositories too): connect the repository, build command
+  `npm run build`, output folder `dist`.
+* **No hosting at all**: give your friend a copy of `dist/single/practice-table.html`. Opening the file
+  directly in a browser also works for online play.
+
+Room codes are private: nobody can join a Duel without the code, and codes stop working when the host leaves.
 
 ## For developers
 
