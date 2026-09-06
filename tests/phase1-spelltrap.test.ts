@@ -141,7 +141,7 @@ describe('Spell/Trap setting and timing', () => {
       expect(r.prompt.options.map((o) => o.uid)).toContain(honest);
       expect(r.prompt.context).toMatch(/Damage Step/);
     }
-    tg.run({ type: 'DECLARE_ATTACK', player: 1, uid: mammoth }, A.activate(honest, 'boost'));
+    tg.run({ type: 'DECLARE_ATTACK', player: 1, uid: mammoth }, A.activate(honest, 'boost'), A.no());
     // Shining Angel: 1400 + 1700 = 3100 vs 1700 -> Mammoth destroyed (or placed as Crystal Beast), P2 takes 1400
     expect(tg.card(honest).zone).toBe('graveyard');
     expect(tg.card(angel).zone).toBe('monster');

@@ -162,7 +162,7 @@ export function Board(props: BoardProps) {
     const pl = view.players[player];
     const isTurn = view.turnPlayer === player;
     return (
-      <div className={`player-banner ${isBottom ? 'banner-bottom' : 'banner-top'}${isTurn ? ' is-turn' : ''}`}>
+      <div className={`player-banner ${isBottom ? 'banner-bottom' : 'banner-top'}${isTurn ? ' is-turn' : ''}`} data-lp-player={player}>
         <div className="player-name">
           {pl.name}
           {isTurn && <span className="turn-tag">TURN PLAYER</span>}

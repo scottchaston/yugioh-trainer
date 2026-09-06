@@ -82,7 +82,7 @@ export function CardView({ card, def, faceDown, size = 'md', stats, selected, hi
   if (card?.treatedAsSpell) classes.push('as-spell');
   const boosted = d && stats && d.cardType === 'Monster' && (stats.atk !== d.atk || stats.def !== d.def);
   return (
-    <div className={classes.join(' ')} onClick={onClick} style={style} title={title ?? (faceDown ? 'Face-down card' : d?.name)} role={onClick ? 'button' : undefined}>
+    <div className={classes.join(' ')} onClick={onClick} style={style} title={title ?? (faceDown ? 'Face-down card' : d?.name)} role={onClick ? 'button' : undefined} data-uid={card?.uid}>
       {faceDown || !d ? (
         <div className="card-back">
           <div className="card-back-inner" />

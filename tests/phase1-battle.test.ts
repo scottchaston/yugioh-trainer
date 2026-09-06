@@ -25,8 +25,8 @@ describe('battle', () => {
     const luster = put(tg, 0, 'Luster Dragon', 'monster'); // 1900
     const pegasus = put(tg, 1, 'Crystal Beast Sapphire Pegasus', 'monster', { turnEnteredField: 1 }); // 1800
     tg.run({ type: 'TO_BATTLE_PHASE', player: 1 });
-    // Only one target -> auto-selected
-    tg.run({ type: 'DECLARE_ATTACK', player: 1, uid: pegasus });
+    // Only one target -> auto-selected. Pegasus is a Crystal Beast: decline placing it in the S/T Zone.
+    tg.run({ type: 'DECLARE_ATTACK', player: 1, uid: pegasus }, A.no());
     expect(tg.card(pegasus).zone).toBe('graveyard');
     expect(tg.card(luster).zone).toBe('monster');
     expect(tg.state.players[1].lp).toBe(8000 - 100);
@@ -50,7 +50,7 @@ describe('battle', () => {
     const a = put(tg, 0, 'Kaiser Sea Horse', 'monster'); // 1700
     const b = put(tg, 1, 'Crystal Beast Amber Mammoth', 'monster', { turnEnteredField: 1 }); // 1700
     tg.run({ type: 'TO_BATTLE_PHASE', player: 1 });
-    tg.run({ type: 'DECLARE_ATTACK', player: 1, uid: b });
+    tg.run({ type: 'DECLARE_ATTACK', player: 1, uid: b }, A.no());
     expect(tg.card(a).zone).toBe('graveyard');
     expect(tg.card(b).zone).toBe('graveyard');
     expect(tg.state.players[0].lp).toBe(8000);
@@ -71,9 +71,9 @@ describe('battle', () => {
     expect(tg.card(luster).zone).toBe('monster');
     expect(tg.state.players[1].lp).toBe(8000 - 100);
     expect(tg.state.players[0].lp).toBe(8000);
-    tg.run({ type: 'DECLARE_ATTACK', player: 1, uid: glider });
-    // Emerald Tortoise is a Crystal Beast: instead of going to GY it can be placed in the S/T zone (Phase 3 script).
-    expect(tg.card(tortoise).zone === 'graveyard' || tg.card(tortoise).zone === 'spellTrap').toBe(true);
+    // Emerald Tortoise is a Crystal Beast: its controller chooses to place it in the S/T Zone instead of the GY.
+    tg.run({ type: 'DECLARE_ATTACK', player: 1, uid: glider }, A.yes(), A.zone(0, 'spellTrap', 0));
+    expect(tg.card(tortoise).zone).toBe('spellTrap');
     expect(tg.state.players[0].lp).toBe(8000);
   });
 

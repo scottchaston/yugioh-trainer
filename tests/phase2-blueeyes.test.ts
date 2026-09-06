@@ -417,7 +417,7 @@ describe('Other Blue-Eyes cards', () => {
     const burst = put(tg, 0, 'Burst Stream of Destruction', 'hand');
     const t1 = put(tg, 1, 'Crystal Beast Topaz Tiger', 'monster');
     const t2 = put(tg, 1, 'Crystal Beast Cobalt Eagle', 'monster', { faceUp: false, position: 'DEF' });
-    tg.run({ type: 'ACTIVATE', player: 0, uid: burst, effectId: 'activate' }, A.zone(0, 'spellTrap', 0));
+    tg.run({ type: 'ACTIVATE', player: 0, uid: burst, effectId: 'activate' }, A.zone(0, 'spellTrap', 0), A.no());
     expect(tg.card(t1).zone).not.toBe('monster');
     expect(tg.card(t2).zone).not.toBe('monster');
     tg.run({ type: 'TO_BATTLE_PHASE', player: 0 });

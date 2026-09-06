@@ -38,7 +38,9 @@ Double-click it to open it in Chrome, Edge, Firefox or Safari. (It is produced b
   pauses with **RESPONSE AVAILABLE**; that player picks a card or declines.
 * **Undo** (or Ctrl+Z) reverses the last step, including individual choices inside an
   action. **Rewind** jumps back to any earlier point.
-* Click a Graveyard, Banished pile or Extra Deck to look through it.
+* Click a Graveyard, Banished pile or Extra Deck to look through it. Extra Deck monsters such as
+  Azure-Eyes Silver Dragon are Synchro Summoned from there (open the Extra Deck, click the card).
+* A Gemini monster (Darkstorm Dragon) shows a **Gemini Summon** action once it is face-up on the field.
 * **Settings**: reveal all hands/face-down cards (learning mode), pause at the quieter
   phase windows, board perspective.
 

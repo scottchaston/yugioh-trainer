@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { getCard } from '../cards';
 import { getLegalActions, PHASE_LABEL, type LegalActionInfo, type PlayerId, type ZoneRef } from '../engine';
 import { answer, cancelPending, clearGame, committedState, currentView, dispatch, newGame, rewindTo, setNotice, undo, updateSettings, useStore } from '../state/store';
 import { Board } from './Board';
+import { FxLayer } from './FxLayer';
 import { Inspector } from './Inspector';
 import { LogPanel } from './LogPanel';
 import { PileModal } from './PileModal';
@@ -32,6 +33,7 @@ export function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [whyPhase, setWhyPhase] = useState<string | null>(null);
+  const boardWrapRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     setPromptSelection([]);
@@ -153,7 +155,7 @@ export function App() {
         </div>
       )}
       <div className="main">
-        <div className="board-wrap">
+        <div className="board-wrap" ref={boardWrapRef}>
           {prompt && (
             <div className={`decision-banner${prompt.type === 'fastEffects' ? ' decision-response' : ''}`}>
               {prompt.type === 'fastEffects' ? 'RESPONSE AVAILABLE — ' : 'DECISION — '}
@@ -173,6 +175,7 @@ export function App() {
             onPileClick={(player, pile) => setPileModal({ player, pile })}
             animations={store.settings.animations}
           />
+          <FxLayer view={view} enabled={store.settings.animations} container={boardWrapRef} />
           {view.winner !== null && (
             <div className="modal-backdrop">
               <div className="modal winner">
