@@ -1,0 +1,62 @@
+import type { DeckDefinition } from './types';
+
+/**
+ * Structure Deck: Legend of the Crystal Beasts (SDCB), TCG 2022.
+ * 46 cards (SDCB-EN001..EN046, one copy each): 44 Main Deck + 2 Extra Deck.
+ * Konami's official card count (46) equals the number of distinct set numbers.
+ */
+export const LEGEND_OF_THE_CRYSTAL_BEASTS: DeckDefinition = {
+  id: 'sdcb',
+  name: 'Legend of the Crystal Beasts',
+  description: 'Structure Deck (2022). Crystal Beasts that become Continuous Spells, building toward Rainbow Dragon.',
+  main: [
+    { name: 'Crystal Beast Ruby Carbuncle', qty: 1 },
+    { name: 'Crystal Beast Amethyst Cat', qty: 1 },
+    { name: 'Crystal Beast Emerald Tortoise', qty: 1 },
+    { name: 'Crystal Beast Topaz Tiger', qty: 1 },
+    { name: 'Crystal Beast Amber Mammoth', qty: 1 },
+    { name: 'Crystal Beast Cobalt Eagle', qty: 1 },
+    { name: 'Crystal Beast Sapphire Pegasus', qty: 1 },
+    { name: 'Rainbow Dark Dragon', qty: 1 },
+    { name: 'Crystal Master', qty: 1 },
+    { name: 'Crystal Keeper', qty: 1 },
+    { name: 'Hamon, Lord of Striking Thunder', qty: 1 },
+    { name: 'Dimension Shifter', qty: 1 },
+    { name: 'Contact "C"', qty: 1 },
+    { name: 'Ash Blossom & Joyous Spring', qty: 1 },
+    { name: 'Ghost Belle & Haunted Mansion', qty: 1 },
+    { name: 'Awakening of the Crystal Ultimates', qty: 1 },
+    { name: 'Crystal Aegis', qty: 1 },
+    { name: 'Ancient City - Rainbow Ruins', qty: 1 },
+    { name: 'Rainbow Bridge', qty: 1 },
+    { name: 'Crystal Beacon', qty: 1 },
+    { name: 'Crystal Blessing', qty: 1 },
+    { name: 'Crystal Abundance', qty: 1 },
+    { name: 'Crystal Promise', qty: 1 },
+    { name: 'Crystal Tree', qty: 1 },
+    { name: 'Crystal Release', qty: 1 },
+    { name: 'Rare Value', qty: 1 },
+    { name: 'Rainbow Refraction', qty: 1 },
+    { name: 'Advanced Dark', qty: 1 },
+    { name: 'The Melody of Awakening Dragon', qty: 1 },
+    { name: 'Foolish Burial Goods', qty: 1 },
+    { name: 'Cosmic Cyclone', qty: 1 },
+    { name: 'Crystal Boon', qty: 1 },
+    { name: 'Crystal Miracle', qty: 1 },
+    { name: 'Crystal Brilliance', qty: 1 },
+    { name: 'Crystal Pair', qty: 1 },
+    { name: 'Crystal Conclave', qty: 1 },
+    { name: 'Ultimate Crystal Magic', qty: 1 },
+    { name: 'Counter Gem', qty: 1 },
+    { name: 'Ferret Flames', qty: 1 },
+    { name: 'Metaverse', qty: 1 },
+    { name: 'Rainbow Dragon', qty: 1 },
+    { name: 'Crystal Beast Rainbow Dragon', qty: 1 },
+    { name: 'Rainbow Bridge of the Heart', qty: 1 },
+    { name: 'Crystal Bond', qty: 1 },
+  ],
+  extra: [
+    { name: 'Ultimate Crystal Rainbow Dragon Overdrive', qty: 1 },
+    { name: 'Rainbow Overdragon', qty: 1 },
+  ],
+};
