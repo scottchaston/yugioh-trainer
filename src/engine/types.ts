@@ -247,7 +247,11 @@ export type Prompt =
       options: ActivationOption[];
       /** The thing being responded to (for the UI). */
       context: string;
+      /** What kind of moment this is (lets the UI offer "don't pause at phase changes"). */
+      windowKind: WindowKind;
     };
+
+export type WindowKind = 'phase' | 'endPhase' | 'action' | 'attack' | 'damage' | 'chain' | 'trigger';
 
 export interface ZoneRef {
   player: PlayerId;

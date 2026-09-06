@@ -3,7 +3,7 @@
  */
 import { Game } from './game';
 import { getScript, getScheduledHandler, type ActivationContext, type EffectDef, type Process } from './scripts';
-import type { ActivationOption, CardInstance, ChainLink, GameEvent, PlayerId, Zone } from './types';
+import type { ActivationOption, CardInstance, ChainLink, GameEvent, PlayerId, WindowKind, Zone } from './types';
 import { PHASE_LABEL } from './types';
 
 export type DamageStage = 'start' | 'beforeCalc' | 'calc' | 'afterCalc' | 'end' | null;
@@ -11,6 +11,7 @@ export type DamageStage = 'start' | 'beforeCalc' | 'calc' | 'afterCalc' | 'end' 
 export interface WindowContext {
   /** Text shown to the player: what is being responded to. */
   description: string;
+  kind?: WindowKind;
   damageStepStage?: DamageStage;
   /** Chain building: the player must respond with a card of sufficient Spell Speed. */
   chaining?: boolean;
@@ -299,13 +300,17 @@ export function* buildAndResolveChain(g: Game, ctx: WindowContext): Process<void
       responder = g.opponent(responder);
       continue;
     }
+    const own = last.player === responder;
     const answer = yield {
       type: 'fastEffects',
       player: responder,
-      title: `Respond to ${g.name(last.uid)}?`,
-      description: `${g.playerName(last.player)} activated ${g.name(last.uid)} (Chain Link ${g.state.chain.length}). You may chain a card or effect, or let it resolve.`,
+      title: own ? `Chain to your own ${g.name(last.uid)}?` : `Respond to ${g.name(last.uid)}?`,
+      description: own
+        ? `Your opponent did not respond to ${g.name(last.uid)} (Chain Link ${g.state.chain.length}). You may add another card or effect to the chain, or let it resolve.`
+        : `${g.playerName(last.player)} activated ${g.name(last.uid)} (Chain Link ${g.state.chain.length}). You may chain a card or effect, or let it resolve.`,
       options,
       context: ctx.description,
+      windowKind: 'chain',
     };
     if (!answer.activation) {
       g.log(`${g.playerName(responder)} does not respond.`, 'chain');
@@ -451,7 +456,7 @@ export function* processTriggers(g: Game): Process<void> {
       activatedAny = true;
     }
     if (activatedAny && g.state.chain.length > 0) {
-      yield* buildAndResolveChain(g, { description: 'trigger effects' });
+      yield* buildAndResolveChain(g, { description: 'trigger effects', kind: 'trigger' });
     }
   }
 }
@@ -480,6 +485,7 @@ export function* fastEffectWindow(g: Game, ctx: WindowContext, order: PlayerId[]
         description: ctx.description,
         options,
         context: ctx.description,
+        windowKind: ctx.kind ?? (ctx.damageStepStage ? 'damage' : 'action'),
       };
       if (!answer.activation) {
         g.state.windowOpen = false;
@@ -499,7 +505,7 @@ export function* fastEffectWindow(g: Game, ctx: WindowContext, order: PlayerId[]
 
 /** Standard bookkeeping after an action completes at an open game state: triggers, then a response window for the opponent. */
 export function* afterAction(g: Game, description: string, order?: PlayerId[]): Process<void> {
-  yield* fastEffectWindow(g, { description }, order ?? [g.opponent(g.state.turnPlayer)]);
+  yield* fastEffectWindow(g, { description, kind: 'action' }, order ?? [g.opponent(g.state.turnPlayer)]);
 }
 
 /** Activate an effect from an open game state (turn player's action), then build & resolve the chain. */

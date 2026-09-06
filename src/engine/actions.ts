@@ -276,7 +276,7 @@ export function* declareAttack(g: Game, player: PlayerId, uid: string): Process<
   g.emit({ type: 'attackDeclared', attacker: uid, target });
 
   // Response window for the attack declaration (turn player has priority, then the opponent).
-  yield* fastEffectWindow(g, { description: `${g.name(uid)} declared an attack` }, [player, opponent]);
+  yield* fastEffectWindow(g, { description: `${g.name(uid)} declared an attack`, kind: 'attack' }, [player, opponent]);
 
   const bb = g.state.battle;
   if (!bb || !bb.attacker) {
@@ -316,7 +316,7 @@ export function* declareAttack(g: Game, player: PlayerId, uid: string): Process<
     bb.targetCountAtDeclaration = nowCount;
     g.log(bb.target ? `${g.name(att.uid)} now attacks ${g.card(bb.target).faceUp ? g.name(bb.target) : 'the face-down monster'}.` : `${g.name(att.uid)} now attacks directly.`, 'battle');
     g.emit({ type: 'attackDeclared', attacker: att.uid, target: bb.target });
-    yield* fastEffectWindow(g, { description: `${g.name(att.uid)} re-declared an attack` }, [player, opponent]);
+    yield* fastEffectWindow(g, { description: `${g.name(att.uid)} re-declared an attack`, kind: 'attack' }, [player, opponent]);
     if (!g.state.battle?.attacker || g.card(att.uid).position !== 'ATK' || g.state.battle.attackNegated) {
       g.log('The attack does not proceed.', 'rule');
       endBattle(g);
@@ -354,12 +354,12 @@ export function checkToBattlePhase(g: Game, player: PlayerId): string | null {
 export function* toBattlePhase(g: Game, player: PlayerId): Process<void> {
   const reason = checkToBattlePhase(g, player);
   if (reason) throw new Error(reason);
-  yield* fastEffectWindow(g, { description: 'end of Main Phase 1' }, [g.opponent(player)]);
+  yield* fastEffectWindow(g, { description: 'end of Main Phase 1', kind: 'phase' }, [g.opponent(player)]);
   g.state.phase = 'BATTLE';
   g.state.battle = { step: 'START', attacker: null, target: null, targetCountAtDeclaration: 0, damageStepStage: null, attackNegated: false };
   g.log(`${g.playerName(player)} enters the Battle Phase.`, 'phase');
   g.emit({ type: 'phaseStart', phase: 'BATTLE', player });
-  yield* fastEffectWindow(g, { description: 'Start Step of the Battle Phase' });
+  yield* fastEffectWindow(g, { description: 'Start Step of the Battle Phase', kind: 'phase' });
   if (g.state.battle) g.state.battle.step = 'BATTLE';
 }
 
@@ -375,12 +375,12 @@ export function* toMain2(g: Game, player: PlayerId): Process<void> {
   const reason = checkToMain2(g, player);
   if (reason) throw new Error(reason);
   if (g.state.battle) g.state.battle.step = 'END';
-  yield* fastEffectWindow(g, { description: 'End Step of the Battle Phase' });
+  yield* fastEffectWindow(g, { description: 'End Step of the Battle Phase', kind: 'phase' });
   g.state.battle = null;
   g.state.phase = 'MAIN2';
   g.log(`${g.playerName(player)} enters Main Phase 2.`, 'phase');
   g.emit({ type: 'phaseStart', phase: 'MAIN2', player });
-  yield* fastEffectWindow(g, { description: 'start of Main Phase 2' }, [g.opponent(player)]);
+  yield* fastEffectWindow(g, { description: 'start of Main Phase 2', kind: 'phase' }, [g.opponent(player)]);
 }
 
 export function checkEndTurn(g: Game, player: PlayerId): string | null {
@@ -397,17 +397,17 @@ export function* endTurn(g: Game, player: PlayerId): Process<void> {
   if (reason) throw new Error(reason);
   if (g.state.phase === 'BATTLE') {
     if (g.state.battle) g.state.battle.step = 'END';
-    yield* fastEffectWindow(g, { description: 'End Step of the Battle Phase' });
+    yield* fastEffectWindow(g, { description: 'End Step of the Battle Phase', kind: 'phase' });
     g.state.battle = null;
   } else {
-    yield* fastEffectWindow(g, { description: `end of ${PHASE_LABEL[g.state.phase]}` }, [g.opponent(player)]);
+    yield* fastEffectWindow(g, { description: `end of ${PHASE_LABEL[g.state.phase]}`, kind: 'phase' }, [g.opponent(player)]);
   }
   g.state.phase = 'END';
   g.log(`${g.playerName(player)} enters the End Phase.`, 'phase');
   g.emit({ type: 'phaseStart', phase: 'END', player });
-  yield* fastEffectWindow(g, { description: 'End Phase' });
+  yield* fastEffectWindow(g, { description: 'End Phase', kind: 'endPhase' });
   yield* runScheduled(g, 'END');
-  yield* fastEffectWindow(g, { description: 'End Phase' });
+  yield* fastEffectWindow(g, { description: 'End Phase (after End Phase effects)', kind: 'endPhase' });
 
   // Hand size limit.
   const hand = g.player(player).hand;
@@ -460,13 +460,13 @@ export function* startTurn(g: Game, player: PlayerId): Process<void> {
   } else {
     g.draw(player, 1, 'draws');
   }
-  yield* fastEffectWindow(g, { description: 'Draw Phase' });
+  yield* fastEffectWindow(g, { description: 'Draw Phase', kind: 'phase' });
 
   g.state.phase = 'STANDBY';
   g.log('Standby Phase.', 'phase');
   g.emit({ type: 'phaseStart', phase: 'STANDBY', player });
   yield* runScheduled(g, 'STANDBY');
-  yield* fastEffectWindow(g, { description: 'Standby Phase' });
+  yield* fastEffectWindow(g, { description: 'Standby Phase', kind: 'phase' });
 
   g.state.phase = 'MAIN1';
   g.log('Main Phase 1.', 'phase');
