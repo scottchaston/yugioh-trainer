@@ -1,0 +1,413 @@
+/**
+ * Plays visual effects (attacks, activations, destruction, damage...) over the board.
+ * Driven purely by the engine's `fx` event stream; never affects the rules.
+ */
+import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
+import { getCard } from '../cards';
+import type { FxEvent, GameState } from '../engine';
+import { CardView } from './CardView';
+import { CardArt } from './art';
+import { playCreature, playMotif, playSound } from './sound';
+import { artFor } from './art';
+import { emitBurst } from './Particles';
+import { tokenDefinition } from '../engine/game';
+
+interface Rect {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+interface ActiveFx {
+  fx: FxEvent;
+  key: number;
+  from?: Rect;
+  to?: Rect;
+  duration: number;
+}
+
+const DURATION: Record<FxEvent['type'], number> = {
+  attack: 1700,
+  activate: 1500,
+  destroy: 800,
+  damage: 1100,
+  heal: 1100,
+  summon: 700,
+  negate: 900,
+  flip: 500,
+  bounce: 600,
+  banish: 600,
+  boost: 900,
+  control: 800,
+  draw: 300,
+  toSpellZone: 900,
+  position: 400,
+  set: 300,
+};
+/** How long to wait before starting the next effect (lets effects overlap slightly). */
+const LEAD: Record<FxEvent['type'], number> = {
+  attack: 1300,
+  activate: 1100,
+  destroy: 450,
+  damage: 350,
+  heal: 350,
+  summon: 350,
+  negate: 500,
+  flip: 200,
+  bounce: 250,
+  banish: 250,
+  boost: 350,
+  control: 400,
+  draw: 100,
+  toSpellZone: 500,
+  position: 250,
+  set: 150,
+};
+
+export function FxLayer({ view, enabled, container }: { view: GameState; enabled: boolean; container: RefObject<HTMLDivElement | null> }) {
+  const lastId = useRef(0);
+  const prevRects = useRef<Map<string, Rect>>(new Map());
+  const [active, setActive] = useState<ActiveFx[]>([]);
+  const keyRef = useRef(1);
+  const timers = useRef<number[]>([]);
+
+  const snapshot = (): Map<string, Rect> => {
+    const map = new Map<string, Rect>();
+    const el = container.current;
+    if (!el) return map;
+    const crect = el.getBoundingClientRect();
+    el.querySelectorAll<HTMLElement>('[data-uid]').forEach((node) => {
+      const r = node.getBoundingClientRect();
+      if (r.width === 0) return;
+      map.set(node.dataset['uid']!, { x: r.left - crect.left + el.scrollLeft, y: r.top - crect.top + el.scrollTop, w: r.width, h: r.height });
+    });
+    el.querySelectorAll<HTMLElement>('[data-lp-player]').forEach((node) => {
+      const r = node.getBoundingClientRect();
+      map.set(`lp:${node.dataset['lpPlayer']}`, { x: r.left - crect.left + el.scrollLeft, y: r.top - crect.top + el.scrollTop, w: r.width, h: r.height });
+    });
+    return map;
+  };
+
+  useLayoutEffect(() => {
+    const maxId = view.fx.length ? view.fx[view.fx.length - 1].id : 0;
+    if (maxId < lastId.current) lastId.current = 0; // undo / new game: don't replay old effects
+    const fresh = view.fx.filter((f) => f.id > lastId.current);
+    lastId.current = maxId;
+    const old = prevRects.current;
+    const now = snapshot();
+    prevRects.current = now;
+    if (!enabled || fresh.length === 0 || !container.current) return;
+    if (old.size === 0) return; // first render: nothing to animate
+    const rectFor = (uid: string, preferOld: boolean): Rect | undefined => (preferOld ? old.get(uid) ?? now.get(uid) : now.get(uid) ?? old.get(uid));
+    let offset = 0;
+    const scheduled: ActiveFx[] = [];
+    for (const fx of fresh) {
+      let from: Rect | undefined;
+      let to: Rect | undefined;
+      switch (fx.type) {
+        case 'attack':
+          from = rectFor(fx.attacker, true);
+          to = fx.target ? rectFor(fx.target, true) : now.get(`lp:${fx.defender}`) ?? old.get(`lp:${fx.defender}`);
+          break;
+        case 'activate':
+          from = rectFor(fx.uid, false);
+          break;
+        case 'destroy':
+        case 'bounce':
+        case 'banish':
+        case 'negate':
+        case 'toSpellZone':
+          from = rectFor(fx.uid, true);
+          break;
+        case 'summon':
+        case 'flip':
+        case 'boost':
+        case 'control':
+          from = rectFor(fx.uid, false);
+          break;
+        case 'damage':
+        case 'heal':
+          from = now.get(`lp:${fx.player}`) ?? old.get(`lp:${fx.player}`);
+          break;
+        case 'draw':
+        case 'position':
+        case 'set':
+          break;
+      }
+      if (!from && fx.type !== 'activate' && fx.type !== 'position' && fx.type !== 'set' && fx.type !== 'draw') continue;
+      const entry: ActiveFx = { fx, key: keyRef.current++, from, to, duration: DURATION[fx.type] };
+      const start = offset;
+      timers.current.push(
+        window.setTimeout(() => {
+          setActive((a) => [...a, entry]);
+          startSideEffects(entry, container.current, view);
+        }, start),
+        window.setTimeout(() => setActive((a) => a.filter((x) => x.key !== entry.key)), start + entry.duration),
+      );
+      scheduled.push(entry);
+      offset += LEAD[fx.type];
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view]);
+
+  useEffect(() => () => timers.current.forEach((t) => window.clearTimeout(t)), []);
+
+  if (!enabled || active.length === 0) return null;
+  return (
+    <div className="fx-layer" aria-hidden="true">
+      {active.map((a) => (
+        <Effect key={a.key} entry={a} view={view} />
+      ))}
+    </div>
+  );
+}
+
+/** Sounds, particles and screen shake for an effect that just started. */
+function startSideEffects(entry: ActiveFx, host: HTMLDivElement | null, view: GameState): void {
+  const { fx, from, to } = entry;
+  const cardArt = (uid: string) => {
+    const c = view.cards[uid];
+    if (!c) return null;
+    return artFor(c.token ? tokenDefinition(c.token) : getCard(c.cardId));
+  };
+  const creatureVoice = (uid: string, mode: 'attack' | 'call') => {
+    const a = cardArt(uid);
+    if (a?.kind === 'creature') playCreature(a.spec.archetype, mode);
+  };
+  const c = (r?: Rect) => (r ? { x: r.x + r.w / 2, y: r.y + r.h / 2 } : null);
+  const shake = (strength: 'light' | 'heavy') => {
+    if (!host) return;
+    host.classList.remove('shake-light', 'shake-heavy');
+    void host.offsetWidth;
+    host.classList.add(strength === 'heavy' ? 'shake-heavy' : 'shake-light');
+    window.setTimeout(() => host.classList.remove('shake-light', 'shake-heavy'), 500);
+  };
+  switch (fx.type) {
+    case 'attack': {
+      creatureVoice(fx.attacker, 'attack');
+      window.setTimeout(() => playSound('attack'), 250);
+      const t = c(to);
+      window.setTimeout(() => {
+        playSound('impact');
+        if (t) emitBurst({ x: t.x, y: t.y, color: '#ff9f1c', kind: 'impact' });
+        shake('light');
+      }, entry.duration * 0.55);
+      break;
+    }
+    case 'activate':
+      {
+        const a = cardArt(fx.uid);
+        if (a?.kind === 'motif') {
+          playSound(fx.what === 'trap' ? 'trap' : 'spell');
+          window.setTimeout(() => playMotif(a.motif, fx.what === 'trap'), 180);
+        } else if (a?.kind === 'creature') {
+          playSound('monsterEffect');
+          window.setTimeout(() => playCreature(a.spec.archetype, 'call'), 150);
+        } else {
+          playSound(fx.what === 'trap' ? 'trap' : fx.what === 'spell' ? 'spell' : 'monsterEffect');
+        }
+      }
+      {
+        const f = c(from);
+        if (f) emitBurst({ x: f.x, y: f.y, color: fx.what === 'trap' ? '#ff5c8a' : fx.what === 'spell' ? '#3ee3b6' : '#ffb347', kind: 'sparkle' });
+      }
+      break;
+    case 'destroy': {
+      playSound('destroy');
+      const f = c(from);
+      if (f) emitBurst({ x: f.x, y: f.y, color: fx.by === 'battle' ? '#ff7a3d' : '#c96a2b', kind: 'shatter' });
+      shake(fx.by === 'battle' ? 'light' : 'light');
+      break;
+    }
+    case 'damage':
+      playSound('damage');
+      shake(fx.amount >= 2000 ? 'heavy' : 'light');
+      break;
+    case 'heal':
+      playSound('heal');
+      break;
+    case 'summon': {
+      playSound(fx.method === 'special' ? 'specialSummon' : 'summon');
+      window.setTimeout(() => creatureVoice(fx.uid, 'call'), 350);
+      const f = c(from);
+      if (f) emitBurst({ x: f.x, y: f.y, color: fx.method === 'special' ? '#4cc9f0' : '#ffd166', kind: 'sparkle' });
+      break;
+    }
+    case 'negate':
+      playSound('negate');
+      break;
+    case 'flip':
+      playSound('flip');
+      break;
+    case 'toSpellZone': {
+      playSound('crystal');
+      const f = c(from);
+      if (f) emitBurst({ x: f.x, y: f.y, color: '#4cf0c0', kind: 'crystal' });
+      break;
+    }
+    case 'boost':
+      playSound('boost');
+      break;
+    case 'draw':
+      playSound('draw');
+      break;
+    case 'bounce':
+    case 'banish':
+    case 'position':
+      playSound('swoosh');
+      break;
+    case 'set':
+      playSound('set');
+      break;
+    case 'control':
+      playSound('swoosh');
+      window.setTimeout(() => playSound('monsterEffect'), 200);
+      break;
+  }
+}
+
+function center(r: Rect): { x: number; y: number } {
+  return { x: r.x + r.w / 2, y: r.y + r.h / 2 };
+}
+
+function Effect({ entry, view }: { entry: ActiveFx; view: GameState }) {
+  const { fx, from, to } = entry;
+  switch (fx.type) {
+    case 'attack': {
+      if (!from || !to) return null;
+      const a = center(from);
+      const b = center(to);
+      const dx = b.x - a.x;
+      const dy = b.y - a.y;
+      const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
+      const len = Math.hypot(dx, dy);
+      const attacker = view.cards[fx.attacker];
+      const target = fx.target ? view.cards[fx.target] : null;
+      const defOf = (c: typeof attacker) => (c.token ? tokenDefinition(c.token) : getCard(c.cardId));
+      // Creatures meet part-way: the attacker lunges most of the distance towards the target.
+      const lungeX = dx * 0.55;
+      const lungeY = dy * 0.55;
+      return (
+        <>
+          <div className="fx-beam" style={{ left: a.x, top: a.y, width: len, transform: `rotate(${angle}deg)` }} />
+          {target && target.faceUp !== false && (
+            <div className="fx-creature fx-defender" style={{ left: b.x, top: b.y, position: 'absolute' }}>
+              <CardArt def={defOf(target)} backdrop={false} />
+            </div>
+          )}
+          {attacker && (
+            <div className="fx-creature fx-lunge" style={{ left: a.x, top: a.y, position: 'absolute', ['--dx' as string]: `${lungeX}px`, ['--dy' as string]: `${lungeY}px`, transform: dx < 0 ? 'scaleX(-1)' : undefined }}>
+              <CardArt def={defOf(attacker)} backdrop={false} style={dx < 0 ? { transform: 'scaleX(-1)' } : undefined} />
+            </div>
+          )}
+          <div className="fx-impact" style={{ left: b.x, top: b.y }} />
+          <div className="fx-shake" style={{ left: to.x, top: to.y, width: to.w, height: to.h }} />
+        </>
+      );
+    }
+    case 'activate': {
+      const c = view.cards[fx.uid];
+      if (!c) return null;
+      const d = c.token ? tokenDefinition(c.token) : getCard(c.cardId);
+      const label = fx.what === 'trap' ? 'TRAP ACTIVATED' : fx.what === 'spell' ? 'SPELL ACTIVATED' : 'MONSTER EFFECT';
+      return (
+        <>
+          {from && <div className={`fx-beacon fx-beacon-${fx.what}`} style={{ left: from.x, top: from.y, width: from.w, height: from.h }} />}
+          <div className={`fx-spotlight fx-spot-${fx.what}`}>
+            <div className="fx-spot-ring" />
+            <div className="fx-spot-row">
+              <div className="fx-spot-art">
+                <CardArt def={d} backdrop={false} />
+              </div>
+              <CardView def={d} size="lg" />
+            </div>
+            <div className="fx-spot-label">
+              <span>{label}</span>
+              <b>{d.name}</b>
+            </div>
+          </div>
+        </>
+      );
+    }
+    case 'destroy': {
+      if (!from) return null;
+      const c = center(from);
+      return (
+        <div className="fx-shatter" style={{ left: c.x, top: c.y }}>
+          {Array.from({ length: 10 }).map((_, i) => (
+            <span key={i} style={{ ['--i' as string]: i, ['--rot' as string]: `${i * 36}deg` }} />
+          ))}
+          <div className="fx-flash" />
+        </div>
+      );
+    }
+    case 'damage':
+    case 'heal': {
+      if (!from) return null;
+      return (
+        <div className={`fx-lp ${fx.type === 'damage' ? 'fx-lp-damage' : 'fx-lp-heal'}`} style={{ left: from.x + from.w * 0.25, top: from.y }}>
+          {fx.type === 'damage' ? '−' : '+'}
+          {fx.amount}
+        </div>
+      );
+    }
+    case 'summon': {
+      if (!from) return null;
+      const c = center(from);
+      return (
+        <>
+          <div className={`fx-ring ${fx.method === 'special' ? 'fx-ring-special' : ''}`} style={{ left: c.x, top: c.y }} />
+          <div className="fx-column" style={{ left: from.x, top: from.y - 40, width: from.w, height: from.h + 40 }} />
+        </>
+      );
+    }
+    case 'negate': {
+      if (!from) return null;
+      const c = center(from);
+      return (
+        <div className="fx-negate" style={{ left: c.x, top: c.y }}>
+          <span>✕</span>
+          <small>NEGATED</small>
+        </div>
+      );
+    }
+    case 'boost': {
+      if (!from) return null;
+      const parts: string[] = [];
+      if (fx.atk) parts.push(`${fx.atk > 0 ? '+' : ''}${fx.atk} ATK`);
+      if (fx.def) parts.push(`${fx.def > 0 ? '+' : ''}${fx.def} DEF`);
+      return (
+        <div className={`fx-boost ${fx.atk < 0 || fx.def < 0 ? 'fx-boost-down' : ''}`} style={{ left: from.x + from.w / 2, top: from.y }}>
+          {parts.join(' ')}
+        </div>
+      );
+    }
+    case 'toSpellZone': {
+      if (!from) return null;
+      const c = center(from);
+      return (
+        <div className="fx-crystal" style={{ left: c.x, top: c.y }}>
+          <span>◆</span>
+          <small>Continuous Spell</small>
+        </div>
+      );
+    }
+    case 'control': {
+      if (!from) return null;
+      const c = center(from);
+      return (
+        <div className="fx-negate fx-control" style={{ left: c.x, top: c.y }}>
+          <span>⇄</span>
+          <small>CONTROL</small>
+        </div>
+      );
+    }
+    case 'bounce':
+    case 'banish':
+    case 'flip':
+    case 'draw':
+    default:
+      return null;
+  }
+}

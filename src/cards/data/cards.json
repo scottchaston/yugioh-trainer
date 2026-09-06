@@ -1,0 +1,1233 @@
+[
+ {
+  "id": "89631139",
+  "konamiId": 4007,
+  "name": "Blue-Eyes White Dragon",
+  "cardType": "Monster",
+  "text": "This legendary dragon is a powerful engine of destruction. Virtually invincible, very few have faced this awesome creature and lived to tell the tale.",
+  "setNumbers": [
+   "SDBE-EN001"
+  ],
+  "race": "Dragon",
+  "monsterTypes": [
+   "Normal"
+  ],
+  "attribute": "LIGHT",
+  "level": 8,
+  "atk": 3000,
+  "def": 2500
+ },
+ {
+  "id": "95788410",
+  "konamiId": 9720,
+  "name": "Rabidragon",
+  "cardType": "Monster",
+  "text": "It's a snowfield-dwelling, giant-ear-sporting, super-acoustic, snowball-shaped mutant dragon! There's no way anybody can escape.",
+  "setNumbers": [
+   "SDBE-EN002"
+  ],
+  "race": "Dragon",
+  "monsterTypes": [
+   "Normal"
+  ],
+  "attribute": "LIGHT",
+  "level": 8,
+  "atk": 2950,
+  "def": 2900
+ },
+ {
+  "id": "43096270",
+  "konamiId": 9863,
+  "name": "Alexandrite Dragon",
+  "cardType": "Monster",
+  "text": "Many of the czars' lost jewels can be found in the scales of this priceless dragon. Its creator remains a mystery, along with how they acquired the imperial treasures. But whosoever finds this dragon has hit the jackpot... whether they know it or not.",
+  "setNumbers": [
+   "SDBE-EN003"
+  ],
+  "race": "Dragon",
+  "monsterTypes": [
+   "Normal"
+  ],
+  "attribute": "LIGHT",
+  "level": 4,
+  "atk": 2000,
+  "def": 100
+ },
+ {
+  "id": "11091375",
+  "konamiId": 5644,
+  "name": "Luster Dragon",
+  "cardType": "Monster",
+  "text": "A very beautiful dragon covered with sapphire. It does not like fights, but has incredibly high attack power.",
+  "setNumbers": [
+   "SDBE-EN004"
+  ],
+  "race": "Dragon",
+  "monsterTypes": [
+   "Normal"
+  ],
+  "attribute": "WIND",
+  "level": 4,
+  "atk": 1900,
+  "def": 1600
+ },
+ {
+  "id": "21615956",
+  "konamiId": 7535,
+  "name": "Flamvell Guard",
+  "cardType": "Monster",
+  "text": "A Flamvell guardian who commands fire with his will. His magma-hot barrier protects his troops from intruders.",
+  "setNumbers": [
+   "SDBE-EN005"
+  ],
+  "race": "Dragon",
+  "monsterTypes": [
+   "Tuner",
+   "Normal"
+  ],
+  "attribute": "FIRE",
+  "level": 1,
+  "atk": 100,
+  "def": 2000
+ },
+ {
+  "id": "88241506",
+  "konamiId": 10588,
+  "name": "Maiden with Eyes of Blue",
+  "cardType": "Monster",
+  "text": "When a card or effect is activated that targets this card (Quick Effect): You can Special Summon 1 \"Blue-Eyes White Dragon\" from your hand, Deck, or GY. When this card is targeted for an attack: You can negate the attack, and if you do, change the battle position of this card, then you can Special Summon 1 \"Blue-Eyes White Dragon\" from your hand, Deck, or GY. You can only use 1 \"Maiden with Eyes of Blue\" effect per turn, and only once that turn.",
+  "setNumbers": [
+   "SDBE-EN006"
+  ],
+  "race": "Spellcaster",
+  "monsterTypes": [
+   "Tuner",
+   "Effect"
+  ],
+  "attribute": "LIGHT",
+  "level": 1,
+  "atk": 0,
+  "def": 0
+ },
+ {
+  "id": "14235211",
+  "konamiId": 10589,
+  "name": "Rider of the Storm Winds",
+  "cardType": "Monster",
+  "text": "You can target 1 Dragon Normal Monster you control; equip this monster from your hand or field to that target. If a monster equipped with this card attacks a Defense Position monster, inflict piercing battle damage to your opponent. If a monster equipped with this card would be destroyed, destroy this card instead.",
+  "setNumbers": [
+   "SDBE-EN007"
+  ],
+  "race": "Dragon",
+  "monsterTypes": [
+   "Tuner",
+   "Effect"
+  ],
+  "attribute": "LIGHT",
+  "level": 1,
+  "atk": 500,
+  "def": 200
+ },
+ {
+  "id": "57662975",
+  "konamiId": 9911,
+  "name": "Darkstorm Dragon",
+  "cardType": "Monster",
+  "text": "This card is treated as a Normal Monster while face-up on the field or in the Graveyard. While this card is a Normal Monster on the field, you can Normal Summon it to have it become an Effect Monster with this effect.\n● Once per turn: You can send 1 face-up Spell/Trap Card you control to the Graveyard; destroy all Spell and Trap Cards on the field.",
+  "setNumbers": [
+   "SDBE-EN008"
+  ],
+  "race": "Dragon",
+  "monsterTypes": [
+   "Gemini",
+   "Effect"
+  ],
+  "attribute": "DARK",
+  "level": 8,
+  "atk": 2700,
+  "def": 2500
+ },
+ {
+  "id": "52824910",
+  "konamiId": 5353,
+  "name": "Kaiser Glider",
+  "cardType": "Monster",
+  "text": "Cannot be destroyed by battle with a monster that has the same ATK. If this card is destroyed and sent to the GY: Target 1 monster on the field; return that target to the hand.",
+  "setNumbers": [
+   "SDBE-EN009"
+  ],
+  "race": "Dragon",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "LIGHT",
+  "level": 6,
+  "atk": 2400,
+  "def": 2200
+ },
+ {
+  "id": "77901552",
+  "konamiId": 10045,
+  "name": "Hieratic Dragon of Tefnuit",
+  "cardType": "Monster",
+  "text": "If only your opponent controls a monster, you can Special Summon this card (from your hand). Cannot attack during the turn it is Special Summoned this way. When this card is Tributed: Special Summon 1 Dragon Normal Monster from your hand, Deck, or GY, and make its ATK/DEF 0.",
+  "setNumbers": [
+   "SDBE-EN010"
+  ],
+  "race": "Dragon",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "LIGHT",
+  "level": 6,
+  "atk": 2100,
+  "def": 1400
+ },
+ {
+  "id": "15960641",
+  "konamiId": 6196,
+  "name": "Mirage Dragon",
+  "cardType": "Monster",
+  "text": "Your opponent cannot activate Trap Cards during the Battle Phase.",
+  "setNumbers": [
+   "SDBE-EN011"
+  ],
+  "race": "Dragon",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "LIGHT",
+  "level": 4,
+  "atk": 1600,
+  "def": 600
+ },
+ {
+  "id": "20277376",
+  "konamiId": 9910,
+  "name": "Divine Dragon Apocralyph",
+  "cardType": "Monster",
+  "text": "Once per turn: You can discard 1 card, then target 1 Dragon-Type monster in your Graveyard; add that target to your hand.",
+  "setNumbers": [
+   "SDBE-EN012"
+  ],
+  "race": "Dragon",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "DARK",
+  "level": 4,
+  "atk": 1000,
+  "def": 1500
+ },
+ {
+  "id": "79814787",
+  "konamiId": 7850,
+  "name": "The White Stone of Legend",
+  "cardType": "Monster",
+  "text": "If this card is sent to the GY: Add 1 \"Blue-Eyes White Dragon\" from your Deck to your hand.",
+  "setNumbers": [
+   "SDBE-EN013"
+  ],
+  "race": "Dragon",
+  "monsterTypes": [
+   "Tuner",
+   "Effect"
+  ],
+  "attribute": "LIGHT",
+  "level": 1,
+  "atk": 300,
+  "def": 250
+ },
+ {
+  "id": "34627841",
+  "konamiId": 6298,
+  "name": "Kaibaman",
+  "cardType": "Monster",
+  "text": "You can Tribute this card; Special Summon 1 \"Blue-Eyes White Dragon\" from your hand.",
+  "setNumbers": [
+   "SDBE-EN014"
+  ],
+  "race": "Warrior",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "LIGHT",
+  "level": 3,
+  "atk": 200,
+  "def": 700
+ },
+ {
+  "id": "66337215",
+  "konamiId": 7246,
+  "name": "Herald of Creation",
+  "cardType": "Monster",
+  "text": "Once per turn: You can discard 1 card, then target 1 Level 7 or higher monster in your Graveyard; add that target to your hand.",
+  "setNumbers": [
+   "SDBE-EN015"
+  ],
+  "race": "Spellcaster",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "LIGHT",
+  "level": 4,
+  "atk": 1800,
+  "def": 600
+ },
+ {
+  "id": "17444133",
+  "konamiId": 5409,
+  "name": "Kaiser Sea Horse",
+  "cardType": "Monster",
+  "text": "This card can be treated as 2 Tributes for the Tribute Summon of a LIGHT monster.",
+  "setNumbers": [
+   "SDBE-EN016"
+  ],
+  "race": "Sea Serpent",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "LIGHT",
+  "level": 4,
+  "atk": 1700,
+  "def": 1650
+ },
+ {
+  "id": "37742478",
+  "konamiId": 7574,
+  "name": "Honest",
+  "cardType": "Monster",
+  "text": "During your Main Phase: You can return this face-up card from the field to the hand. During the Damage Step, when a LIGHT monster you control battles (Quick Effect): You can send this card from your hand to the GY; that monster gains ATK equal to the ATK of the opponent's monster it is battling, until the end of this turn.",
+  "setNumbers": [
+   "SDBE-EN017"
+  ],
+  "race": "Fairy",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "LIGHT",
+  "level": 4,
+  "atk": 1100,
+  "def": 1900
+ },
+ {
+  "id": "95956346",
+  "konamiId": 4924,
+  "name": "Shining Angel",
+  "cardType": "Monster",
+  "text": "When this card is destroyed by battle and sent to the Graveyard: You can Special Summon 1 LIGHT monster with 1500 or less ATK from your Deck, in face-up Attack Position.",
+  "setNumbers": [
+   "SDBE-EN018"
+  ],
+  "race": "Fairy",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "LIGHT",
+  "level": 4,
+  "atk": 1400,
+  "def": 800
+ },
+ {
+  "id": "41620959",
+  "konamiId": 10590,
+  "name": "Dragon Shrine",
+  "cardType": "Spell",
+  "text": "Send 1 Dragon monster from your Deck to the GY, then, if that monster in your GY is a Dragon Normal Monster, you can send 1 more Dragon monster from your Deck to the GY. You can only activate 1 \"Dragon Shrine\" per turn.",
+  "setNumbers": [
+   "SDBE-EN019"
+  ],
+  "property": "Normal"
+ },
+ {
+  "id": "87025064",
+  "konamiId": 10591,
+  "name": "Silver's Cry",
+  "cardType": "Spell",
+  "text": "Target 1 Dragon Normal Monster in your GY; Special Summon that target. You can only activate 1 \"Silver's Cry\" per turn.",
+  "setNumbers": [
+   "SDBE-EN020"
+  ],
+  "property": "Quick-Play"
+ },
+ {
+  "id": "17655904",
+  "konamiId": 5979,
+  "name": "Burst Stream of Destruction",
+  "cardType": "Spell",
+  "text": "If you control \"Blue-Eyes White Dragon\": Destroy all monsters your opponent controls. \"Blue-Eyes White Dragon\" you control cannot attack the turn you activate this card.",
+  "setNumbers": [
+   "SDBE-EN021"
+  ],
+  "property": "Normal"
+ },
+ {
+  "id": "81385346",
+  "konamiId": 5345,
+  "name": "Stamping Destruction",
+  "cardType": "Spell",
+  "text": "If you control a Dragon monster: Target 1 Spell/Trap on the field; destroy that target, and if you do, inflict 500 damage to its controller.",
+  "setNumbers": [
+   "SDBE-EN022"
+  ],
+  "property": "Normal"
+ },
+ {
+  "id": "28596933",
+  "konamiId": 5343,
+  "name": "A Wingbeat of Giant Dragon",
+  "cardType": "Spell",
+  "text": "Return 1 Level 5 or higher Dragon-Type monster you control to the hand, and if you do, destroy all Spell and Trap Cards on the field.",
+  "setNumbers": [
+   "SDBE-EN023"
+  ],
+  "property": "Normal"
+ },
+ {
+  "id": "38120068",
+  "konamiId": 7248,
+  "name": "Trade-In",
+  "cardType": "Spell",
+  "text": "Discard 1 Level 8 monster; draw 2 cards.",
+  "setNumbers": [
+   "SDBE-EN024"
+  ],
+  "property": "Normal"
+ },
+ {
+  "id": "39701395",
+  "konamiId": 8656,
+  "name": "Cards of Consonance",
+  "cardType": "Spell",
+  "text": "Discard 1 Dragon Tuner with 1000 or less ATK; draw 2 cards.",
+  "setNumbers": [
+   "SDBE-EN025"
+  ],
+  "property": "Normal"
+ },
+ {
+  "id": "18756904",
+  "konamiId": 9138,
+  "name": "White Elephant's Gift",
+  "cardType": "Spell",
+  "text": "Send 1 face-up non-Effect Monster you control to the GY; draw 2 cards.",
+  "setNumbers": [
+   "SDBE-EN026"
+  ],
+  "property": "Normal"
+ },
+ {
+  "id": "2295440",
+  "konamiId": 8197,
+  "name": "One for One",
+  "cardType": "Spell",
+  "text": "Send 1 monster from your hand to the GY; Special Summon 1 Level 1 monster from your hand or Deck.",
+  "setNumbers": [
+   "SDBE-EN027"
+  ],
+  "property": "Normal"
+ },
+ {
+  "id": "83764718",
+  "konamiId": 4842,
+  "name": "Monster Reborn",
+  "cardType": "Spell",
+  "text": "Target 1 monster in either GY; Special Summon it.",
+  "setNumbers": [
+   "SDBE-EN028"
+  ],
+  "property": "Normal"
+ },
+ {
+  "id": "72549351",
+  "konamiId": 8422,
+  "name": "Dragonic Tactics",
+  "cardType": "Spell",
+  "text": "Tribute 2 Dragon monsters; Special Summon 1 Level 8 Dragon monster from your Deck.",
+  "setNumbers": [
+   "SDBE-EN029"
+  ],
+  "property": "Normal"
+ },
+ {
+  "id": "68005187",
+  "konamiId": 5099,
+  "name": "Soul Exchange",
+  "cardType": "Spell",
+  "text": "Target 1 monster your opponent controls; this turn, if you Tribute a monster, you must Tribute that target, as if you controlled it. You cannot conduct your Battle Phase the turn you activate this card.",
+  "setNumbers": [
+   "SDBE-EN030"
+  ],
+  "property": "Normal"
+ },
+ {
+  "id": "72302403",
+  "konamiId": 4354,
+  "name": "Swords of Revealing Light",
+  "cardType": "Spell",
+  "text": "After this card's activation, it remains on the field, but you must destroy it during the End Phase of your opponent's 3rd turn. When this card is activated: If your opponent controls a face-down monster, flip all monsters they control face-up. While this card is face-up on the field, your opponent's monsters cannot declare an attack.",
+  "setNumbers": [
+   "SDBE-EN031"
+  ],
+  "property": "Normal"
+ },
+ {
+  "id": "98045062",
+  "konamiId": 5505,
+  "name": "Enemy Controller",
+  "cardType": "Spell",
+  "text": "Activate 1 of these effects;\n● Target 1 face-up monster your opponent controls; change that target's battle position.\n● Tribute 1 monster, then target 1 face-up monster your opponent controls; take control of that target until the End Phase.",
+  "setNumbers": [
+   "SDBE-EN032"
+  ],
+  "property": "Quick-Play"
+ },
+ {
+  "id": "13513663",
+  "konamiId": 10592,
+  "name": "Castle of Dragon Souls",
+  "cardType": "Trap",
+  "text": "Once per turn: You can banish 1 Dragon monster from your GY, then target 1 monster you control; it gains 700 ATK until the end of this turn (even if this card leaves the field). When this face-up card on the field is sent to the GY: You can target 1 of your banished Dragon monsters; Special Summon that target. You can only control 1 \"Castle of Dragon Souls\".",
+  "setNumbers": [
+   "SDBE-EN033"
+  ],
+  "property": "Continuous"
+ },
+ {
+  "id": "50078509",
+  "konamiId": 8675,
+  "name": "Fiendish Chain",
+  "cardType": "Trap",
+  "text": "Activate this card by targeting 1 Effect Monster on the field; negate the effects of that face-up monster while it is on the field, also that face-up monster cannot attack. When it is destroyed, destroy this card.",
+  "setNumbers": [
+   "SDBE-EN034"
+  ],
+  "property": "Continuous"
+ },
+ {
+  "id": "37390589",
+  "konamiId": 4657,
+  "name": "Kunai with Chain",
+  "cardType": "Trap",
+  "text": "Activate 1 or both of these effects (simultaneously);\n● When an opponent's monster declares an attack: Target the attacking monster; change that target to Defense Position.\n● Target 1 face-up monster you control; equip this card to that target. It gains 500 ATK.",
+  "setNumbers": [
+   "SDBE-EN035"
+  ],
+  "property": "Normal"
+ },
+ {
+  "id": "28378427",
+  "konamiId": 6582,
+  "name": "Damage Condenser",
+  "cardType": "Trap",
+  "text": "When you take battle damage: Discard 1 card; Special Summon 1 monster from your Deck with ATK less than or equal to the battle damage you took, in Attack Position.",
+  "setNumbers": [
+   "SDBE-EN036"
+  ],
+  "property": "Normal"
+ },
+ {
+  "id": "97077563",
+  "konamiId": 4989,
+  "name": "Call of the Haunted",
+  "cardType": "Trap",
+  "text": "Activate this card by targeting 1 monster in your GY; Special Summon that target in Attack Position. When this card leaves the field, destroy that monster. When that monster is destroyed, destroy this card.",
+  "setNumbers": [
+   "SDBE-EN037"
+  ],
+  "property": "Continuous"
+ },
+ {
+  "id": "94192409",
+  "konamiId": 5914,
+  "name": "Compulsory Evacuation Device",
+  "cardType": "Trap",
+  "text": "Target 1 monster on the field; return that target to the hand.",
+  "setNumbers": [
+   "SDBE-EN038"
+  ],
+  "property": "Normal"
+ },
+ {
+  "id": "82382815",
+  "konamiId": 9792,
+  "name": "Champion's Vigilance",
+  "cardType": "Trap",
+  "text": "If you control a Level 7 or higher Normal Monster, when a monster would be Summoned OR a Spell/Trap Card is activated: Negate the Summon or activation, and if you do, destroy that card.",
+  "setNumbers": [
+   "SDBE-EN039"
+  ],
+  "property": "Counter"
+ },
+ {
+  "id": "40908371",
+  "konamiId": 10593,
+  "name": "Azure-Eyes Silver Dragon",
+  "cardType": "Monster",
+  "text": "1 Tuner + 1+ non-Tuner Normal Monsters\nIf this card is Special Summoned: Until the end of the next turn, neither player can target Dragon monsters you currently control with card effects, also they cannot be destroyed by card effects. Once per turn, during your Standby Phase: You can target 1 Normal Monster in your GY; Special Summon it.",
+  "setNumbers": [
+   "SDBE-EN040"
+  ],
+  "race": "Dragon",
+  "monsterTypes": [
+   "Synchro",
+   "Effect"
+  ],
+  "attribute": "LIGHT",
+  "level": 9,
+  "atk": 2500,
+  "def": 3000,
+  "materials": "1 Tuner + 1 or more non-Tuner Normal Monsters"
+ },
+ {
+  "id": "32710364",
+  "konamiId": 7074,
+  "name": "Crystal Beast Ruby Carbuncle",
+  "cardType": "Monster",
+  "text": "When this card is Special Summoned: You can Special Summon as many \"Crystal Beast\" Monster Cards as possible from your Spell & Trap Zones. If this face-up card is destroyed in a Monster Zone, you can place it face-up in your Spell & Trap Zone as a Continuous Spell, instead of sending it to the GY.",
+  "setNumbers": [
+   "SDCB-EN001"
+  ],
+  "race": "Fairy",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "LIGHT",
+  "level": 3,
+  "atk": 300,
+  "def": 300
+ },
+ {
+  "id": "32933942",
+  "konamiId": 7071,
+  "name": "Crystal Beast Amethyst Cat",
+  "cardType": "Monster",
+  "text": "This card can attack your opponent directly, but when it uses this effect, any battle damage it inflicts to your opponent is halved. If this face-up card is destroyed in a Monster Zone, you can place it face-up in your Spell & Trap Zone as a Continuous Spell, instead of sending it to the GY.",
+  "setNumbers": [
+   "SDCB-EN002"
+  ],
+  "race": "Beast",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "EARTH",
+  "level": 3,
+  "atk": 1200,
+  "def": 400
+ },
+ {
+  "id": "68215963",
+  "konamiId": 7075,
+  "name": "Crystal Beast Emerald Tortoise",
+  "cardType": "Monster",
+  "text": "Once per turn: You can target 1 monster you control that attacked this turn; change that target to Defense Position. If this face-up card is destroyed in a Monster Zone, you can place it face-up in your Spell & Trap Zone as a Continuous Spell, instead of sending it to the GY.",
+  "setNumbers": [
+   "SDCB-EN003"
+  ],
+  "race": "Aqua",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "WATER",
+  "level": 3,
+  "atk": 600,
+  "def": 2000
+ },
+ {
+  "id": "95600067",
+  "konamiId": 7076,
+  "name": "Crystal Beast Topaz Tiger",
+  "cardType": "Monster",
+  "text": "If this card attacks an opponent's monster, it gains 400 ATK during the Damage Step only. If this face-up card is destroyed in a Monster Zone, you can place it face-up in your Spell & Trap Zone as a Continuous Spell, instead of sending it to the GY.",
+  "setNumbers": [
+   "SDCB-EN004"
+  ],
+  "race": "Beast",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "EARTH",
+  "level": 4,
+  "atk": 1600,
+  "def": 1000
+ },
+ {
+  "id": "69937550",
+  "konamiId": 7072,
+  "name": "Crystal Beast Amber Mammoth",
+  "cardType": "Monster",
+  "text": "When another \"Crystal Beast\" monster you control is targeted for an attack: You can change the attack target to this card. If this face-up card is destroyed in a Monster Zone, you can place it face-up in your Spell & Trap Zone as a Continuous Spell, instead of sending it to the GY.",
+  "setNumbers": [
+   "SDCB-EN005"
+  ],
+  "race": "Beast",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "EARTH",
+  "level": 4,
+  "atk": 1700,
+  "def": 1600
+ },
+ {
+  "id": "21698716",
+  "konamiId": 7077,
+  "name": "Crystal Beast Cobalt Eagle",
+  "cardType": "Monster",
+  "text": "Once per turn: You can target 1 \"Crystal Beast\" card you control; place that target on top of the Deck. If this face-up card is destroyed in a Monster Zone, you can place it face-up in your Spell & Trap Zone as a Continuous Spell, instead of sending it to the GY.",
+  "setNumbers": [
+   "SDCB-EN006"
+  ],
+  "race": "Winged Beast",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "WIND",
+  "level": 4,
+  "atk": 1400,
+  "def": 800
+ },
+ {
+  "id": "7093411",
+  "konamiId": 7078,
+  "name": "Crystal Beast Sapphire Pegasus",
+  "cardType": "Monster",
+  "text": "When this card is Summoned: You can place 1 \"Crystal Beast\" monster from your hand, Deck, or GY, face-up in your Spell & Trap Zone as a Continuous Spell. If this face-up card is destroyed in a Monster Zone, you can place it face-up in your Spell & Trap Zone as a Continuous Spell, instead of sending it to the GY.",
+  "setNumbers": [
+   "SDCB-EN007"
+  ],
+  "race": "Beast",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "WIND",
+  "level": 4,
+  "atk": 1800,
+  "def": 1200
+ },
+ {
+  "id": "79407975",
+  "konamiId": 7406,
+  "name": "Rainbow Dark Dragon",
+  "cardType": "Monster",
+  "text": "(This card is always treated as an \"Ultimate Crystal\" card.)\nCannot be Normal Summoned/Set. Must be Special Summoned (from your hand) by banishing 7 DARK monsters with different names from your GY. You can banish all other DARK monsters from your field and GY; this card gains 500 ATK for each card banished this way.",
+  "setNumbers": [
+   "SDCB-EN008"
+  ],
+  "race": "Dragon",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "DARK",
+  "level": 10,
+  "atk": 4000,
+  "def": 0
+ },
+ {
+  "id": "87475570",
+  "konamiId": 11601,
+  "name": "Crystal Master",
+  "cardType": "Monster",
+  "text": "You can Tribute this card; add 1 \"Ultimate Crystal\" monster, \"Crystal Beast\" monster, or \"Crystal\" Spell/Trap from your Deck to your hand.",
+  "setNumbers": [
+   "SDCB-EN009"
+  ],
+  "race": "Spellcaster",
+  "monsterTypes": [
+   "Pendulum",
+   "Effect"
+  ],
+  "attribute": "DARK",
+  "level": 3,
+  "atk": 1300,
+  "def": 1000,
+  "pendulumScale": 5,
+  "pendulumEffect": "Your opponent cannot target \"Ultimate Crystal\" monsters or \"Crystal Beast\" cards you control with card effects."
+ },
+ {
+  "id": "14469229",
+  "konamiId": 11602,
+  "name": "Crystal Keeper",
+  "cardType": "Monster",
+  "text": "If a \"Crystal Beast\" monster you control battles an opponent's monster, during damage calculation (Quick Effect): You can Tribute this card from your hand or face-up field; your battling monster's ATK/DEF become double its original ATK/DEF during that damage calculation only, but it is destroyed at the end of this Damage Step.",
+  "setNumbers": [
+   "SDCB-EN010"
+  ],
+  "race": "Warrior",
+  "monsterTypes": [
+   "Pendulum",
+   "Effect"
+  ],
+  "attribute": "FIRE",
+  "level": 4,
+  "atk": 1500,
+  "def": 1800,
+  "pendulumScale": 2,
+  "pendulumEffect": "Each turn, the first time an \"Ultimate Crystal\" monster(s) and/or \"Crystal Beast\" card(s) you control would be destroyed by card effect that turn, it is not destroyed."
+ },
+ {
+  "id": "32491822",
+  "konamiId": 6564,
+  "name": "Hamon, Lord of Striking Thunder",
+  "cardType": "Monster",
+  "text": "Cannot be Normal Summoned/Set. Must be Special Summoned (from your hand) by sending 3 face-up Continuous Spells you control to the GY. If this card destroys an opponent's monster by battle and sends it to the GY: Inflict 1000 damage to your opponent. While this card is in face-up Defense Position, monsters your opponent controls cannot target monsters for attacks, except this one.",
+  "setNumbers": [
+   "SDCB-EN011"
+  ],
+  "race": "Thunder",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "LIGHT",
+  "level": 10,
+  "atk": 4000,
+  "def": 4000
+ },
+ {
+  "id": "91800273",
+  "konamiId": 14740,
+  "name": "Dimension Shifter",
+  "cardType": "Monster",
+  "text": "If you have no cards in your GY (Quick Effect): You can send this card from your hand to the GY; until the end of the next turn, any card sent to the GY is banished instead.",
+  "setNumbers": [
+   "SDCB-EN012"
+  ],
+  "race": "Spellcaster",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "DARK",
+  "level": 6,
+  "atk": 1200,
+  "def": 2200
+ },
+ {
+  "id": "87170768",
+  "konamiId": 13407,
+  "name": "Contact \"C\"",
+  "cardType": "Monster",
+  "text": "When your opponent Normal or Special Summons a monster(s) (except during the Damage Step): You can Special Summon this card from your hand to the opponent's field in Defense Position. This card's controller cannot Fusion, Synchro, Xyz, or Link Summon unless they use this card as material.",
+  "setNumbers": [
+   "SDCB-EN013"
+  ],
+  "race": "Insect",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "EARTH",
+  "level": 6,
+  "atk": 1500,
+  "def": 2200
+ },
+ {
+  "id": "14558127",
+  "konamiId": 12950,
+  "name": "Ash Blossom & Joyous Spring",
+  "cardType": "Monster",
+  "text": "When a card or effect is activated that includes any of these effects (Quick Effect): You can discard this card; negate that effect.\n● Add a card from the Deck to the hand.\n● Special Summon from the Deck.\n● Send a card from the Deck to the GY.\nYou can only use this effect of \"Ash Blossom & Joyous Spring\" once per turn.",
+  "setNumbers": [
+   "SDCB-EN014"
+  ],
+  "race": "Zombie",
+  "monsterTypes": [
+   "Tuner",
+   "Effect"
+  ],
+  "attribute": "FIRE",
+  "level": 3,
+  "atk": 0,
+  "def": 1800
+ },
+ {
+  "id": "73642296",
+  "konamiId": 13587,
+  "name": "Ghost Belle & Haunted Mansion",
+  "cardType": "Monster",
+  "text": "When a card or effect is activated that includes any of these effects (Quick Effect): You can discard this card; negate that activation.\n● Add a card(s) from the GY to the hand, Deck, and/or Extra Deck.\n● Special Summon a Monster Card(s) from the GY.\n● Banish a card(s) from the GY.\nYou can only use this effect of \"Ghost Belle & Haunted Mansion\" once per turn.",
+  "setNumbers": [
+   "SDCB-EN015"
+  ],
+  "race": "Zombie",
+  "monsterTypes": [
+   "Tuner",
+   "Effect"
+  ],
+  "attribute": "EARTH",
+  "level": 3,
+  "atk": 0,
+  "def": 1800
+ },
+ {
+  "id": "12877076",
+  "konamiId": 17729,
+  "name": "Awakening of the Crystal Ultimates",
+  "cardType": "Spell",
+  "text": "Reveal 1 \"Ultimate Crystal\" monster in your hand, then activate 1 of these effects. If you control an \"Ultimate Crystal\" monster, you can activate 1 or 2 of these effects in sequence, instead (and do not have to reveal a monster).\n● Take 1 \"Rainbow Bridge\" card or 1 \"Rainbow Refraction\" from your Deck, and either add it to your hand or send it to the GY.\n● Special Summon 1 \"Crystal Beast\" Monster Card from your hand, Deck, GY, or Spell & Trap Zone.\nYou can only activate 1 \"Awakening of the Crystal Ultimates\" per turn.",
+  "setNumbers": [
+   "SDCB-EN016"
+  ],
+  "property": "Quick-Play"
+ },
+ {
+  "id": "58371671",
+  "konamiId": 17730,
+  "name": "Crystal Aegis",
+  "cardType": "Spell",
+  "text": "Target 1 \"Crystal Beast\" Monster Card you control; destroy it, then Special Summon 1 \"Crystal Beast Token\" with the destroyed monster's original Type, Attribute, Level, and ATK/DEF. If a \"Crystal Beast\" card(s) is placed in your Spell & Trap Zone while this card is in your GY, even during the Damage Step: You can banish this card; Special Summon 1 \"Crystal Beast\" Monster Card from your Spell & Trap Zone. You can only use this effect of \"Crystal Aegis\" once per turn.",
+  "setNumbers": [
+   "SDCB-EN017"
+  ],
+  "property": "Normal"
+ },
+ {
+  "id": "34487429",
+  "konamiId": 7079,
+  "name": "Ancient City - Rainbow Ruins",
+  "cardType": "Spell",
+  "text": "You must have this many \"Crystal Beast\" cards in your Spell & Trap Zone to activate and to resolve these effects.\n● 1+: This card cannot be destroyed by card effects.\n● 2+: Once per turn (including the opponent's) you can halve the battle damage you take.\n● 3+: When a Spell/Trap Card is activated: You can send 1 \"Crystal Beast\" monster you control to the GY; negate the activation, and if you do, destroy it.\n● 4+: Once per turn, during your Main Phase: You can draw 1 card.\n● 5: Once per turn, during your Main Phase: You can target 1 \"Crystal Beast\" card in your Spell & Trap Zone; Special Summon that target.",
+  "setNumbers": [
+   "SDCB-EN018"
+  ],
+  "property": "Field"
+ },
+ {
+  "id": "63945693",
+  "konamiId": 13485,
+  "name": "Rainbow Bridge",
+  "cardType": "Spell",
+  "text": "Add 1 \"Crystal\" Spell/Trap from your Deck to your hand.",
+  "setNumbers": [
+   "SDCB-EN019"
+  ],
+  "property": "Normal"
+ },
+ {
+  "id": "95326659",
+  "konamiId": 7073,
+  "name": "Crystal Beacon",
+  "cardType": "Spell",
+  "text": "Special Summon 1 \"Crystal Beast\" monster from your Deck. You must have 2 or more \"Crystal Beast\" cards in your Spell & Trap Zone to activate and to resolve this effect.",
+  "setNumbers": [
+   "SDCB-EN020"
+  ],
+  "property": "Normal"
+ },
+ {
+  "id": "35486099",
+  "konamiId": 7122,
+  "name": "Crystal Blessing",
+  "cardType": "Spell",
+  "text": "Target up to 2 \"Crystal Beast\" monsters in your GY; place those targets face-up in your Spell & Trap Zone as Continuous Spells.",
+  "setNumbers": [
+   "SDCB-EN021"
+  ],
+  "property": "Normal"
+ },
+ {
+  "id": "72881007",
+  "konamiId": 7123,
+  "name": "Crystal Abundance",
+  "cardType": "Spell",
+  "text": "Send 4 \"Crystal Beast\" cards from your Spell & Trap Zone to the GY; send as many cards on the field as possible to the GY, then Special Summon as many \"Crystal Beast\" monsters as possible from your GY, up to the number of cards sent from your opponent's field to the GY by this card's effect.",
+  "setNumbers": [
+   "SDCB-EN022"
+  ],
+  "property": "Normal"
+ },
+ {
+  "id": "8275702",
+  "konamiId": 7124,
+  "name": "Crystal Promise",
+  "cardType": "Spell",
+  "text": "Target 1 \"Crystal Beast\" card in your Spell & Trap Zone; Special Summon that target.",
+  "setNumbers": [
+   "SDCB-EN023"
+  ],
+  "property": "Normal"
+ },
+ {
+  "id": "47408488",
+  "konamiId": 7391,
+  "name": "Crystal Tree",
+  "cardType": "Spell",
+  "text": "Each time a \"Crystal Beast\" monster(s) is placed in either player's Spell & Trap Zone, place 1 Crystal Counter on this card. You can send this card to the GY; take a number of \"Crystal Beast\" monsters from your Deck equal to the number of Crystal Counters that were on this card, and place them face-up in your Spell & Trap Zone as Continuous Spells.",
+  "setNumbers": [
+   "SDCB-EN024"
+  ],
+  "property": "Continuous"
+ },
+ {
+  "id": "10004783",
+  "konamiId": 7390,
+  "name": "Crystal Release",
+  "cardType": "Spell",
+  "text": "Equip only to a \"Crystal Beast\" monster. It gains 800 ATK. When this card is sent from the field to the GY: You can place 1 \"Crystal Beast\" monster from your Deck face-up in your Spell & Trap Zone as a Continuous Spell.",
+  "setNumbers": [
+   "SDCB-EN025"
+  ],
+  "property": "Equip"
+ },
+ {
+  "id": "60876124",
+  "konamiId": 7080,
+  "name": "Rare Value",
+  "cardType": "Spell",
+  "text": "If you control 2 or more \"Crystal Beast\" cards in your Spell & Trap Zone: Your opponent chooses 1 \"Crystal Beast\" card in your Spell & Trap Zone, you send it to the GY, and if you do, you draw 2 cards.",
+  "setNumbers": [
+   "SDCB-EN026"
+  ],
+  "property": "Normal"
+ },
+ {
+  "id": "40854824",
+  "konamiId": 11603,
+  "name": "Rainbow Refraction",
+  "cardType": "Spell",
+  "text": "If a monster(s) you control whose original name is \"Rainbow Dragon\" or \"Rainbow Dark Dragon\" activated its effect this turn: Special Summon any number of \"Crystal Beast\" monsters with different names from your Deck.",
+  "setNumbers": [
+   "SDCB-EN027"
+  ],
+  "property": "Quick-Play"
+ },
+ {
+  "id": "12644061",
+  "konamiId": 10214,
+  "name": "Advanced Dark",
+  "cardType": "Spell",
+  "text": "All \"Crystal Beast\" monsters on the field and in the GY become DARK. If an \"Ultimate Crystal\" monster attacks, negate the effects of the attack target during that Battle Phase. During damage calculation, if a \"Crystal Beast\" monster you control battles and you would take damage: You can send 1 \"Crystal Beast\" monster from your Deck to the GY; you take no battle damage from that battle.",
+  "setNumbers": [
+   "SDCB-EN028"
+  ],
+  "property": "Field"
+ },
+ {
+  "id": "48800175",
+  "konamiId": 7508,
+  "name": "The Melody of Awakening Dragon",
+  "cardType": "Spell",
+  "text": "Discard 1 card; add up to 2 Dragon monsters with 3000 or more ATK and 2500 or less DEF from your Deck to your hand.",
+  "setNumbers": [
+   "SDCB-EN029"
+  ],
+  "property": "Normal"
+ },
+ {
+  "id": "35726888",
+  "konamiId": 12800,
+  "name": "Foolish Burial Goods",
+  "cardType": "Spell",
+  "text": "Send 1 Spell/Trap from your Deck to the GY. You can only activate 1 \"Foolish Burial Goods\" per turn.",
+  "setNumbers": [
+   "SDCB-EN030"
+  ],
+  "property": "Normal"
+ },
+ {
+  "id": "8267140",
+  "konamiId": 12464,
+  "name": "Cosmic Cyclone",
+  "cardType": "Spell",
+  "text": "Pay 1000 LP, then target 1 Spell/Trap on the field; banish it.",
+  "setNumbers": [
+   "SDCB-EN031"
+  ],
+  "property": "Quick-Play"
+ },
+ {
+  "id": "85766789",
+  "konamiId": 17731,
+  "name": "Crystal Boon",
+  "cardType": "Trap",
+  "text": "Special Summon up to 2 \"Crystal Beast\" Monster Cards from your Spell & Trap Zone, and if you do, gain LP equal to their combined original ATK. If a \"Crystal Beast\" card(s) is placed in your Spell & Trap Zone while this card is in your GY, even during the Damage Step: You can banish this card; excavate the top card of your Deck, and if it is a \"Crystal Beast\" monster, either add it to your hand or Special Summon it. Otherwise, send that card to the GY. You can only use this effect of \"Crystal Boon\" once per turn.",
+  "setNumbers": [
+   "SDCB-EN032"
+  ],
+  "property": "Normal"
+ },
+ {
+  "id": "11155484",
+  "konamiId": 17732,
+  "name": "Crystal Miracle",
+  "cardType": "Trap",
+  "text": "When a Spell/Trap Card, or monster effect, is activated: Destroy 1 \"Crystal Beast\" card you control, and if you do, negate that activation, and if you do that, destroy that card. If a \"Crystal Beast\" card(s) is placed in your Spell & Trap Zone while this card is in your GY, even during the Damage Step: You can banish this card; place 1 \"Crystal Beast\" monster from your hand, Deck, or GY, face-up in your Spell & Trap Zone as a Continuous Spell. You can only use this effect of \"Crystal Miracle\" once per turn.",
+  "setNumbers": [
+   "SDCB-EN033"
+  ],
+  "property": "Counter"
+ },
+ {
+  "id": "47149093",
+  "konamiId": 17733,
+  "name": "Crystal Brilliance",
+  "cardType": "Trap",
+  "text": "You can only control 1 \"Crystal Brilliance\". Each \"Crystal Beast\" monster you control gains ATK equal to its original DEF. If a \"Crystal Beast\" card(s) is placed in your Spell & Trap Zone, even during the Damage Step: You can send this face-up card to the GY; Special Summon 1 \"Crystal Beast\" monster from your hand or GY, also any damage you take this turn is halved.",
+  "setNumbers": [
+   "SDCB-EN034"
+  ],
+  "property": "Continuous"
+ },
+ {
+  "id": "47121070",
+  "konamiId": 7388,
+  "name": "Crystal Pair",
+  "cardType": "Trap",
+  "text": "When a \"Crystal Beast\" monster you control is destroyed by battle and sent to the GY: Place 1 \"Crystal Beast\" monster from your Deck face-up in your Spell & Trap Zone as a Continuous Spell, and if you do, you take no battle damage for the rest of this turn.",
+  "setNumbers": [
+   "SDCB-EN035"
+  ],
+  "property": "Normal"
+ },
+ {
+  "id": "87259933",
+  "konamiId": 11604,
+  "name": "Crystal Conclave",
+  "cardType": "Trap",
+  "text": "Once per turn, if a face-up \"Crystal Beast\" monster(s) you control is destroyed by battle or card effect: You can Special Summon 1 \"Crystal Beast\" monster from your Deck. You can send this face-up card from the field to the GY, then target 1 \"Crystal Beast\" card you control and 1 card on the field; return them to the hand. You cannot activate these effects in the same Chain.",
+  "setNumbers": [
+   "SDCB-EN036"
+  ],
+  "property": "Continuous"
+ },
+ {
+  "id": "36328300",
+  "konamiId": 13487,
+  "name": "Ultimate Crystal Magic",
+  "cardType": "Trap",
+  "text": "When your \"Crystal Beast\" monster is destroyed by battle: You can send 7 \"Crystal Beast\" cards with different names from your hand, Deck, and/or face-up field to the GY; Special Summon 1 \"Ultimate Crystal\" Fusion Monster from your Extra Deck. (This is treated as a Fusion Summon.) If a face-up \"Ultimate Crystal\" monster you control leaves the field because of an opponent's card effect: You can banish this card from your GY; place any number of \"Crystal Beast\" monsters from your GY, face-up in your Spell & Trap Zone as Continuous Spells.",
+  "setNumbers": [
+   "SDCB-EN037"
+  ],
+  "property": "Normal"
+ },
+ {
+  "id": "11136371",
+  "konamiId": 7387,
+  "name": "Counter Gem",
+  "cardType": "Trap",
+  "text": "Send all cards in your Spell & Trap Zone to the GY. Place as many \"Crystal Beast\" monsters as possible from your GY face-up in your Spell & Trap Zone as Continuous Spells. During the End Phase of this turn, destroy all \"Crystal Beast\" cards you control.",
+  "setNumbers": [
+   "SDCB-EN038"
+  ],
+  "property": "Normal"
+ },
+ {
+  "id": "31044787",
+  "konamiId": 11861,
+  "name": "Ferret Flames",
+  "cardType": "Trap",
+  "text": "If the combined ATK of all face-up monsters your opponent controls is higher than your LP: Make your opponent shuffle face-up monsters they control into the Deck (their choice), except monsters with 0 ATK, so that the combined ATK of the remaining monsters they control becomes less than or equal to your LP.",
+  "setNumbers": [
+   "SDCB-EN039"
+  ],
+  "property": "Normal"
+ },
+ {
+  "id": "89208725",
+  "konamiId": 13292,
+  "name": "Metaverse",
+  "cardType": "Trap",
+  "text": "Take 1 Field Spell from your Deck, and either activate it or add it to your hand.",
+  "setNumbers": [
+   "SDCB-EN040"
+  ],
+  "property": "Normal"
+ },
+ {
+  "id": "79856792",
+  "konamiId": 7171,
+  "name": "Rainbow Dragon",
+  "cardType": "Monster",
+  "text": "(This card is always treated as an \"Ultimate Crystal\" card.)\nCannot be Normal Summoned/Set. Must be Special Summoned (from your hand) by having 7 \"Crystal Beast\" cards with different names on your field and/or GY. This card cannot activate the following effects the turn it is Special Summoned. (Quick Effect): You can send all \"Crystal Beast\" monsters you control to the GY; this card gains 1000 ATK for each monster sent to the GY. You can banish all \"Crystal Beast\" monsters from your GY; shuffle all cards on the field into the Deck.",
+  "setNumbers": [
+   "SDCB-EN041"
+  ],
+  "race": "Dragon",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "LIGHT",
+  "level": 10,
+  "atk": 4000,
+  "def": 0
+ },
+ {
+  "id": "84544192",
+  "konamiId": 17734,
+  "name": "Ultimate Crystal Rainbow Dragon Overdrive",
+  "cardType": "Monster",
+  "text": "1 \"Ultimate Crystal\" monster + 7 \"Crystal Beast\" monsters\nMust be Special Summoned (from your Extra Deck) during a Duel you Special Summoned an \"Ultimate Crystal\" monster, by banishing the above monsters from your field and/or GY. While 7 or more of your \"Crystal Beast\" monsters with different names are banished, this card gains 7000 ATK. If this card has not battled this turn (Quick Effect): You can Tribute this card; shuffle as many cards on the field as possible into the Deck, and if you do, Special Summon any number of your banished \"Crystal Beast\" monsters.",
+  "setNumbers": [
+   "SDCB-EN042"
+  ],
+  "race": "Dragon",
+  "monsterTypes": [
+   "Fusion",
+   "Effect"
+  ],
+  "attribute": "LIGHT",
+  "level": 12,
+  "atk": 4000,
+  "def": 0,
+  "materials": "1 \"Ultimate Crystal\" monster + 7 \"Crystal Beast\" monsters"
+ },
+ {
+  "id": "37440988",
+  "konamiId": 13484,
+  "name": "Rainbow Overdragon",
+  "cardType": "Monster",
+  "text": "7 \"Crystal Beast\" monsters\n(This card is always treated as an \"Ultimate Crystal\" card.)\nMust be either Fusion Summoned, or Special Summoned by Tributing 1 Level 10 \"Ultimate Crystal\" monster. Once per turn: You can banish 1 \"Crystal Beast\" monster from your GY; this card gains ATK equal to the banished monster's, until the end of this turn. (Quick Effect): You can Tribute this Fusion Summoned card; shuffle all cards on the field into the Deck.",
+  "setNumbers": [
+   "SDCB-EN043"
+  ],
+  "race": "Dragon",
+  "monsterTypes": [
+   "Fusion",
+   "Effect"
+  ],
+  "attribute": "LIGHT",
+  "level": 12,
+  "atk": 4000,
+  "def": 0,
+  "materials": "7 \"Crystal Beast\" monsters"
+ },
+ {
+  "id": "36795102",
+  "konamiId": 14955,
+  "name": "Crystal Beast Rainbow Dragon",
+  "cardType": "Monster",
+  "text": "If this face-up card is destroyed in a Monster Zone, you can place it face-up in your Spell & Trap Zone as a Continuous Spell, instead of sending it to the GY. You can only use each of the following effects of \"Crystal Beast Rainbow Dragon\" once per turn. When an attack is declared involving a \"Crystal Beast\" monster: You can Special Summon this card from your hand. You can banish this card treated as a Continuous Spell; Special Summon 1 Level 4 or lower \"Crystal Beast\" monster from your Deck, but negate its effects, and if you do, add 1 \"Ultimate Crystal\" monster from your Deck to your hand.",
+  "setNumbers": [
+   "SDCB-EN044"
+  ],
+  "race": "Dragon",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "LIGHT",
+  "level": 8,
+  "atk": 3000,
+  "def": 0
+ },
+ {
+  "id": "10938846",
+  "konamiId": 17735,
+  "name": "Rainbow Bridge of the Heart",
+  "cardType": "Spell",
+  "text": "During your Main Phase, you can Normal Summon 1 \"Crystal Beast\" monster, in addition to your Normal Summon/Set. (You can only gain this effect once per turn.) You can only use each of the following effects of \"Rainbow Bridge of the Heart\" once per turn. During your Main Phase: You can destroy 1 \"Crystal Beast\" card you control or in your hand, and if you do, add 1 \"Crystal\" Spell/Trap from your Deck to your hand. If a \"Crystal Beast\" card(s) is placed in your Spell & Trap Zone, even during the Damage Step: You can target 1 card your opponent controls; return both that card and this card to the hand.",
+  "setNumbers": [
+   "SDCB-EN045"
+  ],
+  "property": "Continuous"
+ },
+ {
+  "id": "9334391",
+  "konamiId": 13486,
+  "name": "Crystal Bond",
+  "cardType": "Spell",
+  "text": "Add 1 \"Crystal Beast\" monster from your Deck to your hand, and place 1 \"Crystal Beast\" monster with a different name from your Deck face-up in your Spell & Trap Zone as a Continuous Spell. You can only activate 1 \"Crystal Bond\" per turn.",
+  "setNumbers": [
+   "SDCB-EN046"
+  ],
+  "property": "Normal"
+ }
+]
