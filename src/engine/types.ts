@@ -38,7 +38,7 @@ export interface TempStatMod {
   atk: number;
   def: number;
   /** When the modifier expires. */
-  until: 'endOfTurn' | 'endOfDamageStep' | 'permanent';
+  until: 'endOfTurn' | 'endOfDamageStep' | 'permanent' | 'endOfNextTurn';
   source: string;
 }
 

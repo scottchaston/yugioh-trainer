@@ -90,6 +90,8 @@ export function canActivateEffect(
     if (st.turnPlayer !== player) return `Spell Speed 1 effects such as ${d.name} can only be activated during your own turn.`;
     if (st.phase !== 'MAIN1' && st.phase !== 'MAIN2') return `${d.name} can only be activated during your Main Phase 1 or Main Phase 2 (it is currently the ${PHASE_LABEL[st.phase]}).`;
   }
+  // A card already on the chain cannot be activated again in the same chain.
+  if (st.chain.some((l) => l.uid === card.uid)) return `${d.name} is already on this chain; a card cannot be activated twice in the same chain.`;
   // Chain speed rule
   if (ctx.chainSpeed > 0 && effect.spellSpeed < ctx.chainSpeed) {
     return `${d.name} is Spell Speed ${effect.spellSpeed}, but the last card on the chain is Spell Speed ${ctx.chainSpeed}. You can only chain a card with equal or higher Spell Speed.`;
@@ -685,6 +687,7 @@ export function* fastEffectWindow(g: Game, ctx: WindowContext, order: PlayerId[]
  * Normal priority: the turn player may respond to their own action first, then the opponent.
  */
 export function* afterAction(g: Game, description: string, order?: PlayerId[]): Process<void> {
+  g.player(g.state.turnPlayer).turnFlags['acted'] = true; // "at the start of your Main Phase 1" cards need to be the first action
   yield* fastEffectWindow(g, { description, kind: 'action' }, order ?? [g.state.turnPlayer, g.opponent(g.state.turnPlayer)]);
 }
 

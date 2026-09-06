@@ -459,7 +459,7 @@ export class Game {
     return { atk: Math.max(0, atk), def: Math.max(0, def), originalAtk, originalDef };
   }
 
-  addStatMod(uid: string, atk: number, def: number, until: 'endOfTurn' | 'endOfDamageStep' | 'permanent', source: string): void {
+  addStatMod(uid: string, atk: number, def: number, until: 'endOfTurn' | 'endOfDamageStep' | 'permanent' | 'endOfNextTurn', source: string): void {
     this.card(uid).statMods.push({ atk, def, until, source });
     this.fx({ type: 'boost', uid, atk, def });
   }
@@ -490,7 +490,10 @@ export class Game {
 
   expireStatMods(until: 'endOfTurn' | 'endOfDamageStep'): void {
     for (const c of Object.values(this.state.cards)) {
-      if (c.statMods.length) c.statMods = c.statMods.filter((m) => m.until !== until);
+      if (!c.statMods.length) continue;
+      c.statMods = c.statMods.filter((m) => m.until !== until);
+      // "until the end of the next turn" becomes "until the end of the turn" once a turn has ended.
+      if (until === 'endOfTurn') for (const m of c.statMods) if (m.until === 'endOfNextTurn') m.until = 'endOfTurn';
     }
   }
 
@@ -811,6 +814,7 @@ export class Game {
     c.zone = 'graveyard';
     c.index = -1;
     c.faceUp = true;
+    c.flags['sentToGYTurn'] = this.state.turn;
     // A properly Special Summoned Extra Deck monster keeps that status in the GY (it may be revived from there).
     this.player(c.owner).graveyard.push(uid);
     this.emit({ type: 'toGraveyard', uid, from, reason, source, wasFaceUp });
@@ -1194,14 +1198,18 @@ export class Game {
         this.log(`${this.name(uid)} is unaffected by ${this.name(source!)}, so it is not destroyed.`, 'rule');
         continue;
       }
+      const byPlayer = source ? this.state.cards[source]?.controller : undefined;
       const protection = this.effectDestructionProtection(c);
       if (protection) {
         this.log(`${this.name(uid)} is not destroyed: ${protection}`, 'rule');
         continue;
       }
+      if (c.faceUp && !c.flags['effectsNegated'] && byPlayer !== undefined && byPlayer !== c.controller && getScript(this.name(uid))?.immuneToOpponentEffectDestruction) {
+        this.log(`${this.name(uid)} cannot be destroyed by an opponent's card effects.`, 'rule');
+        continue;
+      }
       const replaced = yield* this.tryDestructionReplacement(c, 'effect');
       if (replaced) continue;
-      const byPlayer = source ? this.state.cards[source]?.controller : undefined;
       this.log(`${this.name(uid)} is destroyed${source ? ` by ${this.name(source)}` : ''} and sent to the Graveyard.`, 'effect');
       this.fx({ type: 'destroy', uid, by: 'effect' });
       this.emit({ type: 'destroyed', uid, reason: 'effect', source: source ?? undefined, byPlayer });
@@ -1234,6 +1242,11 @@ export class Game {
         if (yield* s.replaceDestruction(this, src, c, reason)) return true;
       }
     }
+    // Cards in the Graveyard that can replace the destruction (Soul Resonator).
+    for (const u of this.player(c.controller).graveyard.slice()) {
+      const s = getScript(this.name(u));
+      if (s?.replaceDestructionFromGraveyard && (yield* s.replaceDestructionFromGraveyard(this, this.card(u), c, reason))) return true;
+    }
     if (!this.isMonsterOnField(c) || c.flags['effectsNegated']) return false;
     const s = getScript(this.name(c.uid));
     if (s?.onWouldBeDestroyedInMonsterZone) {
@@ -1265,6 +1278,7 @@ export class Game {
   /** Can `target` be targeted by an effect controlled by `sourcePlayer`? */
   targetingProtection(target: CardInstance, sourcePlayer: PlayerId, sourceUid?: string): string | null {
     if (sourceUid && this.isUnaffected(target.uid, sourceUid)) return `it is unaffected by ${this.name(sourceUid)}.`;
+    if (this.player(sourcePlayer).turnFlags['cannotTargetSynchros'] && this.isOnField(target) && this.isSynchroMonster(target.uid) && target.controller !== sourcePlayer) return 'Synchro Monsters cannot be targeted by your card effects this turn (Burning Soul).';
     for (const src of this.activeFieldCards()) {
       const s = getScript(this.name(src.uid));
       const r = s?.preventTargeting?.(this, src, target, sourcePlayer);

@@ -152,6 +152,10 @@ export interface CardScript {
   procedureIsNotSummon?: boolean;
   /** Continuous: while this card is face-up, any card sent to the GY is banished instead (Retaliating "C"). */
   banishInsteadOfGraveyard?: (g: Game, self: CardInstance) => boolean;
+  /** From the Graveyard: replace the destruction of `target` (Soul Resonator banishes itself instead). Return true if replaced. */
+  replaceDestructionFromGraveyard?: (g: Game, self: CardInstance, target: CardInstance, reason: 'battle' | 'effect') => Process<boolean>;
+  /** "Cannot be destroyed by an opponent's card effects." */
+  immuneToOpponentEffectDestruction?: boolean;
 }
 
 export interface SynchroRequirement {

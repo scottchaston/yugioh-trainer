@@ -270,7 +270,7 @@ export function endTurn(tg: TestGame, ...answers: Answer[]): void {
 export const A = {
   cards: (...uids: string[]): Answer => ({ cards: uids }),
   option: (id: string): Answer => ({ option: id }),
-  zone: (player: PlayerId, zone: 'monster' | 'spellTrap', index: number): Answer => ({ zone: { player, zone, index } }),
+  zone: (player: PlayerId, zone: 'monster' | 'spellTrap' | 'extraMonster' | 'field', index: number): Answer => ({ zone: { player, zone, index } }),
   pass: (): Answer => ({ activation: null }),
   activate: (uid: string, effectId = 'activate'): Answer => ({ activation: { uid, effectId } }),
   yes: (): Answer => ({ option: 'yes' }),

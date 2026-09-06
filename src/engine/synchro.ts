@@ -93,8 +93,8 @@ export function* performSynchroSummon(g: Game, card: CardInstance, player: Playe
   g.log(`${g.playerName(player)} Synchro Summons ${g.name(card.uid)} using ${materials.map((u) => `${g.name(u)} (Level ${levelOf(g, u)})`).join(' + ')}.`, 'action');
   for (const m of materials) {
     g.log(`${g.name(m)} is sent to the Graveyard as Synchro Material.`, 'rule');
-    g.card(m).flags['usedAsSynchroMaterialFor'] = card.uid;
     g.sendToGraveyard(m, 'material', card.uid);
+    g.card(m).flags['usedAsSynchroMaterialFor'] = card.uid;
   }
   return yield* g.specialSummon(card.uid, player, { position: 'choose', how: 'synchro', proper: true });
 }

@@ -531,6 +531,14 @@ export function* declareAttack(g: Game, player: PlayerId, uid: string): Process<
   }
   g.fx({ type: 'attack', attacker: uid, target, defender: opponent });
   g.emit({ type: 'attackDeclared', attacker: uid, target });
+  // Absolute Powerforce: while that monster battles, the opponent cannot activate cards or effects.
+  for (const m of [uid, target]) {
+    const mc = m ? g.state.cards[m] : undefined;
+    if (mc && mc.flags['lockOpponentActivationsThisTurn'] && target !== null) {
+      const other = g.opponent(mc.controller);
+      g.player(other).turnFlags['cannotActivate'] = { scope: 'all', reason: `${g.name(m!)} is battling under Absolute Powerforce`, battleOf: uid };
+    }
+  }
 
   // Response window for the attack declaration (turn player has priority, then the opponent).
   yield* fastEffectWindow(g, { description: `${g.name(uid)} declared an attack`, kind: 'attack' }, [player, opponent]);
@@ -550,6 +558,7 @@ export function* declareAttack(g: Game, player: PlayerId, uid: string): Process<
   if (bb.attackNegated) {
     g.log('The attack was negated.', 'rule');
     endBattle(g);
+    if (g.player(player).turnFlags['endBattlePhaseNow']) yield* forceEndOfBattlePhase(g, player);
     return;
   }
 
@@ -583,6 +592,20 @@ export function* declareAttack(g: Game, player: PlayerId, uid: string): Process<
 
   yield* damageStep(g);
   endBattle(g);
+}
+
+/** Battle Fader: the Battle Phase ends immediately (Main Phase 2 begins). */
+function* forceEndOfBattlePhase(g: Game, player: PlayerId): Process<void> {
+  delete g.player(player).turnFlags['endBattlePhaseNow'];
+  if (g.state.phase !== 'BATTLE') return;
+  g.log('The Battle Phase ends (Battle Fader).', 'rule');
+  if (g.state.battle) g.state.battle.step = 'END';
+  yield* fastEffectWindow(g, { description: 'End Step of the Battle Phase', kind: 'phase' });
+  g.state.battle = null;
+  clearBattlePhaseFlags(g);
+  g.state.phase = 'MAIN2';
+  g.log(`${g.playerName(player)} enters Main Phase 2.`, 'phase');
+  g.emit({ type: 'phaseStart', phase: 'MAIN2', player });
 }
 
 function endBattle(g: Game): void {
@@ -705,6 +728,7 @@ function* endOfTurnCleanup(g: Game): Process<void> {
       delete c.flags['effectsNegated'];
       delete c.flags['negatedBy'];
     }
+    if (c.flags['levelSetThisTurn']) delete c.flags['levelSet'];
     for (const key of Object.keys(c.flags)) {
       if (key.endsWith('ThisTurn')) delete c.flags[key];
       if (key === 'cannotAttackReason') delete c.flags[key];
