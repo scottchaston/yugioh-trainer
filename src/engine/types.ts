@@ -61,8 +61,11 @@ export interface CardInstance {
   attacksDeclaredThisTurn: number;
   /** For Gemini monsters: has been Gemini Summoned (gained its effect). */
   geminiEffectActive: boolean;
-  /** A "Crystal Beast" placed in the Spell & Trap Zone is treated as a Continuous Spell. */
-  asContinuousSpell: boolean;
+  /**
+   * A monster card placed in the Spell & Trap Zone that is treated as a Spell Card there
+   * (Crystal Beasts become Continuous Spells; Rider of the Storm Winds becomes an Equip Spell).
+   */
+  treatedAsSpell: 'continuous' | 'equip' | null;
   /** For Equip Spells: uid of the monster this is equipped to. */
   equippedTo: string | null;
   /** Special Summoned properly (relevant for reviving Extra Deck monsters). */
@@ -91,6 +94,8 @@ export interface PlayerState {
   normalSummonsAllowed: number;
   /** Per-turn effect activation counts: key -> count. */
   effectUses: Record<string, number>;
+  /** Restrictions that last for the current turn (e.g. "cannot conduct your Battle Phase"). Cleared each turn. */
+  turnFlags: Record<string, unknown>;
 }
 
 export interface ChainLink {
@@ -137,7 +142,7 @@ export type GameEventBody =
   | { type: 'summon'; uid: string; player: PlayerId; method: 'normal' | 'special' | 'flip'; how?: string }
   | { type: 'set'; uid: string; player: PlayerId }
   | { type: 'attackDeclared'; attacker: string; target: string | null }
-  | { type: 'toGraveyard'; uid: string; from: Zone; reason: SendReason; source?: string }
+  | { type: 'toGraveyard'; uid: string; from: Zone; reason: SendReason; source?: string; wasFaceUp: boolean }
   | { type: 'destroyed'; uid: string; reason: 'battle' | 'effect'; source?: string }
   | { type: 'banished'; uid: string; from: Zone }
   | { type: 'leftField'; uid: string; to: Zone }
@@ -152,7 +157,38 @@ export type GameEventBody =
   | { type: 'cardToHand'; uid: string; player: PlayerId }
   | { type: 'damageCalculated'; attacker: string; target: string | null }
   | { type: 'flipped'; uid: string; how: 'battle' | 'effect' }
-  | { type: 'controlChanged'; uid: string; to: PlayerId };
+  | { type: 'controlChanged'; uid: string; to: PlayerId }
+  | { type: 'targeted'; uid: string; source: string; player: PlayerId }
+  | { type: 'summonNegated'; uid: string }
+  | { type: 'summonAttempt'; uid: string; player: PlayerId; method: 'normal' | 'special' | 'flip' };
+
+/** A summon that is happening right now (cards like Champion's Vigilance can negate it). */
+export interface SummonAttempt {
+  uid: string;
+  player: PlayerId;
+  method: 'normal' | 'special' | 'flip';
+  how: string;
+  negated: boolean;
+}
+
+/** Visual-effect events for the interface (the engine never depends on them). */
+export type FxEvent = { id: number } & FxBody;
+export type FxBody = (
+  | { type: 'attack'; attacker: string; target: string | null; defender: PlayerId }
+  | { type: 'activate'; uid: string; player: PlayerId; what: 'spell' | 'trap' | 'monster' }
+  | { type: 'destroy'; uid: string; by: 'battle' | 'effect' }
+  | { type: 'damage'; player: PlayerId; amount: number }
+  | { type: 'heal'; player: PlayerId; amount: number }
+  | { type: 'summon'; uid: string; method: 'normal' | 'special' | 'flip' }
+  | { type: 'negate'; uid: string }
+  | { type: 'flip'; uid: string }
+  | { type: 'bounce'; uid: string }
+  | { type: 'banish'; uid: string }
+  | { type: 'boost'; uid: string; atk: number; def: number }
+  | { type: 'control'; uid: string }
+  | { type: 'draw'; player: PlayerId; count: number }
+  | { type: 'toSpellZone'; uid: string }
+);
 
 /** Something that must happen later (e.g. "until the End Phase", "destroy during the End Phase of your opponent's 3rd turn"). */
 export interface ScheduledEffect {
@@ -196,6 +232,16 @@ export interface GameState {
   started: boolean;
   scheduled: ScheduledEffect[];
   nextScheduledId: number;
+  /** Continuous Trap <-> monster links (Call of the Haunted, Fiendish Chain): trap uid -> monster uid. */
+  links: Record<string, string>;
+  /** Summon currently being performed (for summon-negation windows). */
+  summonAttempt: SummonAttempt | null;
+  /** Events that happened just before the current fast-effect window opened (e.g. battle damage). */
+  windowEvents: GameEvent[];
+  /** Events since the last window (collected into windowEvents when a window opens). */
+  recentEvents: GameEvent[];
+  fx: FxEvent[];
+  nextFxId: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -251,7 +297,7 @@ export type Prompt =
       windowKind: WindowKind;
     };
 
-export type WindowKind = 'phase' | 'endPhase' | 'action' | 'attack' | 'damage' | 'chain' | 'trigger';
+export type WindowKind = 'phase' | 'endPhase' | 'action' | 'attack' | 'damage' | 'chain' | 'trigger' | 'summon';
 
 export interface ZoneRef {
   player: PlayerId;
@@ -280,6 +326,7 @@ export type Action =
   | { type: 'SET_SPELL_TRAP'; player: PlayerId; uid: string }
   | { type: 'ACTIVATE'; player: PlayerId; uid: string; effectId: string }
   | { type: 'SPECIAL_SUMMON'; player: PlayerId; uid: string; procId: string }
+  | { type: 'GEMINI_SUMMON'; player: PlayerId; uid: string }
   | { type: 'DECLARE_ATTACK'; player: PlayerId; uid: string }
   | { type: 'TO_BATTLE_PHASE'; player: PlayerId }
   | { type: 'TO_MAIN2'; player: PlayerId }

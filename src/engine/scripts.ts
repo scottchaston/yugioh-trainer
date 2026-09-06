@@ -65,6 +65,10 @@ export interface EffectDef {
   oncePerTurn?: boolean;
   /** Effects like Honest that are activated from the hand by revealing/sending it. */
   hidden?: boolean;
+  /** Several effects of one card that share a single "once per turn" (e.g. Maiden with Eyes of Blue). */
+  oncePerTurnGroup?: string;
+  /** Can be activated in the special window that opens while a monster is being Summoned (to negate the Summon). */
+  respondsToSummon?: boolean;
 }
 
 export interface StatModification {
@@ -94,10 +98,27 @@ export interface CardScript {
   cannotNormalSummon?: string;
   /** Instead of being destroyed / sent to GY from a Monster Zone, run this (Crystal Beasts). Return true if replaced. */
   onWouldBeDestroyedInMonsterZone?: (g: Game, self: CardInstance, reason: 'battle' | 'effect') => Process<boolean>;
+  /** Continuous: replace the destruction of another card (e.g. an Equip that is destroyed instead). Return true if replaced. */
+  replaceDestruction?: (g: Game, self: CardInstance, target: CardInstance, reason: 'battle' | 'effect') => Process<boolean>;
+  /** Continuous: prevent `card`'s effect from being activated by `player`. Return a reason if prevented. */
+  preventActivation?: (g: Game, self: CardInstance, card: CardInstance, effect: EffectDef, player: PlayerId) => string | null;
+  /** How many Tributes this monster counts as when Tributed for `forUid` (Kaiser Sea Horse). */
+  tributeValue?: (g: Game, self: CardInstance, forUid: string) => number;
+  /** Synchro Summon requirements (for Synchro Monsters). */
+  synchro?: SynchroRequirement;
   /** Special Summon procedures the card offers from a given zone (e.g. Rainbow Dragon from hand, Gemini Summon). */
   specialSummon?: SpecialSummonProcedure[];
   /** Called when the card leaves the field, to clean up related state (equips etc.). */
   onLeaveField?: (g: Game, self: CardInstance) => void;
+}
+
+export interface SynchroRequirement {
+  /** Does this monster qualify as the Tuner? (default: any Tuner) */
+  tuner?: (g: Game, card: CardInstance) => boolean;
+  /** Does this monster qualify as a non-Tuner material? (default: any non-Tuner) */
+  nonTuner?: (g: Game, card: CardInstance) => boolean;
+  /** Human-readable material text. */
+  text: string;
 }
 
 export interface SpecialSummonProcedure {

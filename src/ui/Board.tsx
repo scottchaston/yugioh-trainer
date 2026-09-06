@@ -65,7 +65,7 @@ export function Board(props: BoardProps) {
     const stats = c.faceUp && (c.zone === 'monster' || c.zone === 'extraMonster') ? g.stats(uid) : null;
     const inPrompt = selectableCards?.has(uid);
     const dimmed = selectableCards ? !inPrompt : false;
-    const badge = c.asContinuousSpell ? 'Continuous Spell' : c.equippedTo ? `Equipped` : undefined;
+    const badge = c.treatedAsSpell === 'continuous' ? 'Continuous Spell' : c.treatedAsSpell === 'equip' ? 'Equip Spell' : c.equippedTo ? 'Equipped' : c.flags['effectsNegated'] ? 'Negated' : undefined;
     return (
       <CardView
         key={uid}

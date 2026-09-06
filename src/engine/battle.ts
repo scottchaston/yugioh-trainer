@@ -15,7 +15,7 @@ export function tributesRequired(level: number): number {
 export function extraAttacksFor(g: Game, uid: string): number {
   let n = 0;
   const m = g.card(uid);
-  for (const src of g.faceUpFieldCards()) {
+  for (const src of g.activeFieldCards()) {
     const s = getScript(g.name(src.uid));
     if (s?.extraAttacks) n += s.extraAttacks(g, src, m);
   }
@@ -25,7 +25,7 @@ export function extraAttacksFor(g: Game, uid: string): number {
 export function hasPiercing(g: Game, uid: string): boolean {
   const m = g.card(uid);
   if (m.flags['piercing']) return true;
-  for (const src of g.faceUpFieldCards()) {
+  for (const src of g.activeFieldCards()) {
     const s = getScript(g.name(src.uid));
     if (s?.piercing?.(g, src, m)) return true;
   }
@@ -36,7 +36,10 @@ export function hasPiercing(g: Game, uid: string): boolean {
 export function attackRestriction(g: Game, attacker: string, target: string | null): string | null {
   const a = g.card(attacker);
   if (a.flags['cannotAttackThisTurn']) return `${g.name(attacker)} cannot attack this turn (${a.flags['cannotAttackReason'] ?? 'card effect'}).`;
-  for (const src of g.faceUpFieldCards()) {
+  if (a.flags['cannotAttack']) return `${g.name(attacker)} cannot attack (${a.flags['cannotAttackReason'] ?? 'card effect'}).`;
+  const nameFlag = g.player(a.controller).turnFlags[`cannotAttack:${g.name(attacker)}`];
+  if (nameFlag) return `${g.name(attacker)} cannot attack this turn (${nameFlag}).`;
+  for (const src of g.activeFieldCards()) {
     const s = getScript(g.name(src.uid));
     const r = s?.restrictAttack?.(g, src, a, target ? g.card(target) : null);
     if (r) return r;

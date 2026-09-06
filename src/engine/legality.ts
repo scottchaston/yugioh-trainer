@@ -10,6 +10,7 @@ import {
   checkDeclareAttack,
   checkEndTurn,
   checkFlipSummon,
+  checkGeminiSummon,
   checkNormalSummon,
   checkSetSpellTrap,
   checkSpecialSummonProcedure,
@@ -122,6 +123,17 @@ export function getLegalActions(state: GameState, player: PlayerId): LegalAction
         legal: !r,
         reason: r ?? undefined,
         rule: 'A face-down monster that was Set on a previous turn can be Flip Summoned: turned face-up into Attack Position. This does not use your Normal Summon.',
+        uid: m.uid,
+      });
+    }
+    if (d.monsterTypes?.includes('Gemini') && m.faceUp) {
+      const rg = checkGeminiSummon(g, player, m.uid);
+      out.push({
+        action: { type: 'GEMINI_SUMMON', player, uid: m.uid },
+        label: 'Gemini Summon (Normal Summon again for its effect)',
+        legal: !rg,
+        reason: rg ?? undefined,
+        rule: `${d.name} is a Gemini monster: on the field it is a Normal Monster with no effect. While it is face-up, you can use your Normal Summon on it again (no Tributes) to turn it into an Effect Monster with its effect.`,
         uid: m.uid,
       });
     }

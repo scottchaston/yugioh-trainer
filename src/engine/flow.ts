@@ -15,6 +15,8 @@ export interface WindowContext {
   damageStepStage?: DamageStage;
   /** Chain building: the player must respond with a card of sufficient Spell Speed. */
   chaining?: boolean;
+  /** A summon is being performed: only effects that can negate a Summon may be used. */
+  summonNegation?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -35,11 +37,16 @@ export function canActivateEffect(
   player: PlayerId,
   card: CardInstance,
   effect: EffectDef,
-  ctx: { openState: boolean; chainSpeed: 0 | 1 | 2 | 3; damageStepStage?: DamageStage; event?: GameEvent },
+  ctx: { openState: boolean; chainSpeed: 0 | 1 | 2 | 3; damageStepStage?: DamageStage; event?: GameEvent; summonNegation?: boolean },
 ): string | null {
   const d = g.def(card.uid);
   const st = g.state;
   if (st.winner !== null) return 'The Duel is over.';
+  if (ctx.summonNegation && !effect.respondsToSummon) return 'Only effects that can negate a Summon can be used at this moment.';
+  if (!ctx.summonNegation && effect.respondsToSummon && !effect.condition) return 'This effect can only be used while a monster is being Summoned.';
+  if (g.isOnField(card) && card.flags['effectsNegated'] && d.cardType === 'Monster') {
+    return `${d.name}'s effects are negated (${card.flags['negatedBy'] ?? 'card effect'}), so they cannot be activated.`;
+  }
   if (d.cardType === 'Trap' && effect.kind === 'activate' && card.zone === 'hand') {
     return `${d.name} is a Trap Card. Trap Cards must be Set on the field first, and cannot be activated until the next turn.`;
   }
@@ -47,13 +54,22 @@ export function canActivateEffect(
   const controller = card.zone === 'hand' || card.zone === 'graveyard' || card.zone === 'banished' || card.zone === 'deck' ? card.owner : card.controller;
   if (controller !== player) return `You do not control ${d.name}.`;
 
-  // Crystal Beasts in the Spell & Trap Zone are Continuous Spells, not monsters; their monster effects cannot be used.
-  if (card.asContinuousSpell && effect.kind !== 'continuousIgnition' && effect.kind !== 'activate' && d.cardType === 'Monster') {
-    return `${d.name} is currently treated as a Continuous Spell in the Spell & Trap Zone, so its monster effects cannot be used.`;
+  // Monster cards in the Spell & Trap Zone are Spell Cards there, not monsters; their monster effects cannot be used.
+  if (card.treatedAsSpell && effect.kind !== 'continuousIgnition' && effect.kind !== 'activate' && d.cardType === 'Monster') {
+    return `${d.name} is currently treated as ${card.treatedAsSpell === 'equip' ? 'an Equip Spell' : 'a Continuous Spell'} in the Spell & Trap Zone, so its monster effects cannot be used.`;
+  }
+  if (!card.treatedAsSpell && effect.kind === 'continuousIgnition' && d.cardType === 'Monster') {
+    return `${d.name} is not in the Spell & Trap Zone right now.`;
+  }
+  // Continuous effects of other cards that forbid this activation (e.g. Mirage Dragon).
+  for (const src of g.activeFieldCards()) {
+    const r = getScript(g.name(src.uid))?.preventActivation?.(g, src, card, effect, player);
+    if (r) return r;
   }
 
   // Spell speed 1 (Normal Spells, ignition effects) can only be used at an open game state in your own Main Phase.
-  if (effect.spellSpeed === 1) {
+  // (Trigger effects are Spell Speed 1 too, but they activate in response to their trigger instead.)
+  if (effect.spellSpeed === 1 && effect.kind !== 'trigger') {
     if (!ctx.openState || ctx.chainSpeed > 0) {
       return `${d.name}'s effect is Spell Speed 1, which cannot be activated in response to something or during a chain. Spell Speed 1 effects (Normal Spells and most monster effects) can only be activated at an open moment in your own Main Phase.`;
     }
@@ -113,6 +129,9 @@ export function canActivateEffect(
   if (effect.oncePerTurn && g.effectUses(player, g.effectUseKey(card.uid, effect.id, false)) > 0) {
     return `This effect of ${d.name} can only be used once per turn, and it was already used this turn.`;
   }
+  if (effect.oncePerTurnGroup && g.effectUses(player, `group:${d.name}:${effect.oncePerTurnGroup}`) > 0) {
+    return `You can only use 1 effect of "${d.name}" per turn, and you already did this turn.`;
+  }
 
   if (effect.condition) {
     const r = effect.condition(g, card, {
@@ -157,6 +176,7 @@ export function activatableFastEffects(g: Game, player: PlayerId, ctx: WindowCon
         openState: false,
         chainSpeed: chainSpeed(g),
         damageStepStage: ctx.damageStepStage,
+        summonNegation: ctx.summonNegation,
       });
       if (reason) continue;
       out.push({
@@ -204,7 +224,7 @@ export function* activateEffect(
   player: PlayerId,
   uid: string,
   effectId: string,
-  extra: { event?: GameEvent; damageStepStage?: DamageStage; openState: boolean },
+  extra: { event?: GameEvent; damageStepStage?: DamageStage; openState: boolean; summonNegation?: boolean },
 ): Process<ChainLink> {
   const card = g.card(uid);
   const d = g.def(uid);
@@ -214,6 +234,7 @@ export function* activateEffect(
     chainSpeed: chainSpeed(g),
     damageStepStage: extra.damageStepStage,
     event: extra.event,
+    summonNegation: extra.summonNegation,
   });
   if (reason) throw new Error(reason);
 
@@ -237,14 +258,16 @@ export function* activateEffect(
     } else {
       card.faceUp = true;
     }
-    if (d.property === 'Normal' || d.property === 'Quick-Play' || d.property === 'Ritual') sendToGYAfter = true;
-    if (d.cardType === 'Trap' && d.property === 'Normal') sendToGYAfter = true;
+    if (d.cardType === 'Spell' && (d.property === 'Normal' || d.property === 'Quick-Play' || d.property === 'Ritual')) sendToGYAfter = true;
+    if (d.cardType === 'Trap' && d.property !== 'Continuous') sendToGYAfter = true;
     g.log(`${g.playerName(player)} activates ${d.name}${linkNo > 1 ? ` (Chain Link ${linkNo})` : ''}.`, linkNo > 1 ? 'chain' : 'action');
+    g.fx({ type: 'activate', uid, player, what: d.cardType === 'Trap' ? 'trap' : 'spell' });
   } else {
     g.log(
       `${g.playerName(player)} activates the effect of ${d.name}${card.zone === 'hand' ? ' from the hand' : card.zone === 'graveyard' ? ' in the Graveyard' : ''}${linkNo > 1 ? ` (Chain Link ${linkNo})` : ''}.`,
       linkNo > 1 ? 'chain' : 'effect',
     );
+    g.fx({ type: 'activate', uid, player, what: d.cardType === 'Monster' ? 'monster' : d.cardType === 'Trap' ? 'trap' : 'spell' });
   }
 
   const ctx: ActivationContext = {
@@ -258,6 +281,7 @@ export function* activateEffect(
 
   if (effect.hardOncePerTurn) g.recordEffectUse(player, g.effectUseKey(uid, effect.id, true));
   if (effect.oncePerTurn) g.recordEffectUse(player, g.effectUseKey(uid, effect.id, false));
+  if (effect.oncePerTurnGroup) g.recordEffectUse(player, `group:${d.name}:${effect.oncePerTurnGroup}`);
 
   g.logIndent++;
   try {
@@ -265,12 +289,14 @@ export function* activateEffect(
     if (effect.targets) {
       ctx.targets = yield* effect.targets(g, card, ctx);
       if (ctx.targets.length) g.log(`Target${ctx.targets.length > 1 ? 's' : ''}: ${ctx.targets.map((t) => g.name(t)).join(', ')}.`, 'effect');
+      for (const t of ctx.targets) g.emit({ type: 'targeted', uid: t, source: uid, player });
     }
   } finally {
     g.logIndent--;
   }
 
   if (ctx.data['keepOnField']) sendToGYAfter = false;
+  if (extra.event) ctx.data['__event'] = extra.event;
   const link: ChainLink = {
     uid,
     effectId,
@@ -285,6 +311,67 @@ export function* activateEffect(
   g.state.chain.push(link);
   g.emit({ type: 'activated', uid, effectId, player });
   return link;
+}
+
+/** Negate the activation of chain link `index` (0-based) and, for Spell/Trap cards, destroy the card. */
+export function* negateChainLink(g: Game, index: number, source: string, destroy: boolean): Process<void> {
+  const link = g.state.chain[index];
+  if (!link) return;
+  link.negated = true;
+  g.log(`The activation of ${g.name(link.uid)} (Chain Link ${index + 1}) is negated by ${g.name(source)}.`, 'effect');
+  g.fx({ type: 'negate', uid: link.uid });
+  if (destroy) {
+    const c = g.card(link.uid);
+    if (g.isOnField(c)) yield* g.destroyByEffect([link.uid], source);
+  }
+}
+
+/**
+ * Window that opens while a monster is being Summoned, in which cards like Champion's Vigilance can negate the Summon.
+ * Returns false if the Summon was negated (the monster has been destroyed).
+ */
+export function* summonWindow(g: Game, uid: string, player: PlayerId, method: 'normal' | 'special' | 'flip', how: string): Process<boolean> {
+  // A Summon performed while a chain is resolving (e.g. by Monster Reborn) cannot be negated by
+  // "when a monster would be Summoned" cards, so no window opens.
+  if (g.state.resolvingChain) return true;
+  g.state.summonAttempt = { uid, player, method, how, negated: false };
+  g.emit({ type: 'summonAttempt', uid, player, method });
+  // Only negation effects are allowed here, so no triggers are processed yet.
+  const opponent = g.opponent(player);
+  const options = activatableFastEffects(g, opponent, { description: 'summon', summonNegation: true });
+  if (options.length > 0) {
+    g.state.windowOpen = true;
+    const answer = yield {
+      type: 'fastEffects',
+      player: opponent,
+      title: `Negate the Summon of ${g.name(uid)}?`,
+      description: `${g.playerName(player)} is ${method === 'normal' ? 'Normal Summoning' : method === 'flip' ? 'Flip Summoning' : 'Special Summoning'} ${g.name(uid)}. You can negate the Summon now, before it is completed.`,
+      options,
+      context: `${g.name(uid)} is being Summoned`,
+      windowKind: 'summon',
+    };
+    if (answer.activation) {
+      const opt = options.find((o) => o.uid === answer.activation!.uid && o.effectId === answer.activation!.effectId);
+      if (!opt) throw new Error('Invalid response choice');
+      yield* activateEffect(g, opponent, opt.uid, opt.effectId, { openState: false, summonNegation: true });
+      yield* buildAndResolveChain(g, { description: `${g.name(uid)} is being Summoned`, kind: 'chain' });
+    }
+    g.state.windowOpen = false;
+  }
+  const attempt = g.state.summonAttempt;
+  g.state.summonAttempt = null;
+  if (attempt?.negated) {
+    const c = g.state.cards[uid];
+    if (c && g.isMonsterOnField(c)) {
+      g.log(`The Summon of ${g.name(uid)} is negated, and ${g.name(uid)} is destroyed.`, 'rule');
+      g.fx({ type: 'destroy', uid, by: 'effect' });
+      g.emit({ type: 'destroyed', uid, reason: 'effect' });
+      g.sendToGraveyard(uid, 'destroyedEffect');
+    }
+    g.emit({ type: 'summonNegated', uid });
+    return false;
+  }
+  return true;
 }
 
 /** After a chain link was added: let players respond until both pass, then resolve the chain. */
@@ -351,6 +438,7 @@ export function* resolveChain(g: Game): Process<void> {
           data: link.data,
           targets: link.targets,
           damageStepStage: null,
+          event: link.data['__event'] as GameEvent | undefined,
         };
         yield* effect.resolve(g, card, ctx);
       }
@@ -395,7 +483,8 @@ function collectTriggers(g: Game, events: GameEvent[]): TriggerCandidate[] {
       for (const effect of script.effects) {
         if (effect.kind !== 'trigger' || !effect.trigger) continue;
         if (!effect.from.includes(card.zone)) continue;
-        if (card.asContinuousSpell && g.def(card.uid).cardType === 'Monster') continue;
+        if (card.treatedAsSpell && g.def(card.uid).cardType === 'Monster') continue;
+        if (g.isOnField(card) && card.flags['effectsNegated'] && g.def(card.uid).cardType === 'Monster') continue;
         for (const ev of events) {
           if (!effect.trigger(g, card, ev)) continue;
           // "When ... you can" optional effects miss the timing if the event was not the last thing to happen.
@@ -471,6 +560,9 @@ export function* processTriggers(g: Game): Process<void> {
  */
 export function* fastEffectWindow(g: Game, ctx: WindowContext, order: PlayerId[] = [g.state.turnPlayer, g.opponent(g.state.turnPlayer)]): Process<void> {
   yield* processTriggers(g);
+  // Cards that respond to "when X happens" (e.g. Damage Condenser) look at the events of this moment.
+  g.state.windowEvents = g.state.recentEvents;
+  g.state.recentEvents = [];
   let guard = 0;
   while (guard++ < 30) {
     let activated = false;

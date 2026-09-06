@@ -4,11 +4,14 @@
  */
 import { getCard, isExtraDeckMonster, type CardDefinition } from '../cards';
 import { getScript } from './scripts';
+import { summonWindow } from './flow';
 import type { Process } from './scripts';
 import { shuffleWithState } from './rng';
 import type {
   Answer,
   CardInstance,
+  FxBody,
+  FxEvent,
   GameEvent,
   GameState,
   LogKind,
@@ -83,6 +86,14 @@ export class Game {
   emit(e: GameEvent): void {
     if (this.state.resolvingChain) e.linkIndex = this.state.resolvingLinkIndex;
     this.state.pendingEvents.push(e);
+    this.state.recentEvents.push(e);
+  }
+
+  /** Record a visual effect for the interface (never affects rules). */
+  fx(e: FxBody): void {
+    const ev = { ...e, id: this.state.nextFxId++ } as FxEvent;
+    this.state.fx.push(ev);
+    if (this.state.fx.length > 60) this.state.fx.splice(0, this.state.fx.length - 60);
   }
 
   // ------------------------------------------------------------- queries
@@ -114,6 +125,25 @@ export class Game {
       if (f && f.faceUp) out.push(f);
     }
     return out;
+  }
+  /** Face-up field cards whose effects are not negated (sources of continuous effects). */
+  activeFieldCards(): CardInstance[] {
+    return this.faceUpFieldCards().filter((c) => !c.flags['effectsNegated']);
+  }
+  /**
+   * Is this card currently a Normal Monster? True for Normal Monsters, and for Gemini monsters
+   * that are on the field without their effect, or in the Graveyard.
+   */
+  isNormalMonster(uid: string): boolean {
+    const c = this.card(uid);
+    const d = this.def(uid);
+    if (d.cardType !== 'Monster') return false;
+    if (d.monsterTypes?.includes('Normal')) return true;
+    if (d.monsterTypes?.includes('Gemini')) {
+      if (this.isMonsterOnField(c)) return !c.geminiEffectActive;
+      if (c.zone === 'graveyard') return true;
+    }
+    return false;
   }
   hand(p: PlayerId): CardInstance[] {
     return this.player(p).hand.map((u) => this.card(u));
@@ -160,7 +190,7 @@ export class Game {
       def += m.def;
     }
     if (this.isMonsterOnField(c)) {
-      for (const src of this.faceUpFieldCards()) {
+      for (const src of this.activeFieldCards()) {
         const s = getScript(this.name(src.uid));
         if (s?.modifyStats) {
           const m = s.modifyStats(this, src, c);
@@ -176,6 +206,30 @@ export class Game {
 
   addStatMod(uid: string, atk: number, def: number, until: 'endOfTurn' | 'endOfDamageStep' | 'permanent', source: string): void {
     this.card(uid).statMods.push({ atk, def, until, source });
+    this.fx({ type: 'boost', uid, atk, def });
+  }
+
+  /** Place a monster card in the Spell & Trap Zone, treated as a Spell Card there. */
+  *placeMonsterAsSpell(uid: string, player: PlayerId, kind: 'continuous' | 'equip'): Process<boolean> {
+    const free = this.freeSpellTrapZones(player);
+    if (free.length === 0) {
+      this.log(`${this.playerName(player)} has no free Spell & Trap Zone for ${this.name(uid)}.`, 'rule');
+      return false;
+    }
+    const zone = yield* this.chooseSpellTrapZone(player, `Choose a Spell & Trap Zone for ${this.name(uid)}`);
+    const c = this.card(uid);
+    if (this.isOnField(c)) {
+      // Leaving the Monster Zone: clean up equips etc. but keep the card on the field.
+      this.detach(c);
+      this.leaveFieldCleanup(c, 'spellTrap');
+    } else {
+      this.detach(c);
+    }
+    this.placeSpellTrap(uid, player, zone, true);
+    c.treatedAsSpell = kind;
+    this.fx({ type: 'toSpellZone', uid });
+    this.emit({ type: 'placedInSpellTrapZone', uid, player });
+    return true;
   }
 
   expireStatMods(until: 'endOfTurn' | 'endOfDamageStep'): void {
@@ -327,12 +381,13 @@ export class Game {
     c.positionChangedThisTurn = false;
     c.attacksDeclaredThisTurn = 0;
     c.geminiEffectActive = false;
-    c.asContinuousSpell = false;
+    c.treatedAsSpell = null;
     c.equippedTo = null;
     c.statMods = [];
     c.counters = {};
     c.flags = {};
     c.controller = c.owner;
+    // Links to Continuous Traps are resolved by the trap scripts (they see the leftField event).
     this.emit({ type: 'leftField', uid: c.uid, to });
     if (this.state.battle) {
       const b = this.state.battle;
@@ -343,6 +398,7 @@ export class Game {
 
   sendToGraveyard(uid: string, reason: SendReason, source?: string): void {
     const c = this.card(uid);
+    const wasFaceUp = c.faceUp;
     const from = this.detach(c);
     this.leaveFieldCleanup(c, 'graveyard');
     c.zone = 'graveyard';
@@ -350,7 +406,7 @@ export class Game {
     c.faceUp = true;
     c.properlySummoned = false;
     this.player(c.owner).graveyard.push(uid);
-    this.emit({ type: 'toGraveyard', uid, from, reason, source });
+    this.emit({ type: 'toGraveyard', uid, from, reason, source, wasFaceUp });
   }
 
   banish(uid: string, faceUp = true): void {
@@ -362,6 +418,7 @@ export class Game {
     c.faceUp = faceUp;
     c.properlySummoned = false;
     this.player(c.owner).banished.push(uid);
+    this.fx({ type: 'banish', uid });
     this.emit({ type: 'banished', uid, from });
   }
 
@@ -372,6 +429,7 @@ export class Game {
       this.toDeck(uid, 'top');
       return;
     }
+    if (this.isOnField(c)) this.fx({ type: 'bounce', uid });
     this.detach(c);
     this.leaveFieldCleanup(c, 'hand');
     c.zone = 'hand';
@@ -389,6 +447,7 @@ export class Game {
     c.faceUp = true;
     const st = this.stats(uid);
     this.log(`${this.name(uid)} is flipped face-up (ATK ${st.atk} / DEF ${st.def}).`, 'effect');
+    this.fx({ type: 'flip', uid });
     this.emit({ type: 'flipped', uid, how: 'effect' });
   }
 
@@ -428,6 +487,7 @@ export class Game {
     c.properlySummoned = keep.proper;
     this.player(to).monsterZones[zone] = uid;
     this.log(`${this.playerName(to)} takes control of ${this.name(uid)}.`, 'effect');
+    this.fx({ type: 'control', uid });
     this.emit({ type: 'controlChanged', uid, to });
     return true;
   }
@@ -468,8 +528,25 @@ export class Game {
     if (opts.proper) c.properlySummoned = true;
     const st = this.stats(uid);
     this.log(`${d.name} is Special Summoned ${opts.how} (ATK ${st.atk} / DEF ${st.def}) in ${faceUp ? '' : 'face-down '}${position === 'ATK' ? 'Attack' : 'Defense'} Position.`, 'effect');
+    this.fx({ type: 'summon', uid, method: 'special' });
+    if (faceUp) {
+      const ok = yield* summonWindow(this, uid, player, 'special', opts.how);
+      if (!ok) return false;
+    }
     this.emit({ type: 'summon', uid, player, method: 'special', how: opts.how });
     return true;
+  }
+
+  // ------------------------------------------------------------------ links
+  /** Link a Continuous Trap to the monster it summoned/affects. */
+  link(trapUid: string, monsterUid: string): void {
+    this.state.links[trapUid] = monsterUid;
+  }
+  linkedMonster(trapUid: string): string | null {
+    return this.state.links[trapUid] ?? null;
+  }
+  unlink(trapUid: string): void {
+    delete this.state.links[trapUid];
   }
 
   // ------------------------------------------------------------- scheduling
@@ -519,6 +596,7 @@ export class Game {
       drawn.push(uid);
     }
     this.log(`${this.playerName(p)} ${reason} ${n} card${n === 1 ? '' : 's'}.`, 'action');
+    this.fx({ type: 'draw', player: p, count: n });
     this.emit({ type: 'drew', player: p, uids: drawn });
     return drawn;
   }
@@ -537,8 +615,8 @@ export class Game {
     c.setThisTurn = false;
     c.positionChangedThisTurn = false;
     c.attacksDeclaredThisTurn = 0;
-    c.asContinuousSpell = false;
     c.statMods = [];
+    c.treatedAsSpell = null;
     this.player(controller).monsterZones[index] = uid;
   }
 
@@ -587,6 +665,7 @@ export class Game {
       const replaced = yield* this.tryDestructionReplacement(c, 'effect');
       if (replaced) continue;
       this.log(`${this.name(uid)} is destroyed${source ? ` by ${this.name(source)}` : ''} and sent to the Graveyard.`, 'effect');
+      this.fx({ type: 'destroy', uid, by: 'effect' });
       this.emit({ type: 'destroyed', uid, reason: 'effect', source: source ?? undefined });
       this.sendToGraveyard(uid, 'destroyedEffect', source ?? undefined);
       destroyed.push(uid);
@@ -604,13 +683,20 @@ export class Game {
     const replaced = yield* this.tryDestructionReplacement(c, 'battle');
     if (replaced) return true;
     this.log(`${this.name(uid)} is destroyed by battle and sent to the Graveyard.`, 'battle');
+    this.fx({ type: 'destroy', uid, by: 'battle' });
     this.emit({ type: 'destroyed', uid, reason: 'battle', source: attacker });
     this.sendToGraveyard(uid, 'destroyedBattle', attacker);
     return true;
   }
 
   private *tryDestructionReplacement(c: CardInstance, reason: 'battle' | 'effect'): Process<boolean> {
-    if (!this.isMonsterOnField(c)) return false;
+    for (const src of this.activeFieldCards()) {
+      const s = getScript(this.name(src.uid));
+      if (s?.replaceDestruction && src.uid !== c.uid) {
+        if (yield* s.replaceDestruction(this, src, c, reason)) return true;
+      }
+    }
+    if (!this.isMonsterOnField(c) || c.flags['effectsNegated']) return false;
     const s = getScript(this.name(c.uid));
     if (s?.onWouldBeDestroyedInMonsterZone) {
       return yield* s.onWouldBeDestroyedInMonsterZone(this, c, reason);
@@ -619,7 +705,7 @@ export class Game {
   }
 
   effectDestructionProtection(c: CardInstance): string | null {
-    for (const src of this.faceUpFieldCards()) {
+    for (const src of this.activeFieldCards()) {
       const s = getScript(this.name(src.uid));
       const r = s?.preventEffectDestruction?.(this, src, c);
       if (r) return r;
@@ -630,7 +716,7 @@ export class Game {
   }
 
   battleDestructionProtection(c: CardInstance): string | null {
-    for (const src of this.faceUpFieldCards()) {
+    for (const src of this.activeFieldCards()) {
       const s = getScript(this.name(src.uid));
       const r = s?.preventBattleDestruction?.(this, src, c);
       if (r) return r;
@@ -640,7 +726,7 @@ export class Game {
 
   /** Can `target` be targeted by an effect controlled by `sourcePlayer`? */
   targetingProtection(target: CardInstance, sourcePlayer: PlayerId): string | null {
-    for (const src of this.faceUpFieldCards()) {
+    for (const src of this.activeFieldCards()) {
       const s = getScript(this.name(src.uid));
       const r = s?.preventTargeting?.(this, src, target, sourcePlayer);
       if (r) return r;
@@ -657,6 +743,8 @@ export class Game {
     pl.lp = Math.max(0, pl.lp + delta);
     if (delta < 0) this.log(`${this.playerName(p)} takes ${-delta} damage (${reason}). LP: ${before} → ${pl.lp}`, 'lp');
     else this.log(`${this.playerName(p)} gains ${delta} LP (${reason}). LP: ${before} → ${pl.lp}`, 'lp');
+    if (delta < 0) this.fx({ type: 'damage', player: p, amount: -delta });
+    else this.fx({ type: 'heal', player: p, amount: delta });
     this.emit({ type: 'lpChange', player: p, amount: delta, reason });
     if (pl.lp <= 0) {
       this.log(`${this.playerName(p)}'s Life Points reached 0. ${this.playerName(this.opponent(p))} wins the Duel!`, 'system');
@@ -669,6 +757,7 @@ export class Game {
     const before = pl.lp;
     pl.lp = Math.max(0, pl.lp - amount);
     this.log(`${this.playerName(p)} pays ${amount} LP (${reason}). LP: ${before} → ${pl.lp}`, 'lp');
+    this.fx({ type: 'damage', player: p, amount });
     this.emit({ type: 'lpChange', player: p, amount: -amount, reason });
     if (pl.lp <= 0) {
       throw new GameOver(this.opponent(p), `${this.playerName(p)}'s Life Points reached 0.`);

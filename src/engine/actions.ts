@@ -6,7 +6,7 @@
 import { isExtraDeckMonster } from '../cards';
 import { Game, ActionCancelled } from './game';
 import { getScript, type Process } from './scripts';
-import { activateFromOpenState, afterAction, fastEffectWindow, processTriggers, runScheduled } from './flow';
+import { activateFromOpenState, afterAction, fastEffectWindow, processTriggers, runScheduled, summonWindow } from './flow';
 import { attackRestriction, damageStep, extraAttacksFor, tributesRequired } from './battle';
 import type { Action, PlayerId } from './types';
 import { PHASE_LABEL } from './types';
@@ -48,12 +48,14 @@ export function checkNormalSummon(g: Game, player: PlayerId, uid: string, asSet:
   }
   const level = d.level ?? 0;
   const tributes = tributesRequired(level);
-  const monsters = g.fieldMonsters(player);
+  const forced = forcedTribute(g, player);
+  const monsters = [...g.fieldMonsters(player), ...(forced ? [g.card(forced)] : [])];
   if (tributes > 0) {
     const available = monsters.reduce((n, m) => n + tributeValue(g, m.uid, uid), 0);
     if (available < tributes) {
       return `${d.name} is Level ${level}, so it needs ${tributes} Tribute${tributes > 1 ? 's' : ''} to be ${verb}ed (Level 5-6 monsters need 1 Tribute, Level 7 or higher need 2). You only control ${monsters.length} monster${monsters.length === 1 ? '' : 's'} to Tribute.`;
     }
+    if (g.fieldMonsters(player).length === 5 && !forced && tributes === 0) return 'All five of your Main Monster Zones are full.';
   } else if (g.freeMonsterZones(player).length === 0) {
     return 'All five of your Main Monster Zones are full. You need an empty Monster Zone.';
   }
@@ -63,9 +65,17 @@ export function checkNormalSummon(g: Game, player: PlayerId, uid: string, asSet:
 /** How many Tributes a monster counts as when Tributing for `forUid` (Kaiser Sea Horse style effects). */
 export function tributeValue(g: Game, monsterUid: string, forUid: string): number {
   const s = getScript(g.name(monsterUid));
-  const extra = (s as { tributeValue?: (g: Game, self: unknown, forUid: string) => number } | undefined)?.tributeValue;
-  if (extra) return Math.max(1, extra(g, g.card(monsterUid), forUid));
+  const m = g.card(monsterUid);
+  if (s?.tributeValue && !m.flags['effectsNegated']) return Math.max(1, s.tributeValue(g, m, forUid));
   return 1;
+}
+
+/** Monster the player is forced to Tribute this turn (Soul Exchange), if it is still on the field. */
+export function forcedTribute(g: Game, player: PlayerId): string | null {
+  const uid = g.player(player).turnFlags['mustTribute'] as string | undefined;
+  if (!uid) return null;
+  const c = g.state.cards[uid];
+  return c && g.isMonsterOnField(c) ? uid : null;
 }
 
 export function* normalSummonOrSet(g: Game, player: PlayerId, uid: string, asSet: boolean): Process<void> {
@@ -76,23 +86,34 @@ export function* normalSummonOrSet(g: Game, player: PlayerId, uid: string, asSet
   const tributes = tributesRequired(level);
 
   if (tributes > 0) {
-    const monsters = g.fieldMonsters(player).map((m) => m.uid);
+    const forced = forcedTribute(g, player);
+    const monsters = [...g.fieldMonsters(player).map((m) => m.uid), ...(forced ? [forced] : [])];
     let chosen: string[] = [];
-    // Allow fewer selected monsters when one counts as 2 Tributes.
-    const anyDouble = monsters.some((m) => tributeValue(g, m, uid) >= 2);
-    chosen = yield* g.selectCards(
-      player,
-      `Choose ${tributes} monster${tributes > 1 ? 's' : ''} to Tribute for ${d.name}`,
-      monsters,
-      anyDouble ? 1 : tributes,
-      tributes,
-      `${d.name} is Level ${level}. Tribute Summoning a Level ${level >= 7 ? '7 or higher' : '5 or 6'} monster requires ${tributes} Tribute${tributes > 1 ? 's' : ''}.`,
-      true,
-    );
-    const value = chosen.reduce((n, m) => n + tributeValue(g, m, uid), 0);
-    if (value < tributes) throw new Error(`You must Tribute monsters worth ${tributes} Tributes.`);
+    if (forced) {
+      g.log(`Because of Soul Exchange, ${g.name(forced)} must be used as a Tribute.`, 'rule');
+      chosen.push(forced);
+    }
+    const remaining = tributes - chosen.reduce((n, m) => n + tributeValue(g, m, uid), 0);
+    if (remaining > 0) {
+      const pool = monsters.filter((m) => !chosen.includes(m));
+      // A monster may count as 2 Tributes (Kaiser Sea Horse), so fewer cards may be enough.
+      const anyDouble = pool.some((m) => tributeValue(g, m, uid) >= 2);
+      const picked = yield* g.selectCards(
+        player,
+        `Choose ${remaining} monster${remaining > 1 ? 's' : ''} to Tribute for ${d.name}`,
+        pool,
+        anyDouble ? 1 : remaining,
+        remaining,
+        `${d.name} is Level ${level}. Tribute Summoning a Level ${level >= 7 ? '7 or higher' : '5 or 6'} monster requires ${tributes} Tribute${tributes > 1 ? 's' : ''}.`,
+        true,
+      );
+      const value = picked.reduce((n, m) => n + tributeValue(g, m, uid), 0);
+      if (value < remaining) throw new Error(`You must Tribute monsters worth ${remaining} more Tribute${remaining > 1 ? 's' : ''}.`);
+      chosen = chosen.concat(picked);
+    }
     for (const t of chosen) {
-      g.log(`${g.name(t)} is Tributed.`, 'action');
+      const v = tributeValue(g, t, uid);
+      g.log(`${g.name(t)} is Tributed${v > 1 && chosen.length < tributes ? ` (it counts as ${v} Tributes)` : ''}.`, 'action');
       g.sendToGraveyard(t, 'tribute');
     }
   }
@@ -110,9 +131,53 @@ export function* normalSummonOrSet(g: Game, player: PlayerId, uid: string, asSet
     c.summonedThisTurn = true;
     const st = g.stats(uid);
     g.log(`${g.playerName(player)} ${tributes > 0 ? 'Tribute Summons' : 'Normal Summons'} ${d.name} (ATK ${st.atk} / DEF ${st.def}) in Attack Position.`, 'action');
+    g.fx({ type: 'summon', uid, method: 'normal' });
+    const ok = yield* summonWindow(g, uid, player, 'normal', tributes > 0 ? 'tribute' : 'normal');
+    if (!ok) {
+      yield* afterAction(g, `The Summon of ${d.name} was negated`);
+      return;
+    }
     g.emit({ type: 'summon', uid, player, method: 'normal', how: tributes > 0 ? 'tribute' : 'normal' });
     yield* afterAction(g, `${d.name} was Normal Summoned`);
   }
+}
+
+// ---------------------------------------------------------------------------
+// Gemini Summon (Normal Summoning a face-up Gemini monster again to give it its effect)
+// ---------------------------------------------------------------------------
+
+export function checkGeminiSummon(g: Game, player: PlayerId, uid: string): string | null {
+  const base = checkOpenMainPhase(g, player);
+  if (base) return base;
+  const c = g.card(uid);
+  const d = g.def(uid);
+  if (!d.monsterTypes?.includes('Gemini')) return `${d.name} is not a Gemini monster.`;
+  if (!g.isMonsterOnField(c) || c.controller !== player) return `${d.name} is not a monster you control on the field.`;
+  if (!c.faceUp) return `${d.name} must be face-up to be Gemini Summoned.`;
+  if (c.geminiEffectActive) return `${d.name} already has its effect (it was Gemini Summoned).`;
+  const pl = g.player(player);
+  if (pl.normalSummonsUsed >= pl.normalSummonsAllowed) {
+    return `Gemini Summoning uses your Normal Summon for the turn, and you have already Normal Summoned or Set this turn.`;
+  }
+  return null;
+}
+
+export function* geminiSummon(g: Game, player: PlayerId, uid: string): Process<void> {
+  const reason = checkGeminiSummon(g, player, uid);
+  if (reason) throw new Error(reason);
+  const c = g.card(uid);
+  g.player(player).normalSummonsUsed++;
+  c.geminiEffectActive = true;
+  c.summonedThisTurn = true;
+  g.log(`${g.playerName(player)} Normal Summons the face-up ${g.name(uid)} again (Gemini Summon). It is now an Effect Monster with its effect.`, 'action');
+  g.fx({ type: 'summon', uid, method: 'normal' });
+  const ok = yield* summonWindow(g, uid, player, 'normal', 'gemini');
+  if (!ok) {
+    yield* afterAction(g, `The Gemini Summon of ${g.name(uid)} was negated`);
+    return;
+  }
+  g.emit({ type: 'summon', uid, player, method: 'normal', how: 'gemini' });
+  yield* afterAction(g, `${g.name(uid)} was Gemini Summoned`);
 }
 
 // ---------------------------------------------------------------------------
@@ -141,6 +206,13 @@ export function* flipSummon(g: Game, player: PlayerId, uid: string): Process<voi
   c.positionChangedThisTurn = true;
   const st = g.stats(uid);
   g.log(`${g.playerName(player)} Flip Summons ${g.name(uid)} (ATK ${st.atk} / DEF ${st.def}) into Attack Position.`, 'action');
+  g.fx({ type: 'flip', uid });
+  const ok = yield* summonWindow(g, uid, player, 'flip', 'flipSummon');
+  if (!ok) {
+    yield* afterAction(g, `The Flip Summon of ${g.name(uid)} was negated`);
+    return;
+  }
+  g.emit({ type: 'flipped', uid, how: 'effect' });
   g.emit({ type: 'summon', uid, player, method: 'flip', how: 'flipSummon' });
   yield* afterAction(g, `${g.name(uid)} was Flip Summoned`);
 }
@@ -273,6 +345,7 @@ export function* declareAttack(g: Game, player: PlayerId, uid: string): Process<
   } else {
     g.log(`${g.name(uid)} declares a direct attack!`, 'battle');
   }
+  g.fx({ type: 'attack', attacker: uid, target, defender: opponent });
   g.emit({ type: 'attackDeclared', attacker: uid, target });
 
   // Response window for the attack declaration (turn player has priority, then the opponent).
@@ -347,7 +420,7 @@ export function checkToBattlePhase(g: Game, player: PlayerId): string | null {
   if (g.state.turnPlayer !== player) return 'It is not your turn.';
   if (g.state.phase !== 'MAIN1') return `You can only enter the Battle Phase from Main Phase 1 (it is currently the ${PHASE_LABEL[g.state.phase]}). After the Battle Phase comes Main Phase 2, then the End Phase.`;
   if (g.state.turn === 1) return 'The player who goes first cannot conduct a Battle Phase during the first turn of the Duel.';
-  if (g.player(player).effectUses['rule:skipBattlePhase']) return 'A card effect prevents you from conducting your Battle Phase this turn.';
+  if (g.player(player).turnFlags['skipBattlePhase']) return `You cannot conduct your Battle Phase this turn (${g.player(player).turnFlags['skipBattlePhase']}).`;
   return null;
 }
 
@@ -444,7 +517,10 @@ export function* startTurn(g: Game, player: PlayerId): Process<void> {
   const pl = g.player(player);
   pl.normalSummonsUsed = 0;
   pl.normalSummonsAllowed = 1;
-  for (const p of [0, 1] as PlayerId[]) g.player(p).effectUses = {};
+  for (const p of [0, 1] as PlayerId[]) {
+    g.player(p).effectUses = {};
+    g.player(p).turnFlags = {};
+  }
   for (const c of Object.values(g.state.cards)) {
     c.summonedThisTurn = false;
     c.setThisTurn = false;
@@ -533,6 +609,9 @@ export function* runAction(g: Game, action: Action): Process<void> {
       return;
     case 'SPECIAL_SUMMON':
       yield* specialSummonProcedure(g, action.player, action.uid, action.procId);
+      return;
+    case 'GEMINI_SUMMON':
+      yield* geminiSummon(g, action.player, action.uid);
       return;
     case 'DECLARE_ATTACK':
       yield* declareAttack(g, action.player, action.uid);

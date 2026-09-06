@@ -33,7 +33,7 @@ function blankInstance(uid: string, cardId: string, owner: PlayerId, zone: 'deck
     positionChangedThisTurn: false,
     attacksDeclaredThisTurn: 0,
     geminiEffectActive: false,
-    asContinuousSpell: false,
+    treatedAsSpell: null,
     equippedTo: null,
     properlySummoned: false,
     statMods: [],
@@ -85,6 +85,7 @@ export function createGame(config: GameConfig): GameState {
       normalSummonsUsed: 0,
       normalSummonsAllowed: 1,
       effectUses: {},
+      turnFlags: {},
     };
     return ps;
   }) as [PlayerState, PlayerState];
@@ -110,5 +111,11 @@ export function createGame(config: GameConfig): GameState {
     started: false,
     scheduled: [],
     nextScheduledId: 1,
+    links: {},
+    summonAttempt: null,
+    windowEvents: [],
+    recentEvents: [],
+    fx: [],
+    nextFxId: 1,
   };
 }

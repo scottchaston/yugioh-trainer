@@ -91,7 +91,7 @@ export function put(
   player: PlayerId,
   name: string,
   zone: 'hand' | 'monster' | 'spellTrap' | 'field' | 'graveyard' | 'deckTop' | 'banished' | 'extra',
-  opts: { faceUp?: boolean; position?: 'ATK' | 'DEF'; index?: number; turnEnteredField?: number; setThisTurn?: boolean; asContinuousSpell?: boolean } = {},
+  opts: { faceUp?: boolean; position?: 'ATK' | 'DEF'; index?: number; turnEnteredField?: number; setThisTurn?: boolean; treatedAsSpell?: 'continuous' | 'equip' | null } = {},
 ): string {
   const s = tg.state;
   const def = getCardByName(name);
@@ -116,7 +116,7 @@ export function put(
   c.turnEnteredField = opts.turnEnteredField ?? (s.turn > 1 ? s.turn - 1 : 0);
   c.setThisTurn = opts.setThisTurn ?? false;
   c.summonedThisTurn = false;
-  c.asContinuousSpell = opts.asContinuousSpell ?? false;
+  c.treatedAsSpell = opts.treatedAsSpell ?? null;
   switch (zone) {
     case 'hand':
       c.zone = 'hand';
@@ -188,6 +188,11 @@ export function endTurn(tg: TestGame, ...answers: Answer[]): void {
     }
     if (r.prompt?.type === 'selectCards' && r.prompt.title.startsWith('Discard')) {
       all.push({ cards: r.prompt.cards.slice(0, r.prompt.min) });
+      continue;
+    }
+    // Optional trigger effects ("Activate X?") are declined unless the test answers them.
+    if (r.prompt?.type === 'selectOption' && r.prompt.title.startsWith('Activate ')) {
+      all.push({ option: 'no' });
       continue;
     }
     throw new Error(`END_TURN stopped at prompt: ${JSON.stringify(r.prompt)}`);

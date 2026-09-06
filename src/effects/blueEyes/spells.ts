@@ -1,7 +1,7 @@
 import { hasType } from '../../cards';
 import { registerScript, registerScheduledHandler } from '../../engine/scripts';
 import type { PlayerId } from '../../engine/types';
-import { SPELL_FROM, def, deckCards, graveyardCards, handCards, isDragon, isNormalMonster, targetableMonsters, validTargets } from '../helpers';
+import { SPELL_FROM, def, deckCards, graveyardCards, handCards, isDragon, targetableMonsters, validTargets } from '../helpers';
 
 // ---------------------------------------------------------------------------
 // Silver's Cry — Quick-Play Spell
@@ -18,13 +18,13 @@ registerScript({
       from: SPELL_FROM,
       hardOncePerTurn: true,
       condition: (g, card, ctx) => {
-        const targets = graveyardCards(g, ctx.player, (d) => d.cardType === 'Monster' && d.race === 'Dragon' && hasType(d, 'Normal'));
+        const targets = graveyardCards(g, ctx.player, (d) => d.cardType === 'Monster' && d.race === 'Dragon').filter((u) => g.isNormalMonster(u));
         if (targets.length === 0) return 'There is no Dragon Normal Monster in your Graveyard to target.';
         if (g.freeMonsterZones(ctx.player).length === 0) return 'You have no empty Monster Zone to Special Summon into.';
         return null;
       },
       targets: function* (g, card, ctx) {
-        const pool = graveyardCards(g, ctx.player, (d) => d.cardType === 'Monster' && d.race === 'Dragon' && hasType(d, 'Normal'));
+        const pool = graveyardCards(g, ctx.player, (d) => d.cardType === 'Monster' && d.race === 'Dragon').filter((u) => g.isNormalMonster(u));
         return yield* g.selectCards(ctx.player, 'Target 1 Dragon Normal Monster in your Graveyard', pool, 1, 1);
       },
       resolve: function* (g, card, ctx) {
@@ -112,7 +112,7 @@ registerScript({
         const [first] = yield* g.selectCards(ctx.player, 'Send 1 Dragon monster from your Deck to the Graveyard', pool, 1, 1);
         g.log(`${g.name(first)} is sent from the Deck to the Graveyard.`, 'effect');
         g.sendToGraveyard(first, 'sent', card.uid);
-        if (isNormalMonster(g, first) && isDragon(g, first)) {
+        if (g.isNormalMonster(first) && isDragon(g, first)) {
           const pool2 = deckCards(g, ctx.player, (d) => d.cardType === 'Monster' && d.race === 'Dragon');
           if (pool2.length === 0) {
             g.log(`${g.name(first)} is a Dragon Normal Monster, but there is no other Dragon in the Deck to send.`, 'rule');
@@ -301,4 +301,259 @@ registerScheduledHandler('returnControl', function* (g, s) {
     const ok = yield* g.changeControl(c.uid, to);
     if (!ok) g.log(`${g.name(c.uid)} stays where it is because ${g.playerName(to)} has no free Monster Zone.`, 'rule');
   }
+});
+
+// ---------------------------------------------------------------------------
+// Burst Stream of Destruction
+// ---------------------------------------------------------------------------
+registerScript({
+  name: 'Burst Stream of Destruction',
+  effects: [
+    {
+      id: 'activate',
+      label: "Destroy all monsters your opponent controls (needs Blue-Eyes White Dragon)",
+      description: 'If you control "Blue-Eyes White Dragon": Destroy all monsters your opponent controls. "Blue-Eyes White Dragon" you control cannot attack the turn you activate this card.',
+      kind: 'activate',
+      spellSpeed: 1,
+      from: SPELL_FROM,
+      condition: (g, card, ctx) => {
+        if (!g.fieldMonsters(ctx.player).some((m) => m.faceUp && g.name(m.uid) === 'Blue-Eyes White Dragon')) return 'You must control a face-up "Blue-Eyes White Dragon" to activate Burst Stream of Destruction.';
+        return null;
+      },
+      resolve: function* (g, card, ctx) {
+        g.player(ctx.player).turnFlags['cannotAttack:Blue-Eyes White Dragon'] = 'Burst Stream of Destruction was activated this turn';
+        const targets = g.fieldMonsters(g.opponent(ctx.player)).map((m) => m.uid);
+        if (targets.length === 0) {
+          g.log('Your opponent controls no monsters, so nothing is destroyed.', 'rule');
+        } else {
+          yield* g.destroyByEffect(targets, card.uid);
+        }
+        g.log('"Blue-Eyes White Dragon" you control cannot attack this turn.', 'rule');
+      },
+    },
+  ],
+});
+
+// ---------------------------------------------------------------------------
+// Stamping Destruction
+// ---------------------------------------------------------------------------
+function spellTrapsOnField(g: Parameters<typeof deckCards>[0]): string[] {
+  const out: string[] = [];
+  for (const p of [0, 1] as PlayerId[]) {
+    out.push(...g.spellTrapCards(p).map((c) => c.uid));
+    const f = g.fieldSpell(p);
+    if (f) out.push(f.uid);
+  }
+  return out;
+}
+
+registerScript({
+  name: 'Stamping Destruction',
+  effects: [
+    {
+      id: 'activate',
+      label: 'Destroy 1 Spell/Trap on the field and inflict 500 damage (needs a Dragon)',
+      description: 'If you control a Dragon monster: Target 1 Spell/Trap on the field; destroy that target, and if you do, inflict 500 damage to its controller.',
+      kind: 'activate',
+      spellSpeed: 1,
+      from: SPELL_FROM,
+      condition: (g, card, ctx) => {
+        if (!g.fieldMonsters(ctx.player).some((m) => m.faceUp && isDragon(g, m.uid))) return 'You must control a face-up Dragon monster to activate Stamping Destruction.';
+        if (spellTrapsOnField(g).filter((u) => u !== card.uid && !g.targetingProtection(g.card(u), ctx.player)).length === 0) return 'There is no other Spell or Trap Card on the field to target.';
+        return null;
+      },
+      targets: function* (g, card, ctx) {
+        const pool = spellTrapsOnField(g).filter((u) => u !== card.uid && !g.targetingProtection(g.card(u), ctx.player));
+        return yield* g.selectCards(ctx.player, 'Target 1 Spell/Trap Card on the field', pool, 1, 1);
+      },
+      resolve: function* (g, card, ctx) {
+        const [t] = validTargets(g, ctx, ['spellTrap', 'field']);
+        if (!t) {
+          g.log('The targeted card is no longer on the field.', 'rule');
+          return;
+        }
+        const controller = g.card(t).controller;
+        const destroyed = yield* g.destroyByEffect([t], card.uid);
+        if (destroyed.length) g.changeLP(controller, -500, 'Stamping Destruction');
+      },
+    },
+  ],
+});
+
+// ---------------------------------------------------------------------------
+// A Wingbeat of Giant Dragon
+// ---------------------------------------------------------------------------
+registerScript({
+  name: 'A Wingbeat of Giant Dragon',
+  effects: [
+    {
+      id: 'activate',
+      label: 'Return 1 Level 5+ Dragon you control to the hand; destroy all Spells and Traps on the field',
+      description: 'Return 1 Level 5 or higher Dragon-Type monster you control to the hand, and if you do, destroy all Spell and Trap Cards on the field.',
+      kind: 'activate',
+      spellSpeed: 1,
+      from: SPELL_FROM,
+      condition: (g, card, ctx) => (g.fieldMonsters(ctx.player).some((m) => m.faceUp && isDragon(g, m.uid) && (def(g, m.uid).level ?? 0) >= 5) ? null : 'You must control a face-up Level 5 or higher Dragon monster to return to the hand.'),
+      resolve: function* (g, card, ctx) {
+        const pool = g.fieldMonsters(ctx.player).filter((m) => m.faceUp && isDragon(g, m.uid) && (def(g, m.uid).level ?? 0) >= 5).map((m) => m.uid);
+        if (pool.length === 0) {
+          g.log('There is no Level 5 or higher Dragon to return, so nothing happens.', 'rule');
+          return;
+        }
+        const [chosen] = yield* g.selectCards(ctx.player, 'Return 1 Level 5 or higher Dragon you control to the hand', pool, 1, 1);
+        g.log(`${g.name(chosen)} returns to the hand.`, 'effect');
+        g.toHand(chosen);
+        const all = spellTrapsOnField(g);
+        if (all.length) yield* g.destroyByEffect(all, card.uid);
+      },
+    },
+  ],
+});
+
+// ---------------------------------------------------------------------------
+// White Elephant's Gift
+// ---------------------------------------------------------------------------
+registerScript({
+  name: "White Elephant's Gift",
+  effects: [
+    {
+      id: 'activate',
+      label: 'Send 1 face-up non-Effect Monster you control to the GY; draw 2 cards',
+      description: 'Send 1 face-up non-Effect Monster you control to the GY; draw 2 cards. (Sending the monster is a cost.)',
+      kind: 'activate',
+      spellSpeed: 1,
+      from: SPELL_FROM,
+      condition: (g, card, ctx) => {
+        if (!g.fieldMonsters(ctx.player).some((m) => m.faceUp && g.isNormalMonster(m.uid))) return 'You need a face-up non-Effect Monster (a Normal Monster, or a Gemini monster without its effect) to send to the Graveyard as the cost.';
+        if (g.player(ctx.player).deck.length < 2) return 'You need at least 2 cards in your Deck to draw.';
+        return null;
+      },
+      cost: function* (g, card, ctx) {
+        const pool = g.fieldMonsters(ctx.player).filter((m) => m.faceUp && g.isNormalMonster(m.uid)).map((m) => m.uid);
+        const [c] = yield* g.selectCards(ctx.player, 'Send 1 face-up non-Effect Monster you control to the Graveyard (cost)', pool, 1, 1);
+        g.log(`${g.name(c)} is sent to the Graveyard as the cost.`, 'effect');
+        g.sendToGraveyard(c, 'cost', card.uid);
+      },
+      resolve: function* (g, card, ctx) {
+        g.draw(ctx.player, 2, 'draws');
+      },
+    },
+  ],
+});
+
+// ---------------------------------------------------------------------------
+// One for One
+// ---------------------------------------------------------------------------
+registerScript({
+  name: 'One for One',
+  effects: [
+    {
+      id: 'activate',
+      label: 'Send 1 monster from your hand to the GY; Special Summon 1 Level 1 monster from your hand or Deck',
+      description: 'Send 1 monster from your hand to the GY; Special Summon 1 Level 1 monster from your hand or Deck.',
+      kind: 'activate',
+      spellSpeed: 1,
+      from: SPELL_FROM,
+      condition: (g, card, ctx) => {
+        const monsters = handCards(g, ctx.player, (d) => d.cardType === 'Monster');
+        if (monsters.length === 0) return 'You need a monster in your hand to send to the Graveyard as the cost.';
+        const level1 = [...handCards(g, ctx.player, (d) => d.cardType === 'Monster' && d.level === 1), ...deckCards(g, ctx.player, (d) => d.cardType === 'Monster' && d.level === 1)];
+        if (level1.length === 0 || (level1.length === 1 && monsters.length === 1 && level1[0] === monsters[0])) return 'You need a Level 1 monster in your hand or Deck to Special Summon.';
+        if (g.freeMonsterZones(ctx.player).length === 0) return 'No free Monster Zone.';
+        return null;
+      },
+      cost: function* (g, card, ctx) {
+        const pool = handCards(g, ctx.player, (d) => d.cardType === 'Monster');
+        const [c] = yield* g.selectCards(ctx.player, 'Send 1 monster from your hand to the Graveyard (cost)', pool, 1, 1);
+        g.log(`${g.name(c)} is sent from the hand to the Graveyard as the cost.`, 'effect');
+        g.sendToGraveyard(c, 'cost', card.uid);
+      },
+      resolve: function* (g, card, ctx) {
+        const pool = [...handCards(g, ctx.player, (d) => d.cardType === 'Monster' && d.level === 1), ...deckCards(g, ctx.player, (d) => d.cardType === 'Monster' && d.level === 1)];
+        if (pool.length === 0 || g.freeMonsterZones(ctx.player).length === 0) {
+          g.log('There is no Level 1 monster to Special Summon.', 'rule');
+          return;
+        }
+        const [chosen] = yield* g.selectCards(ctx.player, 'Special Summon 1 Level 1 monster from your hand or Deck', pool, 1, 1, 'Cards shown come from your hand and your Deck.');
+        const fromDeck = g.player(ctx.player).deck.includes(chosen);
+        yield* g.specialSummon(chosen, ctx.player, { position: 'choose', how: 'by One for One' });
+        if (fromDeck) g.shuffleDeck(ctx.player);
+      },
+    },
+  ],
+});
+
+// ---------------------------------------------------------------------------
+// Dragonic Tactics
+// ---------------------------------------------------------------------------
+registerScript({
+  name: 'Dragonic Tactics',
+  effects: [
+    {
+      id: 'activate',
+      label: 'Tribute 2 Dragons; Special Summon 1 Level 8 Dragon from your Deck',
+      description: 'Tribute 2 Dragon monsters; Special Summon 1 Level 8 Dragon monster from your Deck.',
+      kind: 'activate',
+      spellSpeed: 1,
+      from: SPELL_FROM,
+      condition: (g, card, ctx) => {
+        if (g.fieldMonsters(ctx.player).filter((m) => isDragon(g, m.uid)).length < 2) return 'You need 2 Dragon monsters you control to Tribute as the cost.';
+        if (deckCards(g, ctx.player, (d) => d.cardType === 'Monster' && d.race === 'Dragon' && d.level === 8).length === 0) return 'There is no Level 8 Dragon monster in your Deck.';
+        return null;
+      },
+      cost: function* (g, card, ctx) {
+        const pool = g.fieldMonsters(ctx.player).filter((m) => isDragon(g, m.uid)).map((m) => m.uid);
+        const chosen = yield* g.selectCards(ctx.player, 'Tribute 2 Dragon monsters (cost)', pool, 2, 2);
+        for (const c of chosen) {
+          g.log(`${g.name(c)} is Tributed as the cost.`, 'effect');
+          g.sendToGraveyard(c, 'tribute', card.uid);
+        }
+      },
+      resolve: function* (g, card, ctx) {
+        const pool = deckCards(g, ctx.player, (d) => d.cardType === 'Monster' && d.race === 'Dragon' && d.level === 8);
+        if (pool.length === 0 || g.freeMonsterZones(ctx.player).length === 0) {
+          g.log('There is no Level 8 Dragon to Special Summon.', 'rule');
+          return;
+        }
+        const [chosen] = yield* g.selectCards(ctx.player, 'Special Summon 1 Level 8 Dragon monster from your Deck', pool, 1, 1);
+        yield* g.specialSummon(chosen, ctx.player, { position: 'choose', how: 'by Dragonic Tactics' });
+        g.shuffleDeck(ctx.player);
+      },
+    },
+  ],
+});
+
+// ---------------------------------------------------------------------------
+// Soul Exchange
+// ---------------------------------------------------------------------------
+registerScript({
+  name: 'Soul Exchange',
+  effects: [
+    {
+      id: 'activate',
+      label: "Use 1 opponent's monster as your Tribute this turn (no Battle Phase)",
+      description: 'Target 1 monster your opponent controls; this turn, if you Tribute a monster, you must Tribute that target, as if you controlled it. You cannot conduct your Battle Phase the turn you activate this card.',
+      kind: 'activate',
+      spellSpeed: 1,
+      from: SPELL_FROM,
+      condition: (g, card, ctx) => {
+        if (targetableMonsters(g, ctx.player, 'opponent').length === 0) return 'Your opponent controls no monster to target.';
+        if (g.state.phase === 'MAIN2') return 'Soul Exchange can only be used before your Battle Phase, because you cannot conduct your Battle Phase the turn you activate it.';
+        return null;
+      },
+      targets: function* (g, card, ctx) {
+        return yield* g.selectCards(ctx.player, "Target 1 monster your opponent controls", targetableMonsters(g, ctx.player, 'opponent'), 1, 1);
+      },
+      resolve: function* (g, card, ctx) {
+        g.player(ctx.player).turnFlags['skipBattlePhase'] = 'Soul Exchange was activated this turn';
+        const [t] = validTargets(g, ctx, ['monster', 'extraMonster']);
+        if (!t) {
+          g.log('The target is no longer on the field, but you still cannot conduct your Battle Phase this turn.', 'rule');
+          return;
+        }
+        g.player(ctx.player).turnFlags['mustTribute'] = t;
+        g.log(`This turn, if ${g.playerName(ctx.player)} Tributes a monster, ${g.name(t)} must be Tributed as if they controlled it. ${g.playerName(ctx.player)} cannot conduct their Battle Phase this turn.`, 'effect');
+      },
+    },
+  ],
 });

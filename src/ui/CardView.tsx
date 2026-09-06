@@ -79,7 +79,7 @@ export function CardView({ card, def, faceDown, size = 'md', stats, selected, hi
   if (dimmed) classes.push('dimmed');
   if (anim) classes.push(anim);
   if (card?.position === 'DEF' && (card.zone === 'monster' || card.zone === 'extraMonster')) classes.push('defense');
-  if (card?.asContinuousSpell) classes.push('as-spell');
+  if (card?.treatedAsSpell) classes.push('as-spell');
   const boosted = d && stats && d.cardType === 'Monster' && (stats.atk !== d.atk || stats.def !== d.def);
   return (
     <div className={classes.join(' ')} onClick={onClick} style={style} title={title ?? (faceDown ? 'Face-down card' : d?.name)} role={onClick ? 'button' : undefined}>

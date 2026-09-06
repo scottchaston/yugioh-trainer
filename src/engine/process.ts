@@ -26,6 +26,8 @@ export function cloneState(s: GameState): GameState {
 
 export function execute(base: GameState, action: Action, answers: Answer[]): ExecutionResult {
   const state = cloneState(base);
+  state.recentEvents = [];
+  state.windowEvents = [];
   const g = new Game(state);
   const proc = runAction(g, action);
   let i = 0;

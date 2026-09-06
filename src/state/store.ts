@@ -109,6 +109,8 @@ function describeAction(a: Action, state: GameState): string {
       return `${who}: activate ${name(a.uid)}`;
     case 'SPECIAL_SUMMON':
       return `${who}: Special Summon ${name(a.uid)}`;
+    case 'GEMINI_SUMMON':
+      return `${who}: Gemini Summon ${name(a.uid)}`;
     case 'DECLARE_ATTACK':
       return `${who}: ${name(a.uid)} attacks`;
     case 'TO_BATTLE_PHASE':

@@ -43,7 +43,7 @@ export function Inspector({ view, committed, uid, hidden, onAction, disabledBeca
       : c.zone === 'monster'
         ? `${controller}'s Monster Zone ${c.index + 1} (${g.positionLabel(c)})`
         : c.zone === 'spellTrap'
-          ? `${controller}'s Spell & Trap Zone ${c.index + 1} (${c.faceUp ? 'face-up' : 'Set'})${c.asContinuousSpell ? ' — treated as a Continuous Spell' : ''}`
+          ? `${controller}'s Spell & Trap Zone ${c.index + 1} (${c.faceUp ? 'face-up' : 'Set'})${c.treatedAsSpell === 'continuous' ? ' — treated as a Continuous Spell' : c.treatedAsSpell === 'equip' ? ' — treated as an Equip Spell' : ''}`
           : c.zone === 'field'
             ? `${controller}'s Field Zone`
             : c.zone === 'graveyard'
