@@ -9,7 +9,9 @@ Usage:
 """
 import json, sys
 
-SET_PREFIXES = ("SDBE-EN", "SDCB-EN")
+SET_PREFIXES = ("SDBE-EN", "SDCB-EN", "SDBT-EN", "SDCK-EN")
+
+ARROWS = {"⬉": "TL", "⬆": "T", "⬈": "TR", "⬅": "L", "➡": "R", "⬋": "BL", "⬇": "B", "⬊": "BR"}
 
 def type_line(x):
     line = x.get("monster_type_line") or ""
@@ -47,6 +49,11 @@ def main():
                 rec["level"] = x.get("level")
                 rec["atk"] = x.get("atk")
                 rec["def"] = x.get("def")
+                if x.get("rank") is not None:
+                    rec["rank"] = x.get("rank")
+                if x.get("link_arrows"):
+                    rec["linkArrows"] = [ARROWS[a] for a in x["link_arrows"]]
+                    rec["linkRating"] = len(x["link_arrows"])
                 if x.get("pendulum_scale") is not None:
                     rec["pendulumScale"] = x.get("pendulum_scale")
                     rec["pendulumEffect"] = (x.get("pendulum_effect") or {}).get("en")

@@ -11,3 +11,7 @@ import './crystalBeasts/spells';
 import './crystalBeasts/traps';
 
 export {};
+import './traptrix/monsters';
+import './traptrix/extra';
+import './traptrix/spells';
+import './traptrix/traps';

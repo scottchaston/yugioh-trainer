@@ -7,3 +7,6 @@ export { getLegalActions, actionsForCard } from './legality';
 export { Game } from './game';
 export { registerScript, getScript } from './scripts';
 export type { CardScript, EffectDef, Process } from './scripts';
+export { synchroProcedure, synchroCombos, performSynchroSummon } from './synchro';
+export { xyzProcedure, performXyzSummon } from './xyz';
+export { linkProcedure, performLinkSummon } from './link';

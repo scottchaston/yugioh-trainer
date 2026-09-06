@@ -1,0 +1,62 @@
+import type { DeckDefinition } from './types';
+
+/**
+ * Structure Deck: Beware of Traptrix (SDBT), TCG 2023.
+ * 46 cards (SDBT-EN001..SDBT-EN046, one copy each): 40 Main Deck + 6 Extra Deck.
+ * Konami's official card count equals the number of distinct set numbers, so every card is a single copy.
+ */
+export const BEWARE_OF_TRAPTRIX: DeckDefinition = {
+  id: 'sdbt',
+  name: 'Beware of Traptrix',
+  description: 'Structure Deck (2023). Traptrix monsters that Set "Hole" Trap Cards from the Deck, with Xyz and Link Monsters.',
+  main: [
+    { name: 'Traptrix Pudica', qty: 1 },
+    { name: 'Traptrix Arachnocampa', qty: 1 },
+    { name: 'Traptrix Atrax', qty: 1 },
+    { name: 'Traptrix Myrmeleo', qty: 1 },
+    { name: 'Traptrix Nepenthes', qty: 1 },
+    { name: 'Traptrix Dionaea', qty: 1 },
+    { name: 'Traptrix Genlisea', qty: 1 },
+    { name: 'Traptrix Vesiculo', qty: 1 },
+    { name: 'Gadarla, the Mystery Dust Kaiju', qty: 1 },
+    { name: 'Kumongous, the Sticky String Kaiju', qty: 1 },
+    { name: 'Retaliating "C"', qty: 1 },
+    { name: 'Resonance Insect', qty: 1 },
+    { name: 'Lonefire Blossom', qty: 1 },
+    { name: 'Ash Blossom & Joyous Spring', qty: 1 },
+    { name: 'Rose Lover', qty: 1 },
+    { name: 'Sauge de Fleur', qty: 1 },
+    { name: 'Mekk-Knight Purple Nightfall', qty: 1 },
+    { name: 'Mekk-Knight Blue Sky', qty: 1 },
+    { name: 'Artifact Moralltach', qty: 1 },
+    { name: 'Fire Hand', qty: 1 },
+    { name: 'Ice Hand', qty: 1 },
+    { name: 'Thunder Hand', qty: 1 },
+    { name: 'Traptrip Garden', qty: 1 },
+    { name: 'Traptantalizing Tune', qty: 1 },
+    { name: 'Raigeki', qty: 1 },
+    { name: 'Harpie\'s Feather Duster', qty: 1 },
+    { name: 'Terrifying Trap Hole Nightmare', qty: 1 },
+    { name: 'Trap Hole', qty: 1 },
+    { name: 'Bottomless Trap Hole', qty: 1 },
+    { name: 'Void Trap Hole', qty: 1 },
+    { name: 'Traptrix Trap Hole Nightmare', qty: 1 },
+    { name: 'Floodgate Trap Hole', qty: 1 },
+    { name: 'Gravedigger\'s Trap Hole', qty: 1 },
+    { name: 'Trap Trick', qty: 1 },
+    { name: 'The Phantom Knights of Shade Brigandine', qty: 1 },
+    { name: 'Artifact Sanctum', qty: 1 },
+    { name: 'Naturia Sacred Tree', qty: 1 },
+    { name: 'Evenly Matched', qty: 1 },
+    { name: 'Traptrix Mantis', qty: 1 },
+    { name: 'Traptrix Holeutea', qty: 1 },
+  ],
+  extra: [
+    { name: 'Traptrix Rafflesia', qty: 1 },
+    { name: 'Traptrix Allomerus', qty: 1 },
+    { name: 'Traptrix Cularia', qty: 1 },
+    { name: 'Traptrix Pinguicula', qty: 1 },
+    { name: 'Traptrix Atypus', qty: 1 },
+    { name: 'Traptrix Sera', qty: 1 },
+  ],
+};

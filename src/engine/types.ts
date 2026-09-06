@@ -28,7 +28,9 @@ export type Zone =
   | 'graveyard'
   | 'banished'
   | 'extra'
-  | 'extraMonster';
+  | 'extraMonster'
+  /** Attached to an Xyz Monster as material (not on the field). */
+  | 'material';
 
 export type Position = 'ATK' | 'DEF';
 
@@ -65,7 +67,13 @@ export interface CardInstance {
    * A monster card placed in the Spell & Trap Zone that is treated as a Spell Card there
    * (Crystal Beasts become Continuous Spells; Rider of the Storm Winds becomes an Equip Spell).
    */
-  treatedAsSpell: 'continuous' | 'equip' | 'pendulum' | null;
+  treatedAsSpell: 'continuous' | 'equip' | 'pendulum' | 'artifact' | null;
+  /** A Trap Card Special Summoned as a Normal Monster (The Phantom Knights of Shade Brigandine, Traptrix Holeutea). */
+  treatedAsMonster: { race: string; attribute: string; level: number; atk: number; def: number } | null;
+  /** Xyz Monsters: the cards attached as material (uids). */
+  materials: string[];
+  /** For a card in the 'material' zone: the Xyz Monster it is attached to. */
+  attachedTo: string | null;
   /** Token stats (tokens are created during the Duel and removed when they leave the field). */
   token: { name: string; race: string; attribute: string; level: number; atk: number; def: number } | null;
   /** This monster was Fusion Summoned (relevant for effects that require it). */
@@ -116,6 +124,8 @@ export interface ChainLink {
   data: Record<string, unknown>;
   /** Whether this link's card should be sent to GY after resolution (Normal Spell/Trap). */
   sendToGYAfter: boolean;
+  /** Where the card was when it was activated (hand, Graveyard, field ...). */
+  zone: Zone;
   negated: boolean;
   label: string;
 }
@@ -155,11 +165,14 @@ export type GameEventBody =
   | { type: 'set'; uid: string; player: PlayerId }
   | { type: 'attackDeclared'; attacker: string; target: string | null }
   | { type: 'toGraveyard'; uid: string; from: Zone; reason: SendReason; source?: string; wasFaceUp: boolean }
-  | { type: 'destroyed'; uid: string; reason: 'battle' | 'effect'; source?: string }
-  | { type: 'banished'; uid: string; from: Zone }
+  | { type: 'destroyed'; uid: string; reason: 'battle' | 'effect'; source?: string; byPlayer?: PlayerId }
+  | { type: 'banished'; uid: string; from: Zone; source?: string; byPlayer?: PlayerId }
+  | { type: 'detached'; uid: string; from: string }
+  | { type: 'attached'; uid: string; to: string }
+  | { type: 'excavated'; uid: string; player: PlayerId }
   | { type: 'leftField'; uid: string; to: Zone }
   | { type: 'phaseStart'; phase: Phase; player: PlayerId }
-  | { type: 'activated'; uid: string; effectId: string; player: PlayerId }
+  | { type: 'activated'; uid: string; effectId: string; player: PlayerId; zone?: Zone }
   | { type: 'chainResolved' }
   | { type: 'lpChange'; player: PlayerId; amount: number; reason: string }
   | { type: 'battleDamage'; player: PlayerId; amount: number; attacker: string }
@@ -219,7 +232,7 @@ export interface ScheduledEffect {
   description: string;
 }
 
-export type SendReason = 'destroyedBattle' | 'destroyedEffect' | 'sent' | 'cost' | 'tribute' | 'discard' | 'resolved' | 'material' | 'rule';
+export type SendReason = 'destroyedBattle' | 'destroyedEffect' | 'sent' | 'cost' | 'tribute' | 'discard' | 'resolved' | 'material' | 'rule' | 'detached';
 
 export interface GameState {
   turn: number;

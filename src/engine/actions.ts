@@ -308,13 +308,11 @@ export function* pendulumSummon(g: Game, player: PlayerId): Process<void> {
       { id: 'DEF', label: 'Defense Position' },
     ]);
     if (g.card(uid).zone === 'extra') {
-      const zones = g.usableExtraMonsterZones(player);
-      let idx = zones[0];
-      if (zones.length > 1) {
-        const z = yield* g.selectZone(player, `Choose an Extra Monster Zone for ${g.name(uid)}`, zones.map((i) => ({ player, zone: 'extraMonster' as const, index: i })));
-        idx = z.index;
-      }
-      g.placeInExtraMonsterZone(uid, player, idx, pos as 'ATK' | 'DEF');
+      const zones = g.usableLinkZones(player);
+      let z = zones[0];
+      if (zones.length > 1) z = yield* g.selectZone(player, `Choose a zone for ${g.name(uid)} (Extra Monster Zone or a linked Main Monster Zone)`, zones);
+      if (z.zone === 'extraMonster') g.placeInExtraMonsterZone(uid, player, z.index, pos as 'ATK' | 'DEF');
+      else g.placeMonster(uid, player, z.index, pos as 'ATK' | 'DEF', true);
       g.card(uid).properlySummoned = true;
     } else {
       const zone = yield* g.chooseMonsterZone(player, `Choose a Monster Zone for ${g.name(uid)}`);
@@ -353,6 +351,7 @@ export function checkFlipSummon(g: Game, player: PlayerId, uid: string): string 
   const d = g.def(uid);
   if (!g.isMonsterOnField(c) || c.controller !== player) return `${d.name} is not a monster you control on the field.`;
   if (c.faceUp) return `${d.name} is already face-up. Flip Summoning is for face-down monsters.`;
+  if (c.flags['cannotChangePosition']) return `${d.name} cannot change its battle position (${c.flags['cannotChangePosition']}).`;
   if (c.turnEnteredField === g.state.turn) return `You cannot Flip Summon a monster during the same turn it was Set. Wait until your next turn.`;
   if (c.positionChangedThisTurn) return `${d.name} already changed its battle position this turn.`;
   return null;
@@ -386,6 +385,8 @@ export function checkChangePosition(g: Game, player: PlayerId, uid: string): str
   const d = g.def(uid);
   if (!g.isMonsterOnField(c) || c.controller !== player) return `${d.name} is not a monster you control on the field.`;
   if (!c.faceUp) return `${d.name} is face-down. To turn it face-up, Flip Summon it instead.`;
+  if (g.isLinkMonster(uid)) return `${d.name} is a Link Monster. Link Monsters have no DEF and are always in Attack Position.`;
+  if (c.flags['cannotChangePosition']) return `${d.name} cannot change its battle position (${c.flags['cannotChangePosition']}).`;
   if (c.turnEnteredField === g.state.turn) {
     return `You cannot change the battle position of a monster during the same turn it was Summoned or Set. ${d.name} arrived this turn.`;
   }
@@ -700,6 +701,10 @@ function clearBattlePhaseFlags(g: Game): void {
 function* endOfTurnCleanup(g: Game): Process<void> {
   for (const c of Object.values(g.state.cards)) {
     // Effects that last "until the end of this turn"
+    if (c.flags['effectsNegatedThisTurn']) {
+      delete c.flags['effectsNegated'];
+      delete c.flags['negatedBy'];
+    }
     for (const key of Object.keys(c.flags)) {
       if (key.endsWith('ThisTurn')) delete c.flags[key];
       if (key === 'cannotAttackReason') delete c.flags[key];
@@ -763,8 +768,16 @@ export function checkSpecialSummonProcedure(g: Game, player: PlayerId, uid: stri
   const proc = script?.specialSummon?.find((p) => p.id === procId);
   if (!proc) return `${d.name} has no such Special Summon procedure.`;
   if (!proc.from.includes(c.zone)) return `${d.name} cannot be Special Summoned from there.`;
-  if ((c.zone === 'hand' || c.zone === 'extra' || c.zone === 'graveyard') && c.owner !== player) return `${d.name} is not yours.`;
-  if (g.freeMonsterZones(player).length === 0) return 'All five of your Main Monster Zones are full.';
+  if ((c.zone === 'hand' || c.zone === 'extra' || c.zone === 'graveyard' || c.zone === 'banished') && c.owner !== player) return `${d.name} is not yours.`;
+  if (!script?.procedureIsNotSummon) {
+    if (g.isLinkMonster(uid)) {
+      if (g.usableLinkZones(player).length === 0) return 'A Link Monster must be Summoned to an Extra Monster Zone, or to a Main Monster Zone that a Link Monster points to. None is free right now.';
+    } else if (g.freeMonsterZones(player).length === 0) return 'All five of your Main Monster Zones are full.';
+    if (c.zone === 'extra') {
+      const problem = g.extraDeckSummonProblem(player, uid);
+      if (problem) return problem;
+    }
+  }
   return proc.condition(g, c, player);
 }
 
@@ -774,7 +787,7 @@ export function* specialSummonProcedure(g: Game, player: PlayerId, uid: string, 
   const script = getScript(g.name(uid))!;
   const proc = script.specialSummon!.find((p) => p.id === procId)!;
   const ok = yield* proc.perform(g, g.card(uid), player);
-  if (ok) yield* afterAction(g, `${g.name(uid)} was Special Summoned`);
+  if (ok) yield* afterAction(g, script.procedureIsNotSummon ? `${g.name(uid)} was placed` : `${g.name(uid)} was Special Summoned`);
 }
 
 // ---------------------------------------------------------------------------

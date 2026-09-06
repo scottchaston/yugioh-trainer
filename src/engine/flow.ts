@@ -47,12 +47,26 @@ export function canActivateEffect(
   if (g.isOnField(card) && card.flags['effectsNegated'] && d.cardType === 'Monster') {
     return `${d.name}'s effects are negated (${card.flags['negatedBy'] ?? 'card effect'}), so they cannot be activated.`;
   }
-  if (d.cardType === 'Trap' && effect.kind === 'activate' && card.zone === 'hand') {
-    return `${d.name} is a Trap Card. Trap Cards must be Set on the field first, and cannot be activated until the next turn.`;
-  }
-  if (!effect.from.includes(card.zone)) return `${d.name} is not in a place where this effect can be used.`;
   const controller = card.zone === 'hand' || card.zone === 'graveyard' || card.zone === 'banished' || card.zone === 'deck' ? card.owner : card.controller;
   if (controller !== player) return `You do not control ${d.name}.`;
+  const baseCtx: ActivationContext = { player, chainLength: st.chain.length, event: ctx.event, damageStepStage: ctx.damageStepStage ?? null, data: {}, targets: [] };
+  // Traps from the hand: only with a card effect that allows it (Traptrix Atrax) or the Trap's own condition (Evenly Matched).
+  let trapFromHand = false;
+  if (d.cardType === 'Trap' && effect.kind === 'activate' && card.zone === 'hand') {
+    trapFromHand = !!effect.fromHand?.(g, card, baseCtx) || g.activeFieldCards().some((src) => src.controller === player && getScript(g.name(src.uid))?.allowTrapActivationFromHand?.(g, src, card));
+    if (!trapFromHand) return `${d.name} is a Trap Card. Trap Cards must be Set on the field first, and cannot be activated until the next turn.`;
+  }
+  if (!effect.from.includes(card.zone) && !trapFromHand) return `${d.name} is not in a place where this effect can be used.`;
+  // "Cannot activate cards or effects" restrictions placed on this player (King Calamity, Absolute Powerforce).
+  const block = g.player(player).turnFlags['cannotActivate'] as { scope: 'field' | 'all'; reason: string; battleOf?: string } | undefined;
+  if (block && (block.scope === 'all' || g.isOnField(card)) && (!block.battleOf || st.battle?.attacker === block.battleOf)) {
+    return `You cannot activate ${block.scope === 'field' ? 'cards or effects on the field' : 'cards or effects'} right now (${block.reason}).`;
+  }
+  const forbidden = g.player(player).turnFlags['forbiddenNames'] as string[] | undefined;
+  if (forbidden?.includes(d.name)) return `You cannot activate "${d.name}" or its effects for the rest of this turn (Witch of the Black Forest).`;
+  if (d.cardType === 'Trap' && effect.kind === 'activate' && g.player(player).turnFlags['trapActivationsLeft'] === 0) {
+    return 'You can only activate 1 more Trap Card this turn after Trap Trick resolved, and you already did.';
+  }
 
   // Monster cards in the Spell & Trap Zone are Spell Cards there, not monsters; their monster effects cannot be used.
   if (card.treatedAsSpell && effect.kind !== 'continuousIgnition' && effect.kind !== 'activate' && d.cardType === 'Monster') {
@@ -105,15 +119,14 @@ export function canActivateEffect(
       }
     } else if (card.zone === 'spellTrap' || card.zone === 'field') {
       if (card.faceUp) return `${d.name} is already face-up on the field.`;
-      if (d.property === 'Quick-Play' && card.setThisTurn) {
+      if (d.property === 'Quick-Play' && card.setThisTurn && !card.flags['canActivateThisTurn']) {
         return `${d.name} is a Quick-Play Spell that was Set this turn. A Set Quick-Play Spell cannot be activated during the same turn it was Set. Starting next turn it can be activated at fast-effect timing (even during your opponent's turn).`;
       }
     }
   }
-  if (d.cardType === 'Trap' && effect.kind === 'activate') {
-    if (card.zone === 'hand') return `${d.name} is a Trap Card. Trap Cards must be Set on the field first, and cannot be activated until the next turn.`;
+  if (d.cardType === 'Trap' && effect.kind === 'activate' && !trapFromHand) {
     if (card.faceUp) return `${d.name} is already face-up on the field.`;
-    if (card.setThisTurn) {
+    if (card.setThisTurn && !card.flags['canActivateThisTurn'] && !effect.canActivateTurnSet?.(g, card, baseCtx)) {
       return `You cannot activate ${d.name} yet because you Set it during this turn. Trap Cards cannot be activated during the same turn they are Set. Beginning next turn, it can be activated when its timing is correct.`;
     }
   }
@@ -176,6 +189,7 @@ export function damageStepTimingProblem(name: string, allowed: EffectDef['damage
     default:
       return null;
   }
+  return null;
 }
 
 function chainSpeed(g: Game): 0 | 1 | 2 | 3 {
@@ -271,6 +285,10 @@ export function* activateEffect(
 
   const linkNo = g.state.chain.length + 1;
   let sendToGYAfter = false;
+  const fromZone = card.zone;
+  if (d.cardType === 'Trap' && effect.kind === 'activate' && typeof g.player(player).turnFlags['trapActivationsLeft'] === 'number') {
+    g.player(player).turnFlags['trapActivationsLeft'] = (g.player(player).turnFlags['trapActivationsLeft'] as number) - 1;
+  }
 
   if (effect.kind === 'activate' && isSpellOrTrap(g, card)) {
     // Place the card on the field face-up.
@@ -291,6 +309,7 @@ export function* activateEffect(
     }
     if (d.cardType === 'Spell' && (d.property === 'Normal' || d.property === 'Quick-Play' || d.property === 'Ritual')) sendToGYAfter = true;
     if (d.cardType === 'Trap' && d.property !== 'Continuous') sendToGYAfter = true;
+    delete card.flags['canActivateThisTurn'];
     g.log(`${g.playerName(player)} activates ${d.name}${linkNo > 1 ? ` (Chain Link ${linkNo})` : ''}.`, linkNo > 1 ? 'chain' : 'action');
     g.fx({ type: 'activate', uid, player, what: d.cardType === 'Trap' ? 'trap' : 'spell' });
   } else {
@@ -338,9 +357,10 @@ export function* activateEffect(
     sendToGYAfter,
     negated: false,
     label: `${d.name}: ${effect.label}`,
+    zone: fromZone,
   };
   g.state.chain.push(link);
-  g.emit({ type: 'activated', uid, effectId, player });
+  g.emit({ type: 'activated', uid, effectId, player, zone: fromZone });
   return link;
 }
 
@@ -354,6 +374,14 @@ export function* negateChainLink(g: Game, index: number, source: string, mode: b
   const link = g.state.chain[index];
   if (!link) return;
   const m = mode === true ? 'destroy' : mode === false ? 'activation' : mode;
+  for (const src of g.activeFieldCards()) {
+    if (src.controller !== link.player) continue;
+    const r = getScript(g.name(src.uid))?.preventNegation?.(g, src, link);
+    if (r) {
+      g.log(`${g.name(link.uid)} cannot be negated: ${r}`, 'rule');
+      return;
+    }
+  }
   link.negated = true;
   g.log(`The ${m === 'effect' ? 'effect' : 'activation'} of ${g.name(link.uid)} (Chain Link ${index + 1}) is negated by ${g.name(source)}.`, 'effect');
   g.fx({ type: 'negate', uid: link.uid });
@@ -492,8 +520,21 @@ export function* resolveChain(g: Game): Process<void> {
     if (link.sendToGYAfter) {
       const c = g.card(link.uid);
       if ((c.zone === 'spellTrap' || c.zone === 'field') && c.faceUp) {
-        g.log(`${g.name(link.uid)} finishes resolving and is sent to the Graveyard.`, 'rule');
-        g.sendToGraveyard(link.uid, 'resolved');
+        let kept = false;
+        if (g.def(link.uid).cardType === 'Trap') {
+          for (const src of g.activeFieldCards()) {
+            if (src.controller !== link.player) continue;
+            const hook = getScript(g.name(src.uid))?.afterTrapResolves;
+            if (hook && (yield* hook(g, src, c))) {
+              kept = true;
+              break;
+            }
+          }
+        }
+        if (!kept) {
+          g.log(`${g.name(link.uid)} finishes resolving and is sent to the Graveyard.`, 'rule');
+          g.sendToGraveyard(link.uid, 'resolved');
+        }
       }
     }
   }
@@ -674,6 +715,8 @@ export function zoneLabel(z: Zone): string {
       return 'Extra Deck';
     case 'extraMonster':
       return 'Extra Monster Zone';
+    case 'material':
+      return 'Xyz material';
   }
 }
 
