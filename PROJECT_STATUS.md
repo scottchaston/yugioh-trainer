@@ -131,6 +131,47 @@ the Crystal Beast deck in `phase3-crystal-beasts.test.ts`). The harness deals ne
 Helpers in `tests/harness.ts` (`makeGame`, `put`, `start`, `endTurn`, answer builders `A`).
 Browser smoke tests: `e2e/` (needs `npm run dev` running).
 
+## Rules-engine fixes from the independent review
+
+1. **Proper Special Summon status is kept in the GY and while banished.** `sendToGraveyard()` and `banish()` no
+   longer clear `properlySummoned`; only returning to the Extra Deck / hand / Deck does (`toDeck`, `toHand`, the
+   Pendulum-to-Extra-Deck redirect). A negated Special Summon clears the flag before the monster is destroyed. So a
+   properly Synchro Summoned Azure-Eyes (or a properly Summoned Rainbow Overdragon / Rainbow Dragon Overdrive) can be
+   revived by Monster Reborn, Call of the Haunted or Castle of Dragon Souls, and one that reached the GY any other way
+   cannot. Tests: `tests/rules-review.test.ts`, "Proper Special Summon status".
+2. **Damage Step timing.** `EffectDef.damageStep` now distinguishes four windows (`DAMAGE_STEP_WINDOWS` in
+   `flow.ts`): `'beforeCalc'` for ATK/DEF modifiers and "during the Damage Step" effects (start of the Damage Step and
+   before damage calculation only; Honest, Castle of Dragon Souls, Rainbow Dragon's boost), `'calc'` for effects that
+   say "during damage calculation" (Crystal Keeper, Advanced Dark's no-damage effect), `'untilCalc'` for battle-damage
+   modifiers (Rainbow Ruins' halve; up to and including damage calculation) and `'any'` (Counter Traps, Damage
+   Condenser, Crystal Miracle/Pair, Ultimate Crystal Magic, hand traps). Once damage calculation has begun, Honest and
+   the other ATK/DEF modifiers are no longer offered, with a beginner-friendly explanation.
+3. **Normal response priority.** After an action at an open game state the turn player is offered their own fast
+   effects first, then the opponent (`afterAction`). Chains already alternated correctly (opponent first, then the
+   activating player may chain to their own card). Castle of Dragon Souls targeting your own Maiden with Eyes of Blue
+   now lets you chain Maiden's Quick Effect and Summon Blue-Eyes. In hot-seat play this means the turn player may see
+   a RESPONSE AVAILABLE panel after their own action when they hold a usable Quick Effect or Set Trap; declining is
+   always allowed.
+4. **"Send to the GY" costs are validated.** `Game.canBeSentToGraveyard(uid)` is false for Tokens, for Pendulum
+   Monsters on the field (they go to the Extra Deck face-up instead) and while Dimension Shifter's effect applies;
+   `whyCannotBeSentToGraveyard()` explains which. Every "send ... to the GY" cost filters its choices and its
+   activation condition with it (Darkstorm Dragon, White Elephant's Gift, Rainbow Ruins' negate, Crystal Abundance,
+   Rainbow Dragon's boost, Advanced Dark's no-damage effect, Hamon's Summon condition, Honest, Dimension Shifter
+   itself), and `sendToGraveyard(uid, 'cost')` refuses an unsendable card as a safety net for any script that forgets.
+   So Crystal Master / Crystal Keeper in a Pendulum Zone cannot pay Darkstorm Dragon's cost, though Darkstorm's effect
+   still destroys them (to the Extra Deck).
+
+Related issues found while fixing these:
+* Three discard costs (Trade-In, Cards of Consonance, Herald of Creation / Divine Dragon Apocralyph) sent the card
+  with the generic `'cost'` reason; they now use `'discard'`, so they remain payable under Dimension Shifter
+  (discarding is allowed there; the card is banished instead), as the rulings say.
+* Card uids used to embed the card's passcode (fixed for online play; the Duel shuffle now consumes one extra RNG
+  step, so seeded browser scenarios were re-seeded).
+* Not changed, worth knowing: Kunai with Chain is scripted as not activatable during the Damage Step at all; the
+  ATK/DEF-modifier windows (`'beforeCalc'`) are applied only to effects whose text is purely an ATK/DEF change.
+  Rainbow Ruins' damage-halving keeps the wider `'untilCalc'` window (its text gives no timing). There is no
+  Summon-negating card in these two decks, so the negated-Summon path is covered by an engine-level test only.
+
 ## Known gaps / simplifications
 * Summon negation (Champion's Vigilance) is offered only to the opponent of the summoning player.
 * Crystal Conclave's "cannot activate these effects in the same Chain" clause is not enforced.

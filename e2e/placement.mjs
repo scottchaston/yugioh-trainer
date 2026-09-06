@@ -6,7 +6,7 @@ const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromi
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
 const errors = [];
 page.on('pageerror', (e) => errors.push('PAGEERROR ' + e.message));
-await page.goto('http://localhost:5173/?seed=173');
+await page.goto('http://localhost:5173/?seed=38');
 await page.click('text=Player 1 first');
 await page.click('text=Start Duel');
 await page.waitForSelector('.board');

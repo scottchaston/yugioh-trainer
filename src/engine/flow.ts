@@ -86,12 +86,8 @@ export function canActivateEffect(
 
   // Damage Step restriction
   if (ctx.damageStepStage) {
-    if (!effect.damageStep) {
-      return `${d.name} cannot be activated during the Damage Step. During the Damage Step only Counter Traps, effects that change ATK/DEF, and effects that say they work in the Damage Step can be activated.`;
-    }
-    if (effect.damageStep === 'calc' && ctx.damageStepStage !== 'calc' && ctx.damageStepStage !== 'beforeCalc' && ctx.damageStepStage !== 'start') {
-      return `${d.name} can only be activated before or during damage calculation.`;
-    }
+    const r = damageStepTimingProblem(d.name, effect.damageStep, ctx.damageStepStage);
+    if (r) return r;
   }
 
   if (d.cardType === 'Spell' && effect.kind === 'activate') {
@@ -145,6 +141,41 @@ export function canActivateEffect(
     if (r) return r;
   }
   return null;
+}
+
+/**
+ * Which Damage Step windows an effect may be activated in.
+ *  - 'beforeCalc': ATK/DEF modifiers and effects that say "during the Damage Step" (Honest): only at the
+ *    start of the Damage Step and before damage calculation. Once damage calculation has begun they are too late.
+ *  - 'calc': effects that say "during damage calculation" (Crystal Keeper): only in that window.
+ *  - 'untilCalc': battle-damage modifiers ("halve the battle damage"): start, before and during damage calculation.
+ *  - 'any': Counter Traps and effects that explicitly work at any point of the Damage Step.
+ *  - false/undefined: not during the Damage Step at all.
+ */
+export const DAMAGE_STEP_WINDOWS: Record<'beforeCalc' | 'calc' | 'untilCalc' | 'any', readonly DamageStage[]> = {
+  beforeCalc: ['start', 'beforeCalc'],
+  calc: ['calc'],
+  untilCalc: ['start', 'beforeCalc', 'calc'],
+  any: ['start', 'beforeCalc', 'calc', 'afterCalc', 'end'],
+};
+
+export function damageStepTimingProblem(name: string, allowed: EffectDef['damageStep'], stage: DamageStage): string | null {
+  if (!allowed) {
+    return `${name} cannot be activated during the Damage Step. During the Damage Step only Counter Traps, effects that change ATK/DEF, and effects that say they work in the Damage Step can be activated.`;
+  }
+  if (DAMAGE_STEP_WINDOWS[allowed].includes(stage)) return null;
+  switch (allowed) {
+    case 'beforeCalc':
+      return stage === 'calc'
+        ? `${name} can no longer be activated: damage calculation has already begun. Effects that change ATK/DEF (and effects that say "during the Damage Step") must be activated at the start of the Damage Step or before damage calculation.`
+        : `${name} can only be activated at the start of the Damage Step or before damage calculation; damage calculation is already over.`;
+    case 'calc':
+      return `${name} can only be activated during damage calculation itself.`;
+    case 'untilCalc':
+      return `${name} can only be activated before or during damage calculation.`;
+    default:
+      return null;
+  }
 }
 
 function chainSpeed(g: Game): 0 | 1 | 2 | 3 {
@@ -375,6 +406,7 @@ export function* summonWindow(g: Game, uid: string, player: PlayerId, method: 'n
   if (attempt?.negated) {
     const c = g.state.cards[uid];
     if (c && g.isMonsterOnField(c)) {
+      c.properlySummoned = false; // a negated Special Summon is not a proper Special Summon
       g.log(`The Summon of ${g.name(uid)} is negated, and ${g.name(uid)} is destroyed.`, 'rule');
       g.fx({ type: 'destroy', uid, by: 'effect' });
       g.emit({ type: 'destroyed', uid, reason: 'effect' });
@@ -607,9 +639,12 @@ export function* fastEffectWindow(g: Game, ctx: WindowContext, order: PlayerId[]
   }
 }
 
-/** Standard bookkeeping after an action completes at an open game state: triggers, then a response window for the opponent. */
+/**
+ * Standard bookkeeping after an action completes at an open game state: triggers, then a response window.
+ * Normal priority: the turn player may respond to their own action first, then the opponent.
+ */
 export function* afterAction(g: Game, description: string, order?: PlayerId[]): Process<void> {
-  yield* fastEffectWindow(g, { description, kind: 'action' }, order ?? [g.opponent(g.state.turnPlayer)]);
+  yield* fastEffectWindow(g, { description, kind: 'action' }, order ?? [g.state.turnPlayer, g.opponent(g.state.turnPlayer)]);
 }
 
 /** Activate an effect from an open game state (turn player's action), then build & resolve the chain. */

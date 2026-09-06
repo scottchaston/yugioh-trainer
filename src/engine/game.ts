@@ -469,8 +469,29 @@ export class Game {
     }
   }
 
+  /**
+   * Can this card actually be sent to the Graveyard right now? Costs that say "send ... to the GY" can only
+   * be paid with such cards: Tokens cease to exist, a Pendulum Monster on the field goes to the Extra Deck
+   * instead, and while Dimension Shifter's effect applies everything is banished instead.
+   */
+  canBeSentToGraveyard(uid: string): boolean {
+    const c = this.card(uid);
+    if (c.token) return false;
+    if (this.state.banishInsteadUntilTurn !== null && this.state.turn <= this.state.banishInsteadUntilTurn) return false;
+    if (this.isOnField(c) && !!this.def(uid).monsterTypes?.includes('Pendulum')) return false;
+    return true;
+  }
+
+  whyCannotBeSentToGraveyard(uid: string): string {
+    const c = this.card(uid);
+    if (c.token) return `${this.name(uid)} is a Token; Tokens cannot be sent to the Graveyard, so they cannot pay a "send to the GY" cost.`;
+    if (this.state.banishInsteadUntilTurn !== null && this.state.turn <= this.state.banishInsteadUntilTurn) return `Dimension Shifter's effect banishes cards instead of sending them to the Graveyard, so a cost that sends a card to the Graveyard cannot be paid right now.`;
+    return `${this.name(uid)} is a Pendulum Monster on the field: it would go to the Extra Deck instead of the Graveyard, so it cannot pay a "send to the GY" cost.`;
+  }
+
   sendToGraveyard(uid: string, reason: SendReason, source?: string): void {
     const c = this.card(uid);
+    if (reason === 'cost' && !this.canBeSentToGraveyard(uid)) throw new Error(this.whyCannotBeSentToGraveyard(uid));
     const wasFaceUp = c.faceUp;
     if (c.token) {
       this.detach(c);
@@ -503,7 +524,7 @@ export class Game {
     c.zone = 'graveyard';
     c.index = -1;
     c.faceUp = true;
-    c.properlySummoned = false;
+    // A properly Special Summoned Extra Deck monster keeps that status in the GY (it may be revived from there).
     this.player(c.owner).graveyard.push(uid);
     this.emit({ type: 'toGraveyard', uid, from, reason, source, wasFaceUp });
   }
@@ -521,7 +542,7 @@ export class Game {
     c.zone = 'banished';
     c.index = -1;
     c.faceUp = faceUp;
-    c.properlySummoned = false;
+    // Proper-Summon status is kept while banished too (only returning to the Extra Deck/hand/Deck resets it).
     this.player(c.owner).banished.push(uid);
     this.fx({ type: 'banish', uid });
     this.emit({ type: 'banished', uid, from });

@@ -133,7 +133,35 @@ export function put(
   const def = getCardByName(name);
   // prefer a copy that's in the deck, else anywhere
   const candidates = Object.values(s.cards).filter((c) => c.owner === player && c.cardId === def.id);
-  if (!candidates.length) throw new Error(`Player ${player} has no ${name}`);
+  if (!candidates.length) {
+    // The card is not in this player's Deck: create a fresh copy (for cross-deck interaction tests).
+    const uid = `x${player}-${Object.keys(s.cards).length + 1}`;
+    s.cards[uid] = {
+      uid,
+      cardId: def.id,
+      owner: player,
+      controller: player,
+      zone: 'deck',
+      index: -1,
+      faceUp: false,
+      position: null,
+      turnEnteredField: -1,
+      summonedThisTurn: false,
+      setThisTurn: false,
+      positionChangedThisTurn: false,
+      attacksDeclaredThisTurn: 0,
+      geminiEffectActive: false,
+      treatedAsSpell: null,
+      token: null,
+      fusionSummoned: false,
+      equippedTo: null,
+      properlySummoned: false,
+      statMods: [],
+      counters: {},
+      flags: {},
+    };
+    candidates.push(s.cards[uid]);
+  }
   const c = candidates.find((x) => x.zone === 'deck' || x.zone === 'extra') ?? candidates[0];
   const pl = s.players[player];
   // detach

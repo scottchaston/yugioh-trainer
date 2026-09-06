@@ -36,7 +36,7 @@ registerScript({
       spellSpeed: 2,
       from: ['field'],
       oncePerTurn: true,
-      damageStep: 'calc',
+      damageStep: 'untilCalc',
       condition: (g, card, ctx) => {
         if (!card.faceUp) return 'Rainbow Ruins must be face-up.';
         const n = ruinsCount(g, ctx.player);
@@ -69,12 +69,12 @@ registerScript({
         const chain = g.state.chain;
         const last = chain[chain.length - 1];
         if (!last || last.negated || last.effectId !== 'activate' || def(g, last.uid).cardType === 'Monster') return 'This effect responds to the activation of a Spell or Trap Card.';
-        if (cbMonstersOnField(g, ctx.player).length === 0) return 'You control no Crystal Beast monster to send to the Graveyard.';
+        if (cbMonstersOnField(g, ctx.player).filter((m) => g.canBeSentToGraveyard(m.uid)).length === 0) return 'You control no Crystal Beast monster that can be sent to the Graveyard as the cost.';
         return null;
       },
       cost: function* (g, card, ctx) {
         ctx.data['linkIndex'] = g.state.chain.length - 1;
-        const [u] = yield* g.selectCards(ctx.player, 'Send 1 Crystal Beast monster you control to the Graveyard (cost)', cbMonstersOnField(g, ctx.player).map((m) => m.uid), 1, 1);
+        const [u] = yield* g.selectCards(ctx.player, 'Send 1 Crystal Beast monster you control to the Graveyard (cost)', cbMonstersOnField(g, ctx.player).filter((m) => g.canBeSentToGraveyard(m.uid)).map((m) => m.uid), 1, 1);
         g.log(`${g.name(u)} is sent to the Graveyard.`, 'effect');
         g.sendToGraveyard(u, 'cost', card.uid);
       },
@@ -188,11 +188,12 @@ registerScript({
       tags: ['sendFromDeck'],
       condition: (g, card, ctx) => {
         if (!card.faceUp) return 'Advanced Dark must be face-up.';
-        if (!ctx.damageStepStage || ctx.damageStepStage === 'afterCalc' || ctx.damageStepStage === 'end') return 'This effect is used during damage calculation.';
+        if (ctx.damageStepStage !== 'calc') return 'This effect is used during damage calculation.';
         const b = battlingMonsters(g, ctx.player);
         if (!b || !isCB(g, b.mine)) return 'A Crystal Beast monster you control must be battling.';
         if (expectedBattleDamage(g, ctx.player) <= 0) return 'You would not take battle damage from this battle.';
         if (cbInDeck(g, ctx.player).length === 0) return 'There is no Crystal Beast monster in your Deck to send.';
+        if (!g.canBeSentToGraveyard(cbInDeck(g, ctx.player)[0])) return g.whyCannotBeSentToGraveyard(cbInDeck(g, ctx.player)[0]);
         return null;
       },
       cost: function* (g, card, ctx) {
@@ -337,9 +338,13 @@ registerScript({
       spellSpeed: 1,
       from: SPELL_FROM,
       tags: ['summonFromGY'],
-      condition: (g, card, ctx) => (cbInSTZone(g, ctx.player).length < 4 ? `You need 4 Crystal Beast cards in your Spell & Trap Zone (you have ${cbInSTZone(g, ctx.player).length}).` : null),
+      condition: (g, card, ctx) => {
+        const pool = cbInSTZone(g, ctx.player).filter((c) => g.canBeSentToGraveyard(c.uid));
+        if (pool.length < 4) return `You need 4 Crystal Beast cards in your Spell & Trap Zone that can be sent to the Graveyard (you have ${pool.length}).`;
+        return null;
+      },
       cost: function* (g, card, ctx) {
-        const chosen = yield* g.selectCards(ctx.player, 'Send 4 Crystal Beast cards from your Spell & Trap Zone to the Graveyard (cost)', cbInSTZone(g, ctx.player).map((c) => c.uid), 4, 4);
+        const chosen = yield* g.selectCards(ctx.player, 'Send 4 Crystal Beast cards from your Spell & Trap Zone to the Graveyard (cost)', cbInSTZone(g, ctx.player).filter((c) => g.canBeSentToGraveyard(c.uid)).map((c) => c.uid), 4, 4);
         for (const u of chosen) {
           g.log(`${g.name(u)} is sent to the Graveyard.`, 'effect');
           g.sendToGraveyard(u, 'cost', card.uid);

@@ -57,10 +57,11 @@ registerScript({
       kind: 'quick',
       spellSpeed: 2,
       from: ['hand'],
-      damageStep: 'calc',
+      damageStep: 'beforeCalc',
       hidden: true,
       condition: (g, card, ctx) => {
         if (!ctx.damageStepStage) return "Honest's effect can only be activated during the Damage Step, when a LIGHT monster you control is battling an opponent's monster.";
+        if (!g.canBeSentToGraveyard(card.uid)) return g.whyCannotBeSentToGraveyard(card.uid);
         const b = battlingMonsters(g, ctx.player);
         if (!b || !b.theirs) return "Honest requires a monster you control to be battling an opponent's monster (not a direct attack).";
         if (!isLight(g, b.mine)) return `${g.name(b.mine)} is not a LIGHT monster.`;
@@ -206,6 +207,11 @@ registerScript({
 // ---------------------------------------------------------------------------
 // Darkstorm Dragon (Gemini)
 // ---------------------------------------------------------------------------
+/** Face-up Spells/Traps the player controls that can really be sent to the GY (the cost says "send ... to the GY"). */
+function darkstormCostPool(g: Game, player: PlayerId): string[] {
+  return [...g.spellTrapCards(player), ...(g.fieldSpell(player) ? [g.fieldSpell(player)!] : [])].filter((c) => c.faceUp && g.canBeSentToGraveyard(c.uid)).map((c) => c.uid);
+}
+
 registerScript({
   name: 'Darkstorm Dragon',
   effects: [
@@ -220,12 +226,16 @@ registerScript({
       oncePerTurn: true,
       condition: (g, card, ctx) => {
         if (!card.geminiEffectActive) return 'Darkstorm Dragon is a Normal Monster right now. Gemini Summon it (use your Normal Summon on it while it is face-up) to give it its effect.';
-        const pool = [...g.spellTrapCards(ctx.player), ...(g.fieldSpell(ctx.player) ? [g.fieldSpell(ctx.player)!] : [])].filter((c) => c.faceUp);
-        if (pool.length === 0) return 'You need a face-up Spell or Trap Card you control to send to the Graveyard as the cost.';
+        const pool = darkstormCostPool(g, ctx.player);
+        if (pool.length === 0) {
+          const faceUp = [...g.spellTrapCards(ctx.player), ...(g.fieldSpell(ctx.player) ? [g.fieldSpell(ctx.player)!] : [])].find((c) => c.faceUp);
+          if (faceUp) return `The cost is to send 1 face-up Spell/Trap you control to the Graveyard, and none of yours can be sent there right now: ${g.whyCannotBeSentToGraveyard(faceUp.uid)}`;
+          return 'You need a face-up Spell or Trap Card you control to send to the Graveyard as the cost.';
+        }
         return null;
       },
       cost: function* (g, card, ctx) {
-        const pool = [...g.spellTrapCards(ctx.player), ...(g.fieldSpell(ctx.player) ? [g.fieldSpell(ctx.player)!] : [])].filter((c) => c.faceUp).map((c) => c.uid);
+        const pool = darkstormCostPool(g, ctx.player);
         const [c] = yield* g.selectCards(ctx.player, 'Send 1 face-up Spell/Trap you control to the Graveyard (cost)', pool, 1, 1);
         g.log(`${g.name(c)} is sent to the Graveyard as the cost.`, 'effect');
         g.sendToGraveyard(c, 'cost', card.uid);
@@ -392,7 +402,7 @@ function discardThenRecover(name: string, filterLabel: string, filter: (g: Game,
         cost: function* (g, card, ctx) {
           const [c] = yield* g.selectCards(ctx.player, 'Discard 1 card (cost)', g.player(ctx.player).hand.slice(), 1, 1);
           g.log(`${g.playerName(ctx.player)} discards ${g.name(c)} as the cost.`, 'effect');
-          g.sendToGraveyard(c, 'cost', card.uid);
+          g.sendToGraveyard(c, 'discard', card.uid);
         },
         targets: function* (g, card, ctx) {
           const pool = graveyardCards(g, ctx.player).filter((u) => filter(g, u));
