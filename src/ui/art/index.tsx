@@ -124,11 +124,11 @@ export function artFor(def: CardDefinition): { kind: 'creature'; spec: CreatureS
 }
 
 /** Renders the illustration for a card as an inline SVG that fills its container. */
-export function CardArt({ def, className, style }: { def: CardDefinition; className?: string; style?: React.CSSProperties }) {
+export function CardArt({ def, className, style, backdrop = true }: { def: CardDefinition; className?: string; style?: React.CSSProperties; backdrop?: boolean }) {
   const art = artFor(def);
   return (
     <svg viewBox="0 0 100 100" className={className} style={style} aria-hidden="true" preserveAspectRatio="xMidYMid meet">
-      {art.kind === 'creature' ? <Creature spec={art.spec} /> : <Motif kind={art.motif} p={art.palette} />}
+      {art.kind === 'creature' ? <Creature spec={art.spec} backdrop={backdrop} /> : <Motif kind={art.motif} p={art.palette} backdrop={backdrop} />}
     </svg>
   );
 }

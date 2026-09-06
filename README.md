@@ -49,8 +49,13 @@ Double-click it to open it in Chrome, Edge, Firefox or Safari. (It is produced b
   **Special Summon** actions when their conditions are met (click the card, or open the Extra Deck).
 * Every card has a generated illustration (no official artwork): monsters charge across the board when
   they attack, and Spells/Traps are revealed with their emblem when activated.
+* **Suggest move** gives optional strategy ideas, always labelled STRATEGY: they are advice, never rules.
+* **Rules help** opens a beginner's reference (phases, summons, positions, battle, Spell Speeds and chains,
+  costs versus effects, Crystal Beasts, Pendulum and Gemini monsters).
+* The right-hand panel shows a turn checklist and, while cards respond to each other, the chain and its
+  resolution order.
 * **Settings**: reveal all hands/face-down cards (learning mode), pause at the quieter
-  phase windows, board perspective.
+  phase windows, board perspective (turn player at the bottom by default), animations, sound.
 
 ## For developers
 

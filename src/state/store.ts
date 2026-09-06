@@ -27,9 +27,10 @@ export interface Settings {
   askAtPhaseWindows: boolean;
   /** Learning mode: show both players' hands and face-down cards. */
   revealAll: boolean;
-  /** Which player's side is at the bottom: a specific player, or follow whoever must act. */
-  perspective: PlayerId | 'auto';
+  /** Which player's side is at the bottom: a specific player, the turn player, or whoever must decide. */
+  perspective: PlayerId | 'auto' | 'turn';
   animations: boolean;
+  sound: boolean;
 }
 
 export interface StoreState {
@@ -43,7 +44,7 @@ export interface StoreState {
 
 type Listener = () => void;
 
-const defaultSettings: Settings = { askAtPhaseWindows: false, revealAll: false, perspective: 'auto', animations: true };
+const defaultSettings: Settings = { askAtPhaseWindows: false, revealAll: false, perspective: 'turn', animations: true, sound: true };
 
 let store: StoreState = { history: [], pending: null, settings: loadSettings(), notice: null, config: null };
 const listeners = new Set<Listener>();

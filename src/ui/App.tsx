@@ -3,12 +3,15 @@ import { getLegalActions, PHASE_LABEL, type LegalActionInfo, type PlayerId, type
 import { answer, cancelPending, clearGame, committedState, currentView, dispatch, newGame, rewindTo, setNotice, undo, updateSettings, useStore } from '../state/store';
 import { Board } from './Board';
 import { FxLayer } from './FxLayer';
+import { ParticleCanvas } from './Particles';
+import { setSoundEnabled, unlockAudio } from './sound';
 import { Inspector } from './Inspector';
 import { LogPanel } from './LogPanel';
 import { PileModal } from './PileModal';
 import { PromptPanel } from './PromptPanel';
 import { Setup } from './Setup';
 import { CardArt } from './art';
+import { ChainStack, HelpModal, SuggestPanel, TurnChecklist } from './TeachPanels';
 import { defOf } from './cardDef';
 import { allCards } from '../cards';
 
@@ -35,11 +38,22 @@ export function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [whyPhase, setWhyPhase] = useState<string | null>(null);
+  const [showHelp, setShowHelp] = useState(false);
+  const [showSuggest, setShowSuggest] = useState(false);
   const boardWrapRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     setPromptSelection([]);
   }, [store.pending?.prompt]);
+
+  useEffect(() => {
+    setSoundEnabled(store.settings.sound);
+  }, [store.settings.sound]);
+  useEffect(() => {
+    const unlock = () => unlockAudio();
+    window.addEventListener('pointerdown', unlock, { once: true });
+    return () => window.removeEventListener('pointerdown', unlock);
+  }, []);
 
   // Keyboard: Ctrl/Cmd+Z = undo, Escape = clear selection
   useEffect(() => {
@@ -78,7 +92,7 @@ export function App() {
 
   const prompt = store.pending?.prompt ?? null;
   const actingPlayer: PlayerId = prompt ? prompt.player : view.turnPlayer;
-  const bottom: PlayerId = store.settings.perspective === 'auto' ? actingPlayer : store.settings.perspective;
+  const bottom: PlayerId = store.settings.perspective === 'auto' ? actingPlayer : store.settings.perspective === 'turn' ? view.turnPlayer : store.settings.perspective;
   const legalOnly = legal.filter((a) => a.legal);
   const highlightUids = new Set<string>();
   if (whatCanIDo) for (const a of legalOnly) if (a.uid) highlightUids.add(a.uid);
@@ -149,6 +163,12 @@ export function App() {
           <button className={`btn btn-teach${whatCanIDo ? ' active' : ''}`} onClick={() => setWhatCanIDo(!whatCanIDo)} disabled={!!prompt}>
             What can I do?
           </button>
+          <button className={`btn btn-strategy${showSuggest ? ' active' : ''}`} onClick={() => setShowSuggest(!showSuggest)} title="Optional strategy ideas (not rules)">
+            Suggest move
+          </button>
+          <button className="btn" onClick={() => setShowHelp(true)} title="Beginner rules reference">
+            Rules help
+          </button>
           <button className="btn" onClick={() => undo()} title="Undo (Ctrl+Z)" disabled={store.history.length <= 1 && !store.pending}>
             Undo
           </button>
@@ -174,6 +194,8 @@ export function App() {
             <div className={`decision-banner${prompt.type === 'fastEffects' ? ' decision-response' : ''}`}>
               {prompt.type === 'fastEffects' ? 'RESPONSE AVAILABLE — ' : 'DECISION — '}
               <b>{view.players[prompt.player].name}</b>: {prompt.type === 'fastEffects' ? 'you may respond (see the panel on the right)' : prompt.title}
+              {prompt.type === 'selectZone' && <span className="banner-hint"> · the highlighted zones are on {view.players[prompt.player].name}'s side ({prompt.player === bottom ? 'bottom' : 'top'} of the board)</span>}
+              {prompt.type === 'selectCards' && prompt.cards.some((u) => view.cards[u] && ['monster', 'spellTrap', 'field', 'extraMonster'].includes(view.cards[u].zone)) && <span className="banner-hint"> · highlighted cards can be clicked on the board</span>}
             </div>
           )}
           <Board
@@ -190,6 +212,7 @@ export function App() {
             animations={store.settings.animations}
           />
           <FxLayer view={view} enabled={store.settings.animations} container={boardWrapRef} />
+          <ParticleCanvas container={boardWrapRef} enabled={store.settings.animations} />
           {view.winner !== null && (
             <div className="modal-backdrop">
               <div className="modal winner">
@@ -229,6 +252,26 @@ export function App() {
           )}
         </div>
         <aside className="sidebar">
+          <TurnChecklist view={view} />
+          <ChainStack view={view} />
+          {showSuggest && (
+            <SuggestPanel
+              view={view}
+              player={prompt ? prompt.player : view.turnPlayer}
+              prompt={prompt}
+              onAct={(sg) => {
+                if (sg.action) {
+                  setShowSuggest(false);
+                  dispatch(sg.action);
+                }
+              }}
+              onActivate={(a) => {
+                setShowSuggest(false);
+                answer({ activation: a });
+              }}
+              onClose={() => setShowSuggest(false)}
+            />
+          )}
           {prompt && (
             <PromptPanel
               view={view}
@@ -292,11 +335,20 @@ export function App() {
               </span>
             </label>
             <label className="setting">
+              <input type="checkbox" checked={store.settings.sound} onChange={(e) => updateSettings({ sound: e.target.checked })} />
+              <span>
+                <b>Sound effects</b>
+                <br />
+                <small>Synthesised sounds for draws, summons, attacks, damage, Spells and Traps.</small>
+              </span>
+            </label>
+            <label className="setting">
               <span>
                 <b>Board perspective</b>
                 <br />
-                <select value={String(store.settings.perspective)} onChange={(e) => updateSettings({ perspective: e.target.value === 'auto' ? 'auto' : (Number(e.target.value) as PlayerId) })}>
-                  <option value="auto">Follow the player who must act</option>
+                <select value={String(store.settings.perspective)} onChange={(e) => updateSettings({ perspective: e.target.value === 'auto' ? 'auto' : e.target.value === 'turn' ? 'turn' : (Number(e.target.value) as PlayerId) })}>
+                  <option value="turn">Turn player at the bottom (flips when the turn changes)</option>
+                  <option value="auto">Follow whoever must decide (flips for every decision)</option>
                   <option value="0">{view.players[0].name} at the bottom</option>
                   <option value="1">{view.players[1].name} at the bottom</option>
                 </select>
@@ -310,6 +362,7 @@ export function App() {
           </div>
         </div>
       )}
+      {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
       {showHistory && (
         <div className="modal-backdrop" onClick={() => setShowHistory(false)}>
           <div className="modal history" onClick={(e) => e.stopPropagation()}>

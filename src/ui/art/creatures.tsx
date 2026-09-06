@@ -2,7 +2,111 @@
  * Stylised creature illustrations drawn with SVG primitives. Every monster in the supported decks maps
  * to an archetype (dragon, feline, tortoise ...) with its own palette and features. No card artwork is used.
  */
-import type { ReactNode } from 'react';
+import { useId, type ReactNode } from 'react';
+
+/** Lighten (factor > 1) or darken (factor < 1) a hex colour. */
+export function shade(hex: string, factor: number): string {
+  const m = /^#([0-9a-f]{6})$/i.exec(hex);
+  if (!m) return hex;
+  const n = parseInt(m[1], 16);
+  const ch = (v: number) => Math.max(0, Math.min(255, Math.round(v * factor)));
+  const r = ch((n >> 16) & 255);
+  const g = ch((n >> 8) & 255);
+  const b = ch(n & 255);
+  return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
+}
+
+export type BackdropKind = 'sky' | 'storm' | 'cavern' | 'heaven' | 'sea' | 'forest' | 'mist' | 'dark' | 'arena';
+
+/** Scene behind a creature. */
+export function Backdrop({ kind, glow, id }: { kind: BackdropKind; glow: string; id: string }) {
+  const gid = `${id}-bg`;
+  const top = kind === 'sky' ? '#6fb3e8' : kind === 'storm' ? '#2b2f4a' : kind === 'cavern' ? '#2a1f45' : kind === 'heaven' ? '#fff3c4' : kind === 'sea' ? '#0f4c81' : kind === 'forest' ? '#2f5d3a' : kind === 'mist' ? '#3a2f55' : kind === 'dark' ? '#120a1e' : '#3a2a1a';
+  const bottom = kind === 'sky' ? '#1d3c6b' : kind === 'storm' ? '#0d1020' : kind === 'cavern' ? '#0d0a1c' : kind === 'heaven' ? '#c98d2a' : kind === 'sea' ? '#031a33' : kind === 'forest' ? '#0b1f12' : kind === 'mist' ? '#0e0a1a' : kind === 'dark' ? '#000000' : '#120b05';
+  return (
+    <g>
+      <defs>
+        <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={top} />
+          <stop offset="100%" stopColor={bottom} />
+        </linearGradient>
+      </defs>
+      <rect x={0} y={0} width={100} height={100} fill={`url(#${gid})`} />
+      {kind === 'sky' && (
+        <g>
+          <ellipse cx={22} cy={22} rx={16} ry={6} fill="#ffffff" opacity={0.35} />
+          <ellipse cx={74} cy={16} rx={12} ry={5} fill="#ffffff" opacity={0.3} />
+          <path d="M0,100 L0,78 L18,60 L34,74 L52,56 L70,72 L86,62 L100,76 L100,100Z" fill="#12274a" opacity={0.9} />
+          <path d="M0,100 L0,88 L22,76 L44,90 L66,80 L100,92 L100,100Z" fill="#0b1830" />
+        </g>
+      )}
+      {kind === 'storm' && (
+        <g>
+          <ellipse cx={30} cy={18} rx={26} ry={9} fill="#3d4260" opacity={0.8} />
+          <ellipse cx={72} cy={26} rx={24} ry={8} fill="#2a2e48" opacity={0.9} />
+          <polyline points="62,28 56,44 64,42 58,60" stroke="#e0e6ff" strokeWidth={1.4} fill="none" opacity={0.8} />
+          <path d="M0,100 L0,84 L30,70 L60,84 L100,72 L100,100Z" fill="#0a0c18" />
+        </g>
+      )}
+      {kind === 'cavern' && (
+        <g>
+          {[[8, 90, 12], [24, 96, 8], [88, 92, 14], [70, 98, 6]].map(([x, y, h], i) => (
+            <polygon key={i} points={`${x},${y} ${x + 6},${y - h * 2} ${x + 12},${y}`} fill={i % 2 ? '#6fd3ff' : '#b388ff'} opacity={0.5} />
+          ))}
+          {[[12, 10, 8], [90, 12, 10], [50, 6, 5]].map(([x, y, h], i) => (
+            <polygon key={`s${i}`} points={`${x},${y} ${x + 5},${y + h * 2} ${x + 10},${y}`} fill="#8ad8ff" opacity={0.35} />
+          ))}
+          <ellipse cx={50} cy={96} rx={46} ry={8} fill="#1a1230" />
+        </g>
+      )}
+      {kind === 'heaven' && (
+        <g>
+          {Array.from({ length: 9 }).map((_, i) => (
+            <path key={i} d="M50,50 L50,-20" stroke="#ffffff" strokeWidth={5} opacity={0.12} transform={`rotate(${-80 + i * 20} 50 50)`} />
+          ))}
+          <ellipse cx={50} cy={92} rx={40} ry={10} fill="#ffffff" opacity={0.25} />
+        </g>
+      )}
+      {kind === 'sea' && (
+        <g>
+          {[70, 80, 90].map((y, i) => (
+            <path key={i} d={`M0,${y} C15,${y - 4} 30,${y + 4} 50,${y} C70,${y - 4} 85,${y + 4} 100,${y}`} stroke="#4cc9f0" strokeWidth={1.4} fill="none" opacity={0.5 - i * 0.12} />
+          ))}
+          <circle cx={78} cy={18} r={7} fill="#ffffff" opacity={0.5} />
+        </g>
+      )}
+      {kind === 'forest' && (
+        <g>
+          {[10, 30, 70, 90].map((x, i) => (
+            <path key={i} d={`M${x},100 L${x},40 M${x},60 L${x - 10},50 M${x},52 L${x + 10},44`} stroke="#183a22" strokeWidth={4} strokeLinecap="round" opacity={0.9} />
+          ))}
+          <ellipse cx={50} cy={96} rx={48} ry={7} fill="#0b1f12" />
+        </g>
+      )}
+      {kind === 'mist' && (
+        <g>
+          <ellipse cx={30} cy={80} rx={34} ry={12} fill="#8a7fd6" opacity={0.25} />
+          <ellipse cx={72} cy={90} rx={30} ry={10} fill="#4cc9f0" opacity={0.18} />
+          <circle cx={80} cy={16} r={8} fill="#fff3b0" opacity={0.5} />
+        </g>
+      )}
+      {kind === 'dark' && (
+        <g>
+          {[[12, 20], [84, 14], [70, 80], [20, 70], [50, 10]].map(([x, y], i) => (
+            <circle key={i} cx={x} cy={y} r={1.2} fill="#ffffff" opacity={0.6} />
+          ))}
+        </g>
+      )}
+      {kind === 'arena' && (
+        <g>
+          <ellipse cx={50} cy={94} rx={44} ry={8} fill="#000" opacity={0.4} />
+          <path d="M0,70 L100,70" stroke="#5a3a1a" strokeWidth={1} opacity={0.6} />
+        </g>
+      )}
+      <circle cx={50} cy={50} r={44} fill={glow} opacity={0.14} />
+    </g>
+  );
+}
 
 export interface Palette {
   body: string;
@@ -99,10 +203,18 @@ function Dragon({ p, f }: { p: Palette; f: Set<string> }) {
       {/* body */}
       <ellipse cx={50} cy={64} rx={19} ry={14} fill={p.body} stroke="#0007" strokeWidth={0.8} />
       <ellipse cx={50} cy={68} rx={11} ry={8} fill={p.belly} />
+      {/* claws */}
+      <path d="M34,82 L31,87 M38,83 L37,88 M56,84 L54,89 M61,84 L61,89" stroke="#f6f1e3" strokeWidth={1.6} strokeLinecap="round" />
+      {/* scales along the back */}
+      <path d="M36,56 q4,-3 8,0 q4,-3 8,0 q4,-3 8,0 q4,-3 8,0" stroke="#0005" strokeWidth={0.8} fill="none" />
+      <path d="M38,62 q4,-3 8,0 q4,-3 8,0 q4,-3 8,0" stroke="#0005" strokeWidth={0.8} fill="none" />
       {/* neck + head */}
       <path d="M50,54 C50,42 56,34 64,28" stroke={p.body} strokeWidth={11} fill="none" strokeLinecap="round" />
+      <path d="M52,46 q3,-2 6,0 M54,40 q3,-2 6,0" stroke="#0005" strokeWidth={0.8} fill="none" />
       <path d="M58,22 L84,27 L80,34 L64,36 L58,32Z" fill={p.body} stroke="#0007" strokeWidth={0.8} />
       <path d="M64,36 L80,34 L78,38 L66,39Z" fill={p.belly} />
+      <path d="M70,35 L71,38 M74,35 L75,38 M78,34 L79,37" stroke="#ffffff" strokeWidth={1} strokeLinecap="round" />
+      <path d="M62,24 L83,28" stroke="#fff" strokeWidth={0.8} opacity={0.35} />
       {f.has('ears') ? (
         <>
           <ellipse cx={56} cy={12} rx={4} ry={11} fill={p.body} stroke="#0006" strokeWidth={0.6} />
@@ -114,6 +226,7 @@ function Dragon({ p, f }: { p: Palette; f: Set<string> }) {
           <path d="M66,22 L64,9 L71,21Z" fill={p.accent} />
         </>
       )}
+      <circle cx={70} cy={28} r={4} fill={p.eye} opacity={0.35} />
       <circle cx={70} cy={28} r={2.6} fill={p.eye} />
       <circle cx={70.6} cy={27.4} r={0.9} fill="#fff" />
       {f.has('crystal') && <Gem x={50} y={60} r={5} color={p.eye} />}
@@ -149,8 +262,12 @@ function Feline({ p, f }: { p: Palette; f: Set<string> }) {
       <path d="M19,39 L17,30 L25,37Z" fill={p.belly} />
       <path d="M35,38 L39,29 L31,36Z" fill={p.belly} />
       <ellipse cx={26} cy={54} rx={6} ry={4} fill={p.belly} />
+      <path d="M26,52 L26,55 M22,55 q4,3 8,0" stroke="#0007" strokeWidth={0.9} fill="none" />
+      <path d="M18,53 L8,51 M18,56 L8,58 M34,53 L44,51 M34,56 L44,58" stroke="#fff" strokeWidth={0.7} opacity={0.7} />
       <circle cx={23} cy={46} r={2} fill={p.eye} />
       <circle cx={33} cy={46} r={2} fill={p.eye} />
+      <circle cx={23.6} cy={45.4} r={0.6} fill="#fff" />
+      <circle cx={33.6} cy={45.4} r={0.6} fill="#fff" />
       {f.has('stripes') && (
         <g stroke={p.accent} strokeWidth={2.4} strokeLinecap="round" fill="none">
           <path d="M42,54 L40,62" />
@@ -173,6 +290,7 @@ function Tortoise({ p, f }: { p: Palette; f: Set<string> }) {
       ))}
       <ellipse cx={50} cy={72} rx={30} ry={6} fill={p.body} />
       <path d="M22,70 C22,44 78,44 78,70Z" fill={p.accent} stroke="#0007" strokeWidth={0.8} />
+      <path d="M30,60 C36,50 50,46 62,50" stroke="#fff" strokeWidth={1.5} fill="none" opacity={0.3} strokeLinecap="round" />
       <g stroke="#0005" strokeWidth={0.8} fill="none">
         <path d="M40,70 L44,58 L56,58 L60,70" />
         <path d="M30,70 L36,62 L44,58 M56,58 L64,62 L70,70" />
@@ -193,7 +311,9 @@ function Bird({ p, f }: { p: Palette; f: Set<string> }) {
         <Wing side="R" color={p.accent} spread={1.05} />
       </g>
       <path d="M44,74 L50,90 L56,74Z" fill={p.body} />
+      <path d="M46,78 L48,86 M54,78 L52,86" stroke="#0006" strokeWidth={0.8} />
       <ellipse cx={50} cy={58} rx={11} ry={17} fill={p.body} stroke="#0007" strokeWidth={0.8} />
+      <path d="M44,52 q6,4 12,0 M44,60 q6,4 12,0 M45,68 q5,4 10,0" stroke="#0005" strokeWidth={0.8} fill="none" />
       <ellipse cx={50} cy={62} rx={6} ry={10} fill={p.belly} />
       <circle cx={50} cy={38} r={8} fill={p.body} stroke="#0007" strokeWidth={0.8} />
       <path d="M50,38 L62,42 L50,45Z" fill="#f5b400" />
@@ -232,6 +352,7 @@ function Mammoth({ p, f }: { p: Palette; f: Set<string> }) {
       ))}
       <ellipse cx={54} cy={56} rx={28} ry={20} fill={p.body} stroke="#0007" strokeWidth={0.8} />
       <path d="M28,44 C40,34 66,34 80,44" stroke={p.accent} strokeWidth={3} fill="none" />
+      <path d="M34,66 l2,8 M42,70 l1,8 M52,72 l0,8 M62,70 l-1,8 M72,66 l-2,8" stroke="#0006" strokeWidth={1} strokeLinecap="round" />
       <circle cx={26} cy={50} r={14} fill={p.body} stroke="#0007" strokeWidth={0.8} />
       <ellipse cx={16} cy={46} rx={5} ry={8} fill={p.accent} />
       <path d="M22,60 C16,68 14,78 20,88" stroke={p.body} strokeWidth={7} fill="none" strokeLinecap="round" />
@@ -415,9 +536,31 @@ function Stone({ p }: { p: Palette }) {
   );
 }
 
-export function Creature({ spec, children }: { spec: CreatureSpec; children?: ReactNode }) {
+const BACKDROP_FOR: Record<Archetype, BackdropKind> = {
+  dragon: 'sky',
+  feline: 'cavern',
+  tortoise: 'cavern',
+  bird: 'cavern',
+  pegasus: 'cavern',
+  mammoth: 'cavern',
+  carbuncle: 'cavern',
+  angel: 'heaven',
+  warrior: 'arena',
+  mage: 'mist',
+  serpent: 'sea',
+  insect: 'forest',
+  ghost: 'mist',
+  titan: 'storm',
+  stone: 'dark',
+};
+
+export function Creature({ spec, children, backdrop = true }: { spec: CreatureSpec; children?: ReactNode; backdrop?: boolean }) {
   const f = new Set(spec.features ?? []);
-  const p = spec.palette;
+  const id = useId().replace(/:/g, '');
+  const raw = spec.palette;
+  // Shaded palette: the body and accent become gradients (lit from the top-left).
+  const p: Palette = { ...raw, body: `url(#${id}-body)`, accent: `url(#${id}-acc)` };
+  const bg = f.has('storm') && spec.archetype === 'dragon' ? 'storm' : f.has('crystal') && spec.archetype === 'dragon' ? 'cavern' : BACKDROP_FOR[spec.archetype];
   const body = (() => {
     switch (spec.archetype) {
       case 'dragon':
@@ -454,8 +597,23 @@ export function Creature({ spec, children }: { spec: CreatureSpec; children?: Re
   })();
   return (
     <g>
-      <circle cx={50} cy={52} r={40} fill={p.glow} opacity={0.22} />
-      {body}
+      <defs>
+        <radialGradient id={`${id}-body`} cx="35%" cy="30%" r="80%">
+          <stop offset="0%" stopColor={shade(raw.body, 1.25)} />
+          <stop offset="55%" stopColor={raw.body} />
+          <stop offset="100%" stopColor={shade(raw.body, 0.55)} />
+        </radialGradient>
+        <radialGradient id={`${id}-acc`} cx="40%" cy="30%" r="80%">
+          <stop offset="0%" stopColor={shade(raw.accent, 1.2)} />
+          <stop offset="60%" stopColor={raw.accent} />
+          <stop offset="100%" stopColor={shade(raw.accent, 0.5)} />
+        </radialGradient>
+        <filter id={`${id}-shadow`} x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="2.5" stdDeviation="2" floodColor="#000" floodOpacity="0.55" />
+        </filter>
+      </defs>
+      {backdrop && <Backdrop kind={bg} glow={raw.glow} id={id} />}
+      <g filter={`url(#${id}-shadow)`}>{body}</g>
       {children}
     </g>
   );

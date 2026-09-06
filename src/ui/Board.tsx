@@ -96,8 +96,10 @@ export function Board(props: BoardProps) {
         key={`${player}-${zone}-${index}`}
         className={`zone zone-${zone}${sel ? ' zone-selectable' : ''}${isAttackTarget ? ' zone-target' : ''}${isAttacker ? ' zone-attacker' : ''}`}
         onClick={() => (sel ? onZoneClick(ref) : undefined)}
+        data-zone-owner={player}
       >
-        {uid ? cardEl(uid) : <span className="zone-label">{zone === 'monster' ? 'Monster' : 'Spell / Trap'}</span>}
+        {uid ? cardEl(uid) : <span className="zone-label">{zone === 'monster' ? 'Monster' : zone === 'spellTrap' && (index === 0 || index === 4) ? 'Spell / Trap (Pendulum)' : 'Spell / Trap'}</span>}
+        {sel && <span className="zone-choose">{view.players[player].name}: choose</span>}
       </div>
     );
   };
@@ -109,6 +111,7 @@ export function Board(props: BoardProps) {
     return (
       <div className={`zone zone-field${sel ? ' zone-selectable' : ''}`} onClick={() => (sel ? onZoneClick(ref) : undefined)}>
         {uid ? cardEl(uid) : <span className="zone-label">Field</span>}
+        {sel && <span className="zone-choose">{view.players[player].name}: choose</span>}
       </div>
     );
   };
@@ -141,6 +144,7 @@ export function Board(props: BoardProps) {
     return (
       <div key={`emz-${index}`} className={`zone zone-emz${sel ? ' zone-selectable' : ''}`} onClick={() => (sel ? onZoneClick(ref) : undefined)}>
         {uid ? cardEl(uid) : <span className="zone-label">Extra Monster Zone</span>}
+        {sel && <span className="zone-choose">choose</span>}
       </div>
     );
   };
@@ -157,6 +161,8 @@ export function Board(props: BoardProps) {
   };
 
   const order = (player: PlayerId, isBottom: boolean) => (isBottom ? [0, 1, 2, 3, 4] : [4, 3, 2, 1, 0]).map((i) => i);
+
+  const sideTag = (player: PlayerId) => <span className={`side-tag side-tag-${player === bottom ? 'bottom' : 'top'}`}>{view.players[player].name}'s side</span>;
 
   const playerBanner = (player: PlayerId, isBottom: boolean) => {
     const pl = view.players[player];
@@ -185,6 +191,7 @@ export function Board(props: BoardProps) {
       {playerBanner(top, false)}
       {hand(top, false)}
       <div className="field-rows">
+        {sideTag(top)}
         <div className="field-row">
           {pile(top, 'deck')}
           {order(top, false).map((i) => zoneCell(top, 'spellTrap', i))}
@@ -216,6 +223,7 @@ export function Board(props: BoardProps) {
           {order(bottom, true).map((i) => zoneCell(bottom, 'spellTrap', i))}
           {pile(bottom, 'deck')}
         </div>
+        {sideTag(bottom)}
       </div>
       {hand(bottom, true)}
       {playerBanner(bottom, true)}

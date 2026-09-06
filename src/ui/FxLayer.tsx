@@ -7,6 +7,8 @@ import { getCard } from '../cards';
 import type { FxEvent, GameState } from '../engine';
 import { CardView } from './CardView';
 import { CardArt } from './art';
+import { playSound } from './sound';
+import { emitBurst } from './Particles';
 import { tokenDefinition } from '../engine/game';
 
 interface Rect {
@@ -130,7 +132,10 @@ export function FxLayer({ view, enabled, container }: { view: GameState; enabled
       const entry: ActiveFx = { fx, key: keyRef.current++, from, to, duration: DURATION[fx.type] };
       const start = offset;
       timers.current.push(
-        window.setTimeout(() => setActive((a) => [...a, entry]), start),
+        window.setTimeout(() => {
+          setActive((a) => [...a, entry]);
+          startSideEffects(entry, container.current);
+        }, start),
         window.setTimeout(() => setActive((a) => a.filter((x) => x.key !== entry.key)), start + entry.duration),
       );
       scheduled.push(entry);
@@ -149,6 +154,83 @@ export function FxLayer({ view, enabled, container }: { view: GameState; enabled
       ))}
     </div>
   );
+}
+
+/** Sounds, particles and screen shake for an effect that just started. */
+function startSideEffects(entry: ActiveFx, host: HTMLDivElement | null): void {
+  const { fx, from, to } = entry;
+  const c = (r?: Rect) => (r ? { x: r.x + r.w / 2, y: r.y + r.h / 2 } : null);
+  const shake = (strength: 'light' | 'heavy') => {
+    if (!host) return;
+    host.classList.remove('shake-light', 'shake-heavy');
+    void host.offsetWidth;
+    host.classList.add(strength === 'heavy' ? 'shake-heavy' : 'shake-light');
+    window.setTimeout(() => host.classList.remove('shake-light', 'shake-heavy'), 500);
+  };
+  switch (fx.type) {
+    case 'attack': {
+      playSound('attack');
+      const t = c(to);
+      window.setTimeout(() => {
+        playSound('impact');
+        if (t) emitBurst({ x: t.x, y: t.y, color: '#ff9f1c', kind: 'impact' });
+        shake('light');
+      }, entry.duration * 0.55);
+      break;
+    }
+    case 'activate':
+      playSound(fx.what === 'trap' ? 'trap' : fx.what === 'spell' ? 'spell' : 'monsterEffect');
+      {
+        const f = c(from);
+        if (f) emitBurst({ x: f.x, y: f.y, color: fx.what === 'trap' ? '#ff5c8a' : fx.what === 'spell' ? '#3ee3b6' : '#ffb347', kind: 'sparkle' });
+      }
+      break;
+    case 'destroy': {
+      playSound('destroy');
+      const f = c(from);
+      if (f) emitBurst({ x: f.x, y: f.y, color: fx.by === 'battle' ? '#ff7a3d' : '#c96a2b', kind: 'shatter' });
+      shake(fx.by === 'battle' ? 'light' : 'light');
+      break;
+    }
+    case 'damage':
+      playSound('damage');
+      shake(fx.amount >= 2000 ? 'heavy' : 'light');
+      break;
+    case 'heal':
+      playSound('heal');
+      break;
+    case 'summon': {
+      playSound(fx.method === 'special' ? 'specialSummon' : 'summon');
+      const f = c(from);
+      if (f) emitBurst({ x: f.x, y: f.y, color: fx.method === 'special' ? '#4cc9f0' : '#ffd166', kind: 'sparkle' });
+      break;
+    }
+    case 'negate':
+      playSound('negate');
+      break;
+    case 'flip':
+      playSound('flip');
+      break;
+    case 'toSpellZone': {
+      playSound('crystal');
+      const f = c(from);
+      if (f) emitBurst({ x: f.x, y: f.y, color: '#4cf0c0', kind: 'crystal' });
+      break;
+    }
+    case 'boost':
+      playSound('boost');
+      break;
+    case 'draw':
+      playSound('draw');
+      break;
+    case 'bounce':
+    case 'banish':
+      playSound('flip');
+      break;
+    case 'control':
+      playSound('monsterEffect');
+      break;
+  }
 }
 
 function center(r: Rect): { x: number; y: number } {
@@ -177,12 +259,12 @@ function Effect({ entry, view }: { entry: ActiveFx; view: GameState }) {
           <div className="fx-beam" style={{ left: a.x, top: a.y, width: len, transform: `rotate(${angle}deg)` }} />
           {target && target.faceUp !== false && (
             <div className="fx-creature fx-defender" style={{ left: b.x, top: b.y, position: 'absolute' }}>
-              <CardArt def={defOf(target)} />
+              <CardArt def={defOf(target)} backdrop={false} />
             </div>
           )}
           {attacker && (
             <div className="fx-creature fx-lunge" style={{ left: a.x, top: a.y, position: 'absolute', ['--dx' as string]: `${lungeX}px`, ['--dy' as string]: `${lungeY}px`, transform: dx < 0 ? 'scaleX(-1)' : undefined }}>
-              <CardArt def={defOf(attacker)} style={dx < 0 ? { transform: 'scaleX(-1)' } : undefined} />
+              <CardArt def={defOf(attacker)} backdrop={false} style={dx < 0 ? { transform: 'scaleX(-1)' } : undefined} />
             </div>
           )}
           <div className="fx-impact" style={{ left: b.x, top: b.y }} />
@@ -202,7 +284,7 @@ function Effect({ entry, view }: { entry: ActiveFx; view: GameState }) {
             <div className="fx-spot-ring" />
             <div className="fx-spot-row">
               <div className="fx-spot-art">
-                <CardArt def={d} />
+                <CardArt def={d} backdrop={false} />
               </div>
               <CardView def={d} size="lg" />
             </div>

@@ -13,8 +13,8 @@ response windows, logs everything, and supports Undo. Accuracy over feature coun
 | 1 | Board, decks, turns/phases, summons, battle, Spell/Trap setting + timing, chains, GY/banished/Extra Deck, log, Undo, tests | **Done** |
 | 2 | All Saga of Blue-Eyes card effects (Synchro, Gemini, Azure-Eyes, Honest, Kaiser Glider, traps…) + tests | **Done** (all 41 cards) |
 | 3 | Legend of the Crystal Beasts incl. Crystal Beasts as Continuous Spells, Rainbow Ruins, Rainbow Dragon, Fusion | **Done** (all 46 cards) |
-| 4 | Chains/timing refinement, teaching explanations, "What can I do?" polish, strategy suggestions | Foundations exist |
-| 5 | Interface polish, animations, adding more decks | Card art + battle/activation animations done; more polish possible |
+| 4 | Chains/timing refinement, teaching explanations, "What can I do?" polish, strategy suggestions | **Done**: chain stack panel, turn checklist, Rules help, "Suggest move" (strategy, clearly separated) |
+| 5 | Interface polish, animations, adding more decks | Shaded card art with scene backdrops, creature battle animations, particles, screen shake, synthesised sound; adding decks still needs scripts |
 
 ## What works now (Phase 1)
 * Two players, deck lists for both Structure Decks with official TCG text (86 cards),
@@ -55,6 +55,12 @@ response windows, logs everything, and supports Undo. Accuracy over feature coun
 * Engine features added for it: Pendulum Zones/Summon, Extra Monster Zone use, Pendulum monsters to the Extra Deck,
   Tokens, Attribute changes, effect-allowed direct attacks, battle-damage modifiers (halve / none), "banish instead"
   replacement (Dimension Shifter), effect tags for hand traps, extra Normal Summons, damage-step start hooks.
+* Teaching (Phase 4): `src/ui/TeachPanels.tsx` (chain stack with resolution order, per-turn checklist, Rules help
+  modal) and `src/strategy/suggest.ts` (heuristic suggestions labelled STRATEGY; never used for legality). Board
+  orientation defaults to "turn player at the bottom" so highlighted zones stay on the owner's side; highlighted
+  zones are labelled with the deciding player's name and rows carry "Player X's side" tags.
+* Effects/sound: `src/ui/sound.ts` synthesises all sounds with the Web Audio API (toggle in Settings);
+  `src/ui/Particles.tsx` draws impact/shatter/sparkle bursts on a canvas; damage shakes the board.
 * Card art (`src/ui/art`): every monster has a procedurally drawn creature (dragon, feline, tortoise, bird, pegasus,
   mammoth, carbuncle, angel, warrior, mage, serpent, insect, ghost, titan, stone) with a per-card palette and
   features; every Spell/Trap has its own emblem. Used on card faces, in the attack animation (attacker charges the
@@ -106,7 +112,8 @@ Browser smoke tests: `e2e/` (needs `npm run dev` running).
 * Card artwork is a clean generated frame (no copyrighted art), by design.
 
 ## Suggested next steps
-1. Phase 4: "Suggest move" strategy helper (clearly separated from rules), richer teaching explanations of chains
-   (visual chain stack), a rules glossary panel, per-turn checklist for beginners, and play-testing feedback fixes.
-2. Phase 5: deck editor / adding more decks (card data pipeline exists; effects need scripts), mobile layout,
-   sound, save/load of games.
+1. Play-testing feedback: wording of explanations, prompts that feel noisy, any rule that seems wrong.
+2. Save/load of a Duel (state is plain JSON; add localStorage or file export), and a "replay" viewer.
+3. More decks: the card data pipeline (`scripts/extract-cards.py`) and script registry make this straightforward;
+   each new card needs a script and tests.
+4. Mobile/tablet layout (the board is designed for a laptop screen or larger).

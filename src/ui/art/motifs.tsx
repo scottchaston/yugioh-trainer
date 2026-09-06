@@ -1,6 +1,9 @@
 /**
  * Emblems for Spell and Trap Cards: one recognisable motif per card, drawn with SVG primitives.
  */
+import { useId } from 'react';
+import { shade } from './creatures';
+
 export interface MotifPalette {
   main: string;
   accent: string;
@@ -92,7 +95,9 @@ function RainbowArc({ cx, cy, r, w = 4 }: { cx: number; cy: number; r: number; w
   );
 }
 
-export function Motif({ kind, p }: { kind: MotifKind; p: MotifPalette }) {
+export function Motif({ kind, p: raw, backdrop = true }: { kind: MotifKind; p: MotifPalette; backdrop?: boolean }) {
+  const id = useId().replace(/:/g, '');
+  const p: MotifPalette = { main: `url(#${id}-m)`, accent: `url(#${id}-a)`, glow: raw.glow };
   const body = (() => {
     switch (kind) {
       case 'swords':
@@ -527,8 +532,29 @@ export function Motif({ kind, p }: { kind: MotifKind; p: MotifPalette }) {
   })();
   return (
     <g>
-      <circle cx={50} cy={50} r={40} fill={p.glow} opacity={0.18} />
-      {body}
+      <defs>
+        <radialGradient id={`${id}-m`} cx="35%" cy="30%" r="85%">
+          <stop offset="0%" stopColor={shade(raw.main, 1.3)} />
+          <stop offset="55%" stopColor={raw.main} />
+          <stop offset="100%" stopColor={shade(raw.main, 0.5)} />
+        </radialGradient>
+        <radialGradient id={`${id}-a`} cx="35%" cy="30%" r="85%">
+          <stop offset="0%" stopColor={shade(raw.accent, 1.25)} />
+          <stop offset="60%" stopColor={raw.accent} />
+          <stop offset="100%" stopColor={shade(raw.accent, 0.5)} />
+        </radialGradient>
+        <radialGradient id={`${id}-bg`} cx="50%" cy="45%" r="70%">
+          <stop offset="0%" stopColor={shade(raw.glow, 0.45)} />
+          <stop offset="100%" stopColor="#07090f" />
+        </radialGradient>
+        <filter id={`${id}-sh`} x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="2.5" stdDeviation="2" floodColor="#000" floodOpacity="0.6" />
+        </filter>
+      </defs>
+      {backdrop && <rect x={0} y={0} width={100} height={100} fill={`url(#${id}-bg)`} />}
+      <circle cx={50} cy={50} r={38} fill="none" stroke={raw.glow} strokeWidth={0.8} opacity={0.35} strokeDasharray="2 3" />
+      <circle cx={50} cy={50} r={40} fill={raw.glow} opacity={backdrop ? 0.12 : 0.28} />
+      <g filter={`url(#${id}-sh)`}>{body}</g>
     </g>
   );
 }
