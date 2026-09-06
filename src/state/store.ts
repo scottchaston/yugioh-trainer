@@ -193,29 +193,37 @@ function describeAction(a: Action, state: GameState): string {
   }
 }
 
+const SETUP_LABEL = 'Setup';
+
+/**
+ * Deal the cards and start the first turn. Starting the Duel is an action like any other: the first
+ * turn's phase windows may ask a player something (depending on settings), so it runs through the
+ * same machinery, and the "Setup" entry is replaced by "Duel start" once it completes.
+ */
 export function newGame(config: GameConfig): void {
   const initial = createGame(config);
-  const r = execute(initial, { type: 'START_GAME' }, []);
-  const state = r.done ? r.state : initial;
-  set({ history: [{ state, label: 'Duel start' }], pending: null, notice: null, config });
+  set({ history: [{ state: initial, label: SETUP_LABEL }], pending: null, notice: null, config });
+  runPending(initial, { type: 'START_GAME' }, [], 'Duel start');
 }
 
-/** The Duel so far as replayable data. */
+/** The Duel so far as replayable data (the first step is the start of the Duel itself). */
 export function saveDuel(s: StoreState = store): SavedDuel | null {
   if (!s.config || s.history.length === 0) return null;
-  return { config: s.config, steps: s.history.slice(1).map((h) => h.step!).filter(Boolean) };
+  return { config: s.config, steps: s.history.map((h) => h.step!).filter(Boolean) };
 }
 
 /** Rebuild a history by replaying saved steps through the engine (deterministic). */
 export function replayDuel(saved: SavedDuel): HistoryEntry[] {
   const initial = createGame(saved.config);
-  const r0 = execute(initial, { type: 'START_GAME' }, []);
-  const history: HistoryEntry[] = [{ state: r0.done ? r0.state : initial, label: 'Duel start' }];
-  for (const step of saved.steps) {
+  const history: HistoryEntry[] = [{ state: initial, label: SETUP_LABEL }];
+  const steps = saved.steps[0]?.action.type === 'START_GAME' ? saved.steps : [{ action: { type: 'START_GAME' } as Action, answers: [] }, ...saved.steps];
+  for (const step of steps) {
     const base = history[history.length - 1].state;
     const r = execute(base, step.action, step.answers);
     if (!r.done) break;
-    history.push({ state: r.state, label: describeAction(step.action, base), step });
+    const entry = { state: r.state, label: describeAction(step.action, base), step };
+    if (step.action.type === 'START_GAME') history.splice(0, history.length, entry);
+    else history.push(entry);
   }
   return history;
 }
@@ -245,7 +253,10 @@ function runPending(base: GameState, action: Action, answers: Answer[], label: s
       return;
     }
     if (r.done) {
-      set({ history: [...store.history, { state: r.state, label, step: { action, answers: all } }], pending: null, notice: null });
+      const entry: HistoryEntry = { state: r.state, label, step: { action, answers: all } };
+      // Starting the Duel replaces the "Setup" entry: nothing can be undone to before the start.
+      const history = action.type === 'START_GAME' ? [entry] : [...store.history, entry];
+      set({ history, pending: null, notice: null });
       return;
     }
     const auto = autoAnswer(r.prompt!);
@@ -304,7 +315,8 @@ export function localUndo(): void {
   const p = store.pending;
   if (p) {
     if (p.answers.length === 0) {
-      set({ pending: null, notice: null });
+      // Nothing to undo before the Duel has started.
+      if (p.action.type !== 'START_GAME') set({ pending: null, notice: null });
       return;
     }
     const base = committedState()!;

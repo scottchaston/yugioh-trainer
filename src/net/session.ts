@@ -93,6 +93,8 @@ export class HostSession implements Session {
     public readonly code: string,
     private me: PlayerInfo,
     private first: PlayerId | 'coin',
+    /** Tests: a fixed shuffle seed. */
+    private readonly seed?: number,
   ) {
     current = this;
     setOnline({ role: 'host', seat: HOST_SEAT, code, status: 'waiting', opponent: null, remote: null, undoRequest: null, suggestions: null });
@@ -257,7 +259,7 @@ export class HostSession implements Session {
     if (!this.guest || this.playing) return;
     const first: PlayerId = this.first === 'coin' ? ((Math.random() < 0.5 ? 0 : 1) as PlayerId) : this.first;
     this.playing = true;
-    newGame({ players: [{ name: this.me.name || 'Player 1', deckId: this.me.deckId }, { name: this.guest.name || 'Player 2', deckId: this.guest.deckId }], firstPlayer: first });
+    newGame({ players: [{ name: this.me.name || 'Player 1', deckId: this.me.deckId }, { name: this.guest.name || 'Player 2', deckId: this.guest.deckId }], firstPlayer: first, seed: this.seed });
     updateOnline({ status: 'playing' });
     this.send({ t: 'start', seat: GUEST_SEAT, players: [this.me, this.guest] });
     this.lastSent = { history: null, pending: null };
