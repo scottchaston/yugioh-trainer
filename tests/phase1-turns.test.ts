@@ -3,7 +3,7 @@ import { makeGame, start, endTurn, put, A } from './harness';
 
 describe('turn structure', () => {
   it('second player draws on turn 2 and phases progress', () => {
-    const tg = makeGame();
+    const tg = makeGame({ keepHands: true });
     start(tg);
     endTurn(tg);
     expect(tg.state.turn).toBe(2);
@@ -35,7 +35,7 @@ describe('turn structure', () => {
   });
 
   it('enforces the hand size limit at the End Phase', () => {
-    const tg = makeGame();
+    const tg = makeGame({ keepHands: true });
     start(tg);
     endTurn(tg); // P2 turn 2: 6 cards
     endTurn(tg); // P1 turn 3: draws to 6

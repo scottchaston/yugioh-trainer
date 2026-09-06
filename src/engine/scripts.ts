@@ -67,9 +67,13 @@ export interface EffectDef {
   hidden?: boolean;
   /** Several effects of one card that share a single "once per turn" (e.g. Maiden with Eyes of Blue). */
   oncePerTurnGroup?: string;
+  /** What the effect does, for cards that respond to kinds of effects (Ash Blossom, Ghost Belle). */
+  tags?: EffectTag[];
   /** Can be activated in the special window that opens while a monster is being Summoned (to negate the Summon). */
   respondsToSummon?: boolean;
 }
+
+export type EffectTag = 'searchDeck' | 'summonFromDeck' | 'sendFromDeck' | 'addFromGY' | 'summonFromGY' | 'banishFromGY';
 
 export interface StatModification {
   atk?: number;
@@ -106,6 +110,14 @@ export interface CardScript {
   tributeValue?: (g: Game, self: CardInstance, forUid: string) => number;
   /** Synchro Summon requirements (for Synchro Monsters). */
   synchro?: SynchroRequirement;
+  /** Continuous: change a monster's Attribute (e.g. Advanced Dark). */
+  modifyAttribute?: (g: Game, self: CardInstance, target: CardInstance) => string | null;
+  /** Can this monster attack directly even though the opponent controls monsters? */
+  canAttackDirectly?: (g: Game, self: CardInstance) => boolean;
+  /** Called at the start of the Damage Step for the attacking and defending monsters (e.g. Topaz Tiger's ATK bonus). */
+  onDamageStepStart?: (g: Game, self: CardInstance, role: 'attacker' | 'target') => void;
+  /** Continuous: extra Normal Summons of certain monsters (Rainbow Bridge of the Heart). Return a reason if `card` cannot use it. */
+  extraNormalSummon?: (g: Game, self: CardInstance, card: CardInstance) => string | null;
   /** Special Summon procedures the card offers from a given zone (e.g. Rainbow Dragon from hand, Gemini Summon). */
   specialSummon?: SpecialSummonProcedure[];
   /** Called when the card leaves the field, to clean up related state (equips etc.). */

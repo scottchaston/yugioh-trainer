@@ -6,5 +6,8 @@ import './blueEyes/spells';
 import './blueEyes/traps';
 import './blueEyes/monsters';
 import './crystalBeasts/beasts';
+import './crystalBeasts/ultimates';
+import './crystalBeasts/spells';
+import './crystalBeasts/traps';
 
 export {};

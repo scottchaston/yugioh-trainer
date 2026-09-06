@@ -34,6 +34,8 @@ function blankInstance(uid: string, cardId: string, owner: PlayerId, zone: 'deck
     attacksDeclaredThisTurn: 0,
     geminiEffectActive: false,
     treatedAsSpell: null,
+    token: null,
+    fusionSummoned: false,
     equippedTo: null,
     properlySummoned: false,
     statMods: [],
@@ -86,6 +88,8 @@ export function createGame(config: GameConfig): GameState {
       normalSummonsAllowed: 1,
       effectUses: {},
       turnFlags: {},
+      duelFlags: {},
+      pendulumSummonUsed: false,
     };
     return ps;
   }) as [PlayerState, PlayerState];
@@ -117,5 +121,7 @@ export function createGame(config: GameConfig): GameState {
     recentEvents: [],
     fx: [],
     nextFxId: 1,
+    banishInsteadUntilTurn: null,
+    nextTokenId: 1,
   };
 }

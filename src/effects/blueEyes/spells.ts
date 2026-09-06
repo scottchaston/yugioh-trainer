@@ -17,6 +17,7 @@ registerScript({
       spellSpeed: 2,
       from: SPELL_FROM,
       hardOncePerTurn: true,
+      tags: ['summonFromGY'],
       condition: (g, card, ctx) => {
         const targets = graveyardCards(g, ctx.player, (d) => d.cardType === 'Monster' && d.race === 'Dragon').filter((u) => g.isNormalMonster(u));
         if (targets.length === 0) return 'There is no Dragon Normal Monster in your Graveyard to target.';
@@ -52,6 +53,7 @@ registerScript({
       kind: 'activate',
       spellSpeed: 1,
       from: SPELL_FROM,
+      tags: ['summonFromGY'],
       condition: (g, card, ctx) => {
         if (rebornTargets(g, ctx.player).length === 0) return 'There is no monster in either Graveyard that can be Special Summoned.';
         if (g.freeMonsterZones(ctx.player).length === 0) return 'You have no empty Monster Zone to Special Summon into.';
@@ -102,6 +104,7 @@ registerScript({
       spellSpeed: 1,
       from: SPELL_FROM,
       hardOncePerTurn: true,
+      tags: ['sendFromDeck'],
       condition: (g, card, ctx) => (deckCards(g, ctx.player, (d) => d.cardType === 'Monster' && d.race === 'Dragon').length === 0 ? 'There is no Dragon monster in your Deck.' : null),
       resolve: function* (g, card, ctx) {
         const pool = deckCards(g, ctx.player, (d) => d.cardType === 'Monster' && d.race === 'Dragon');
@@ -454,6 +457,7 @@ registerScript({
       kind: 'activate',
       spellSpeed: 1,
       from: SPELL_FROM,
+      tags: ['summonFromDeck'],
       condition: (g, card, ctx) => {
         const monsters = handCards(g, ctx.player, (d) => d.cardType === 'Monster');
         if (monsters.length === 0) return 'You need a monster in your hand to send to the Graveyard as the cost.';
@@ -496,6 +500,7 @@ registerScript({
       kind: 'activate',
       spellSpeed: 1,
       from: SPELL_FROM,
+      tags: ['summonFromDeck'],
       condition: (g, card, ctx) => {
         if (g.fieldMonsters(ctx.player).filter((m) => isDragon(g, m.uid)).length < 2) return 'You need 2 Dragon monsters you control to Tribute as the cost.';
         if (deckCards(g, ctx.player, (d) => d.cardType === 'Monster' && d.race === 'Dragon' && d.level === 8).length === 0) return 'There is no Level 8 Dragon monster in your Deck.';

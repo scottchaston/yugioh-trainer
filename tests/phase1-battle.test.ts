@@ -85,7 +85,8 @@ describe('battle', () => {
     tg.run({ type: 'DECLARE_ATTACK', player: 1, uid: tiger });
     expect(tg.card(rabid).faceUp).toBe(true);
     expect(tg.card(rabid).position).toBe('DEF');
-    expect(tg.state.players[1].lp).toBe(8000 - 1300);
+    // Topaz Tiger gains 400 ATK during the Damage Step when attacking a monster: 2000 vs DEF 2900
+    expect(tg.state.players[1].lp).toBe(8000 - 900);
   });
 
   it('Defense Position monsters cannot attack; must attack a monster if opponent has one', () => {

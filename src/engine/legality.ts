@@ -11,6 +11,8 @@ import {
   checkEndTurn,
   checkFlipSummon,
   checkGeminiSummon,
+  checkPendulumSummon,
+  checkPlacePendulum,
   checkNormalSummon,
   checkSetSpellTrap,
   checkSpecialSummonProcedure,
@@ -52,6 +54,17 @@ export function getLegalActions(state: GameState, player: PlayerId): LegalAction
           legal: !r2,
           reason: r2 ?? undefined,
           rule: 'Setting places the monster face-down in Defense Position. It uses your one Normal Summon/Set for the turn, and the monster cannot be Flip Summoned until your next turn.',
+          uid,
+        });
+      }
+      if (d.monsterTypes?.includes('Pendulum')) {
+        const rp = checkPlacePendulum(g, player, uid);
+        out.push({
+          action: { type: 'PLACE_PENDULUM', player, uid },
+          label: `Place in Pendulum Zone (Scale ${d.pendulumScale})`,
+          legal: !rp,
+          reason: rp ?? undefined,
+          rule: 'A Pendulum Monster can be placed face-up in one of your two Pendulum Zones (the leftmost and rightmost Spell & Trap Zones). There it is treated as a Spell Card and its Pendulum Effect applies. With two Scales set, you can Pendulum Summon monsters whose Levels are between them once per turn.',
           uid,
         });
       }
@@ -158,6 +171,12 @@ export function getLegalActions(state: GameState, player: PlayerId): LegalAction
   // Spell/Trap zone + field zone
   for (const c of [...g.spellTrapCards(player), ...(g.fieldSpell(player) ? [g.fieldSpell(player)!] : [])]) {
     pushEffectActivations(g, player, c.uid, out);
+  }
+
+  // Pendulum Summon
+  const rps = checkPendulumSummon(g, player);
+  if (g.pendulumCards(player).length === 2 || !rps) {
+    out.push({ action: { type: 'PENDULUM_SUMMON', player }, label: 'Pendulum Summon', legal: !rps, reason: rps ?? undefined, rule: 'Once per turn, with Pendulum Monsters in both Pendulum Zones, you can Special Summon any number of monsters from your hand (and face-up Pendulum Monsters from your Extra Deck) whose Levels are strictly between the two Pendulum Scales.' });
   }
 
   // Phase actions

@@ -105,6 +105,7 @@ registerScript({
       spellSpeed: 2,
       from: ['monster'],
       oncePerTurnGroup: 'maiden',
+      tags: ['summonFromDeck', 'summonFromGY'],
       condition: (g, card, ctx) => {
         const chain = g.state.chain;
         const last = chain[chain.length - 1];
@@ -126,6 +127,7 @@ registerScript({
       from: ['monster'],
       whenYouCan: true,
       oncePerTurnGroup: 'maiden',
+      tags: ['summonFromDeck', 'summonFromGY'],
       trigger: (g, card, ev) => ev.type === 'attackDeclared' && ev.target === card.uid,
       condition: (g, card) => {
         const b = g.state.battle;
@@ -321,6 +323,7 @@ registerScript({
       spellSpeed: 1,
       from: ['graveyard'],
       mandatory: true,
+      tags: ['summonFromDeck', 'summonFromGY'],
       trigger: (g, card, ev) => ev.type === 'toGraveyard' && ev.uid === card.uid && ev.reason === 'tribute',
       condition: (g, card, ctx) => {
         const pl = g.player(ctx.player);
@@ -377,6 +380,7 @@ function discardThenRecover(name: string, filterLabel: string, filter: (g: Game,
         spellSpeed: 1,
         from: ['monster'],
         oncePerTurn: true,
+        tags: ['addFromGY'],
         condition: (g, card, ctx) => {
           if (!card.faceUp) return `${name} must be face-up.`;
           if (g.player(ctx.player).hand.length === 0) return 'You need a card in your hand to discard as the cost.';
@@ -425,6 +429,7 @@ registerScript({
       spellSpeed: 1,
       from: ['graveyard'],
       mandatory: true,
+      tags: ['searchDeck'],
       trigger: (g, card, ev) => ev.type === 'toGraveyard' && ev.uid === card.uid,
       condition: (g, card, ctx) => (deckCards(g, ctx.player, (d) => d.name === 'Blue-Eyes White Dragon').length === 0 ? 'There is no "Blue-Eyes White Dragon" in your Deck.' : null),
       resolve: function* (g, card, ctx) {
@@ -493,6 +498,7 @@ registerScript({
       spellSpeed: 1,
       from: ['graveyard'],
       whenYouCan: true,
+      tags: ['summonFromDeck'],
       trigger: (g, card, ev) => ev.type === 'toGraveyard' && ev.uid === card.uid && ev.reason === 'destroyedBattle',
       condition: (g, card, ctx) => {
         if (deckCards(g, ctx.player, (d) => d.cardType === 'Monster' && d.attribute === 'LIGHT' && (d.atk ?? 0) <= 1500 && !hasType(d, 'Fusion') && !hasType(d, 'Synchro')).length === 0) return 'There is no LIGHT monster with 1500 or less ATK in your Deck.';
@@ -546,6 +552,7 @@ registerScript({
       spellSpeed: 1,
       from: ['monster'],
       oncePerTurn: true,
+      tags: ['summonFromGY'],
       trigger: (g, card, ev) => ev.type === 'phaseStart' && ev.phase === 'STANDBY' && ev.player === card.controller,
       condition: (g, card, ctx) => {
         if (!card.faceUp) return 'Azure-Eyes Silver Dragon must be face-up.';

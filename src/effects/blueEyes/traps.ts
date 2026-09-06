@@ -140,6 +140,7 @@ registerScript({
       from: TRAP_FROM,
       oncePerTurn: true,
       damageStep: 'calc',
+      tags: ['banishFromGY'],
       condition: (g, card, ctx) => {
         if (!card.faceUp) return 'Castle of Dragon Souls must be face-up (activated) first.';
         if (graveyardCards(g, ctx.player, (d) => d.cardType === 'Monster' && d.race === 'Dragon').length === 0) return 'There is no Dragon monster in your Graveyard to banish.';
@@ -286,6 +287,7 @@ registerScript({
       spellSpeed: 2,
       from: TRAP_FROM,
       damageStep: 'any',
+      tags: ['summonFromDeck'],
       condition: (g, card, ctx) => {
         const ev = g.state.windowEvents.find((e) => e.type === 'battleDamage' && e.player === ctx.player);
         if (!ev) return 'Damage Condenser can only be activated right after you take battle damage.';
@@ -327,6 +329,7 @@ registerScript({
       kind: 'activate',
       spellSpeed: 2,
       from: TRAP_FROM,
+      tags: ['summonFromGY'],
       condition: (g, card, ctx) => {
         if (cothTargets(g, ctx.player).length === 0) return 'There is no monster in your Graveyard that can be Special Summoned.';
         if (g.freeMonsterZones(ctx.player).length === 0) return 'No free Monster Zone.';
@@ -444,7 +447,7 @@ registerScript({
             g.log(`The Summon of ${g.name(attempt.uid)} is negated by Champion's Vigilance.`, 'effect');
           }
         } else {
-          yield* negateChainLink(g, ctx.data['linkIndex'] as number, card.uid, true);
+          yield* negateChainLink(g, ctx.data['linkIndex'] as number, card.uid, 'destroy');
         }
       },
     },

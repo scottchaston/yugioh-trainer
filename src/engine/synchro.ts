@@ -23,6 +23,7 @@ export function synchroCombos(g: Game, synchroUid: string, player: PlayerId, req
   const tuners = monsters.filter((m) => hasType(g.def(m.uid), 'Tuner') && (!req.tuner || req.tuner(g, m)));
   const nonTuners = monsters.filter((m) => !hasType(g.def(m.uid), 'Tuner') && (!req.nonTuner || req.nonTuner(g, m)));
   const combos: Combo[] = [];
+  const mustUse = monsters.find((m) => g.name(m.uid) === 'Contact "C"')?.uid;
   for (const t of tuners) {
     const others = nonTuners.filter((m) => m.uid !== t.uid);
     const n = others.length;
@@ -30,6 +31,7 @@ export function synchroCombos(g: Game, synchroUid: string, player: PlayerId, req
       const chosen: CardInstance[] = [];
       for (let i = 0; i < n; i++) if (mask & (1 << i)) chosen.push(others[i]);
       const sum = levelOf(g, t.uid) + chosen.reduce((a, m) => a + levelOf(g, m.uid), 0);
+      if (mustUse && t.uid !== mustUse && !chosen.some((m) => m.uid === mustUse)) continue;
       if (sum === target) combos.push({ tuner: t.uid, nonTuners: chosen.map((m) => m.uid) });
     }
   }

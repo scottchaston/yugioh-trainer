@@ -5,7 +5,7 @@ import { DECKS } from '../src/cards/decks';
 
 describe('game setup', () => {
   it('builds both decks with correct sizes and Extra Deck separation', () => {
-    const tg = makeGame();
+    const tg = makeGame({ keepHands: true });
     const p1 = tg.state.players[0];
     const p2 = tg.state.players[1];
     // SDBE: 40 main (5 in hand + 35 in deck), 1 extra
@@ -31,15 +31,15 @@ describe('game setup', () => {
   });
 
   it('shuffles deterministically by seed and differently for different seeds', () => {
-    const a = makeGame({ seed: 1 }).state.players[0].deck.join(',');
-    const b = makeGame({ seed: 1 }).state.players[0].deck.join(',');
-    const c = makeGame({ seed: 2 }).state.players[0].deck.join(',');
+    const a = makeGame({ seed: 1, keepHands: true }).state.players[0].deck.join(',');
+    const b = makeGame({ seed: 1, keepHands: true }).state.players[0].deck.join(',');
+    const c = makeGame({ seed: 2, keepHands: true }).state.players[0].deck.join(',');
     expect(a).toBe(b);
     expect(a).not.toBe(c);
   });
 
   it('starts turn 1 without drawing, in Main Phase 1', () => {
-    const tg = makeGame();
+    const tg = makeGame({ keepHands: true });
     start(tg);
     expect(tg.state.turn).toBe(1);
     expect(tg.state.phase).toBe('MAIN1');

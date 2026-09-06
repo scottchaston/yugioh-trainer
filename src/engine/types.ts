@@ -65,7 +65,11 @@ export interface CardInstance {
    * A monster card placed in the Spell & Trap Zone that is treated as a Spell Card there
    * (Crystal Beasts become Continuous Spells; Rider of the Storm Winds becomes an Equip Spell).
    */
-  treatedAsSpell: 'continuous' | 'equip' | null;
+  treatedAsSpell: 'continuous' | 'equip' | 'pendulum' | null;
+  /** Token stats (tokens are created during the Duel and removed when they leave the field). */
+  token: { name: string; race: string; attribute: string; level: number; atk: number; def: number } | null;
+  /** This monster was Fusion Summoned (relevant for effects that require it). */
+  fusionSummoned: boolean;
   /** For Equip Spells: uid of the monster this is equipped to. */
   equippedTo: string | null;
   /** Special Summoned properly (relevant for reviving Extra Deck monsters). */
@@ -96,6 +100,10 @@ export interface PlayerState {
   effectUses: Record<string, number>;
   /** Restrictions that last for the current turn (e.g. "cannot conduct your Battle Phase"). Cleared each turn. */
   turnFlags: Record<string, unknown>;
+  /** Facts that last the whole Duel (e.g. "Special Summoned an Ultimate Crystal monster this Duel"). */
+  duelFlags: Record<string, unknown>;
+  /** Pendulum Summon already performed this turn. */
+  pendulumSummonUsed: boolean;
 }
 
 export interface ChainLink {
@@ -120,6 +128,10 @@ export interface BattleState {
   targetCountAtDeclaration: number;
   damageStepStage: 'start' | 'beforeCalc' | 'calc' | 'afterCalc' | 'end' | null;
   attackNegated: boolean;
+  /** The attack is a direct attack allowed by a card effect (e.g. Amethyst Cat) even though monsters are present. */
+  directAttackByEffect: boolean;
+  /** Battle damage modifiers chosen during this battle, per player: 'half' or 'none'. */
+  damageModifier: Record<string, 'half' | 'none' | undefined>;
 }
 
 export type LogKind = 'action' | 'effect' | 'rule' | 'battle' | 'lp' | 'phase' | 'system' | 'chain';
@@ -160,7 +172,9 @@ export type GameEventBody =
   | { type: 'controlChanged'; uid: string; to: PlayerId }
   | { type: 'targeted'; uid: string; source: string; player: PlayerId }
   | { type: 'summonNegated'; uid: string }
-  | { type: 'summonAttempt'; uid: string; player: PlayerId; method: 'normal' | 'special' | 'flip' };
+  | { type: 'summonAttempt'; uid: string; player: PlayerId; method: 'normal' | 'special' | 'flip' }
+  | { type: 'counterAdded'; uid: string; counter: string; amount: number }
+  | { type: 'pendulumPlaced'; uid: string; player: PlayerId };
 
 /** A summon that is happening right now (cards like Champion's Vigilance can negate it). */
 export interface SummonAttempt {
@@ -242,6 +256,9 @@ export interface GameState {
   recentEvents: GameEvent[];
   fx: FxEvent[];
   nextFxId: number;
+  /** While set (turn number), cards that would be sent to the GY are banished instead (Dimension Shifter). */
+  banishInsteadUntilTurn: number | null;
+  nextTokenId: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -327,6 +344,8 @@ export type Action =
   | { type: 'ACTIVATE'; player: PlayerId; uid: string; effectId: string }
   | { type: 'SPECIAL_SUMMON'; player: PlayerId; uid: string; procId: string }
   | { type: 'GEMINI_SUMMON'; player: PlayerId; uid: string }
+  | { type: 'PLACE_PENDULUM'; player: PlayerId; uid: string }
+  | { type: 'PENDULUM_SUMMON'; player: PlayerId }
   | { type: 'DECLARE_ATTACK'; player: PlayerId; uid: string }
   | { type: 'TO_BATTLE_PHASE'; player: PlayerId }
   | { type: 'TO_MAIN2'; player: PlayerId }

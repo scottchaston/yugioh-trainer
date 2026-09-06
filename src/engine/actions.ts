@@ -44,7 +44,8 @@ export function checkNormalSummon(g: Game, player: PlayerId, uid: string, asSet:
   if (script?.cannotNormalSummon) return `${d.name} cannot be Normal Summoned or Set. ${script.cannotNormalSummon}`;
   const pl = g.player(player);
   if (pl.normalSummonsUsed >= pl.normalSummonsAllowed) {
-    return `You have already Normal Summoned or Set a monster this turn. You can only Normal Summon or Set once per turn.`;
+    const extra = extraNormalSummonSource(g, player, uid);
+    if (!extra || asSet) return `You have already Normal Summoned or Set a monster this turn. You can only Normal Summon or Set once per turn.`;
   }
   const level = d.level ?? 0;
   const tributes = tributesRequired(level);
@@ -58,6 +59,18 @@ export function checkNormalSummon(g: Game, player: PlayerId, uid: string, asSet:
     if (g.fieldMonsters(player).length === 5 && !forced && tributes === 0) return 'All five of your Main Monster Zones are full.';
   } else if (g.freeMonsterZones(player).length === 0) {
     return 'All five of your Main Monster Zones are full. You need an empty Monster Zone.';
+  }
+  return null;
+}
+
+/** A face-up card granting an additional Normal Summon of `uid` this turn (e.g. Rainbow Bridge of the Heart). */
+export function extraNormalSummonSource(g: Game, player: PlayerId, uid: string): string | null {
+  const pl = g.player(player);
+  if (pl.turnFlags['extraNormalSummonUsed']) return null;
+  for (const src of g.activeFieldCards()) {
+    if (src.controller !== player) continue;
+    const sc = getScript(g.name(src.uid));
+    if (sc?.extraNormalSummon && sc.extraNormalSummon(g, src, g.card(uid)) === null) return src.uid;
   }
   return null;
 }
@@ -121,7 +134,14 @@ export function* normalSummonOrSet(g: Game, player: PlayerId, uid: string, asSet
   const zone = yield* g.chooseMonsterZone(player, `Choose a Monster Zone for ${d.name}`);
   g.placeMonster(uid, player, zone, asSet ? 'DEF' : 'ATK', !asSet);
   const c = g.card(uid);
-  g.player(player).normalSummonsUsed++;
+  const pl0 = g.player(player);
+  if (pl0.normalSummonsUsed >= pl0.normalSummonsAllowed) {
+    const src = extraNormalSummonSource(g, player, uid)!;
+    pl0.turnFlags['extraNormalSummonUsed'] = true;
+    g.log(`${g.name(src)} allows this additional Normal Summon.`, 'rule');
+  } else {
+    pl0.normalSummonsUsed++;
+  }
   if (asSet) {
     c.setThisTurn = true;
     g.log(`${g.playerName(player)} Sets a monster${tributes > 0 ? ` (Tribute Set)` : ''} in face-down Defense Position.`, 'action');
@@ -178,6 +198,147 @@ export function* geminiSummon(g: Game, player: PlayerId, uid: string): Process<v
   }
   g.emit({ type: 'summon', uid, player, method: 'normal', how: 'gemini' });
   yield* afterAction(g, `${g.name(uid)} was Gemini Summoned`);
+}
+
+// ---------------------------------------------------------------------------
+// Pendulum Zones and Pendulum Summon
+// ---------------------------------------------------------------------------
+
+export function checkPlacePendulum(g: Game, player: PlayerId, uid: string): string | null {
+  const base = checkOpenMainPhase(g, player);
+  if (base) return base;
+  const c = g.card(uid);
+  const d = g.def(uid);
+  if (!d.monsterTypes?.includes('Pendulum')) return `${d.name} is not a Pendulum Monster.`;
+  if (c.zone !== 'hand' || c.owner !== player) return `${d.name} must be in your hand to be placed in a Pendulum Zone.`;
+  const pl = g.player(player);
+  const free = [0, 4].filter((i) => !pl.spellTrapZones[i]);
+  if (free.length === 0) return 'Both of your Pendulum Zones (the leftmost and rightmost Spell & Trap Zones) are occupied.';
+  return null;
+}
+
+export function* placePendulum(g: Game, player: PlayerId, uid: string): Process<void> {
+  const reason = checkPlacePendulum(g, player, uid);
+  if (reason) throw new Error(reason);
+  const pl = g.player(player);
+  const free = [0, 4].filter((i) => !pl.spellTrapZones[i]);
+  let index = free[0];
+  if (free.length > 1) {
+    const z = yield* g.selectZone(
+      player,
+      `Choose a Pendulum Zone for ${g.name(uid)}`,
+      free.map((i) => ({ player, zone: 'spellTrap' as const, index: i })),
+      'The leftmost and rightmost Spell & Trap Zones are your Pendulum Zones.',
+      true,
+    );
+    index = z.index;
+  }
+  g.placeSpellTrap(uid, player, index, true);
+  const c = g.card(uid);
+  c.treatedAsSpell = 'pendulum';
+  g.log(`${g.playerName(player)} places ${g.name(uid)} (Scale ${g.def(uid).pendulumScale}) in a Pendulum Zone. It is treated as a Spell Card there.`, 'action');
+  g.fx({ type: 'activate', uid, player, what: 'spell' });
+  g.emit({ type: 'pendulumPlaced', uid, player });
+  g.emit({ type: 'activated', uid, effectId: 'pendulum', player });
+  yield* afterAction(g, `${g.name(uid)} was placed in a Pendulum Zone`);
+}
+
+export function pendulumScales(g: Game, player: PlayerId): { low: number; high: number } | null {
+  const pend = g.pendulumCards(player);
+  if (pend.length < 2) return null;
+  const scales = pend.map((c) => g.def(c.uid).pendulumScale ?? 0);
+  return { low: Math.min(...scales), high: Math.max(...scales) };
+}
+
+export function pendulumSummonCandidates(g: Game, player: PlayerId): string[] {
+  const sc = pendulumScales(g, player);
+  if (!sc) return [];
+  const pl = g.player(player);
+  const ok = (uid: string) => {
+    const d = g.def(uid);
+    if (d.cardType !== 'Monster') return false;
+    const lvl = d.level ?? 0;
+    if (!(lvl > sc.low && lvl < sc.high)) return false;
+    if (getScript(d.name)?.cannotNormalSummon && d.text.includes('Must be Special Summoned')) return false;
+    return true;
+  };
+  const fromHand = pl.hand.filter(ok);
+  const fromExtra = g.usableExtraMonsterZones(player).length > 0 ? pl.extra.filter((u) => g.card(u).faceUp && ok(u)) : [];
+  return [...fromHand, ...fromExtra];
+}
+
+export function checkPendulumSummon(g: Game, player: PlayerId): string | null {
+  const base = checkOpenMainPhase(g, player);
+  if (base) return base;
+  const sc = pendulumScales(g, player);
+  if (!sc) return 'You need Pendulum Monsters in both of your Pendulum Zones to Pendulum Summon.';
+  if (sc.low === sc.high) return `Both of your Pendulum Scales are ${sc.low}; you can only Pendulum Summon monsters with Levels strictly between the two Scales.`;
+  if (g.player(player).pendulumSummonUsed) return 'You can only Pendulum Summon once per turn.';
+  const cands = pendulumSummonCandidates(g, player);
+  if (cands.length === 0) return `You have no monster in your hand (or face-up in your Extra Deck) with a Level between ${sc.low} and ${sc.high} (exclusive).`;
+  if (g.freeMonsterZones(player).length === 0 && g.usableExtraMonsterZones(player).length === 0) return 'You have no free Monster Zone.';
+  return null;
+}
+
+export function* pendulumSummon(g: Game, player: PlayerId): Process<void> {
+  const reason = checkPendulumSummon(g, player);
+  if (reason) throw new Error(reason);
+  const sc = pendulumScales(g, player)!;
+  const cands = pendulumSummonCandidates(g, player);
+  const maxN = g.freeMonsterZones(player).length + (g.usableExtraMonsterZones(player).length > 0 ? 1 : 0);
+  const chosen = yield* g.selectCards(
+    player,
+    `Pendulum Summon: choose monsters with Levels between ${sc.low} and ${sc.high}`,
+    cands,
+    1,
+    Math.min(maxN, cands.length),
+    'Monsters from your hand go to your Main Monster Zones; face-up Pendulum Monsters from the Extra Deck must go to an Extra Monster Zone.',
+    true,
+  );
+  const fromExtra = chosen.filter((u) => g.card(u).zone === 'extra');
+  if (fromExtra.length > 1) throw new Error('Only one monster can be Pendulum Summoned from the Extra Deck (it needs the Extra Monster Zone).');
+  if (chosen.length - fromExtra.length > g.freeMonsterZones(player).length) throw new Error('Not enough free Main Monster Zones.');
+  g.player(player).pendulumSummonUsed = true;
+  g.log(`${g.playerName(player)} Pendulum Summons ${chosen.map((u) => g.name(u)).join(', ')} (Scales ${sc.low} and ${sc.high}).`, 'action');
+  const summoned: string[] = [];
+  for (const uid of chosen) {
+    const pos = yield* g.selectOption(player, `${g.name(uid)}: which position?`, [
+      { id: 'ATK', label: 'Attack Position' },
+      { id: 'DEF', label: 'Defense Position' },
+    ]);
+    if (g.card(uid).zone === 'extra') {
+      const zones = g.usableExtraMonsterZones(player);
+      let idx = zones[0];
+      if (zones.length > 1) {
+        const z = yield* g.selectZone(player, `Choose an Extra Monster Zone for ${g.name(uid)}`, zones.map((i) => ({ player, zone: 'extraMonster' as const, index: i })));
+        idx = z.index;
+      }
+      g.placeInExtraMonsterZone(uid, player, idx, pos as 'ATK' | 'DEF');
+      g.card(uid).properlySummoned = true;
+    } else {
+      const zone = yield* g.chooseMonsterZone(player, `Choose a Monster Zone for ${g.name(uid)}`);
+      g.placeMonster(uid, player, zone, pos as 'ATK' | 'DEF', true);
+      g.card(uid).summonedThisTurn = true;
+      g.card(uid).properlySummoned = true;
+    }
+    g.fx({ type: 'summon', uid, method: 'special' });
+    summoned.push(uid);
+  }
+  // A Pendulum Summon of several monsters is one Summon; the negation window covers all of them.
+  const ok = yield* summonWindow(g, summoned[0], player, 'special', 'pendulum');
+  if (!ok) {
+    for (const uid of summoned.slice(1)) {
+      const c = g.state.cards[uid];
+      if (c && g.isMonsterOnField(c)) {
+        g.emit({ type: 'destroyed', uid, reason: 'effect' });
+        g.sendToGraveyard(uid, 'destroyedEffect');
+      }
+    }
+    yield* afterAction(g, 'The Pendulum Summon was negated');
+    return;
+  }
+  for (const uid of summoned) g.emit({ type: 'summon', uid, player, method: 'special', how: 'pendulum' });
+  yield* afterAction(g, 'Pendulum Summon');
 }
 
 // ---------------------------------------------------------------------------
@@ -314,18 +475,35 @@ export function* declareAttack(g: Game, player: PlayerId, uid: string): Process<
   const opponent = g.opponent(player);
   const oppMonsters = g.fieldMonsters(opponent).filter((t) => !attackRestriction(g, uid, t.uid));
   let target: string | null = null;
+  let directByEffect = false;
+  const directAllowed = !!getScript(g.name(uid))?.canAttackDirectly?.(g, g.card(uid)) && !g.card(uid).flags['effectsNegated'];
   if (g.fieldMonsters(opponent).length > 0) {
-    if (oppMonsters.length === 0) throw new Error('No legal attack target.');
-    const chosen = yield* g.selectCards(
-      player,
-      `Choose the monster ${g.name(uid)} attacks`,
-      oppMonsters.map((m) => m.uid),
-      1,
-      1,
-      'Your opponent controls monsters, so you must attack one of them (you cannot attack directly).',
-      true,
-    );
-    target = chosen[0];
+    if (oppMonsters.length === 0 && !directAllowed) throw new Error('No legal attack target.');
+    if (directAllowed) {
+      const choice = yield* g.selectOption(
+        player,
+        `${g.name(uid)}: attack a monster, or attack directly?`,
+        [
+          ...oppMonsters.map((m) => ({ id: m.uid, label: `Attack ${m.faceUp ? g.name(m.uid) : 'the face-down monster'}` })),
+          { id: 'direct', label: 'Attack directly (card effect; battle damage is halved)' },
+        ],
+        `${g.name(uid)}'s effect lets it attack directly even though your opponent controls monsters.`,
+        true,
+      );
+      if (choice === 'direct') directByEffect = true;
+      else target = choice;
+    } else {
+      const chosen = yield* g.selectCards(
+        player,
+        `Choose the monster ${g.name(uid)} attacks`,
+        oppMonsters.map((m) => m.uid),
+        1,
+        1,
+        'Your opponent controls monsters, so you must attack one of them (you cannot attack directly).',
+        true,
+      );
+      target = chosen[0];
+    }
   } else if (attackRestriction(g, uid, null)) {
     throw new Error(attackRestriction(g, uid, null)!);
   }
@@ -337,6 +515,8 @@ export function* declareAttack(g: Game, player: PlayerId, uid: string): Process<
   b.targetCountAtDeclaration = g.fieldMonsters(opponent).length;
   b.damageStepStage = null;
   b.attackNegated = false;
+  b.directAttackByEffect = directByEffect;
+  b.damageModifier = {};
   const c = g.card(uid);
   c.attacksDeclaredThisTurn++;
   if (target) {
@@ -371,7 +551,7 @@ export function* declareAttack(g: Game, player: PlayerId, uid: string): Process<
 
   // Replay: if the number of monsters the opponent controls changed, the attacker may choose again.
   const nowCount = g.fieldMonsters(opponent).length;
-  if (nowCount !== bb.targetCountAtDeclaration || (bb.target === null && nowCount > 0) || (bb.target !== null && !g.isMonsterOnField(g.card(bb.target)))) {
+  if (nowCount !== bb.targetCountAtDeclaration || (bb.target === null && nowCount > 0 && !bb.directAttackByEffect) || (bb.target !== null && !g.isMonsterOnField(g.card(bb.target)))) {
     g.log('A replay occurs: the number of monsters on the opposing field changed before the Damage Step. The attacker chooses again.', 'rule');
     const targets = g.fieldMonsters(opponent).filter((t) => !attackRestriction(g, att.uid, t.uid));
     const options = [
@@ -409,6 +589,8 @@ function endBattle(g: Game): void {
   b.target = null;
   b.damageStepStage = null;
   b.attackNegated = false;
+  b.directAttackByEffect = false;
+  b.damageModifier = {};
 }
 
 // ---------------------------------------------------------------------------
@@ -429,7 +611,7 @@ export function* toBattlePhase(g: Game, player: PlayerId): Process<void> {
   if (reason) throw new Error(reason);
   yield* fastEffectWindow(g, { description: 'end of Main Phase 1', kind: 'phase' }, [g.opponent(player)]);
   g.state.phase = 'BATTLE';
-  g.state.battle = { step: 'START', attacker: null, target: null, targetCountAtDeclaration: 0, damageStepStage: null, attackNegated: false };
+  g.state.battle = { step: 'START', attacker: null, target: null, targetCountAtDeclaration: 0, damageStepStage: null, attackNegated: false, directAttackByEffect: false, damageModifier: {} };
   g.log(`${g.playerName(player)} enters the Battle Phase.`, 'phase');
   g.emit({ type: 'phaseStart', phase: 'BATTLE', player });
   yield* fastEffectWindow(g, { description: 'Start Step of the Battle Phase', kind: 'phase' });
@@ -450,6 +632,7 @@ export function* toMain2(g: Game, player: PlayerId): Process<void> {
   if (g.state.battle) g.state.battle.step = 'END';
   yield* fastEffectWindow(g, { description: 'End Step of the Battle Phase', kind: 'phase' });
   g.state.battle = null;
+  clearBattlePhaseFlags(g);
   g.state.phase = 'MAIN2';
   g.log(`${g.playerName(player)} enters Main Phase 2.`, 'phase');
   g.emit({ type: 'phaseStart', phase: 'MAIN2', player });
@@ -472,6 +655,7 @@ export function* endTurn(g: Game, player: PlayerId): Process<void> {
     if (g.state.battle) g.state.battle.step = 'END';
     yield* fastEffectWindow(g, { description: 'End Step of the Battle Phase', kind: 'phase' });
     g.state.battle = null;
+    clearBattlePhaseFlags(g);
   } else {
     yield* fastEffectWindow(g, { description: `end of ${PHASE_LABEL[g.state.phase]}`, kind: 'phase' }, [g.opponent(player)]);
   }
@@ -499,6 +683,17 @@ export function* endTurn(g: Game, player: PlayerId): Process<void> {
   yield* startTurn(g, g.opponent(player));
 }
 
+/** Effects that last "during that Battle Phase" (e.g. Advanced Dark's negation). */
+function clearBattlePhaseFlags(g: Game): void {
+  for (const c of Object.values(g.state.cards)) {
+    if (c.flags['effectsNegatedBattlePhase']) {
+      delete c.flags['effectsNegatedBattlePhase'];
+      delete c.flags['effectsNegated'];
+      delete c.flags['negatedBy'];
+    }
+  }
+}
+
 function* endOfTurnCleanup(g: Game): Process<void> {
   for (const c of Object.values(g.state.cards)) {
     // Effects that last "until the end of this turn"
@@ -520,7 +715,9 @@ export function* startTurn(g: Game, player: PlayerId): Process<void> {
   for (const p of [0, 1] as PlayerId[]) {
     g.player(p).effectUses = {};
     g.player(p).turnFlags = {};
+    g.player(p).pendulumSummonUsed = false;
   }
+  if (g.state.banishInsteadUntilTurn !== null && g.state.turn > g.state.banishInsteadUntilTurn) g.state.banishInsteadUntilTurn = null;
   for (const c of Object.values(g.state.cards)) {
     c.summonedThisTurn = false;
     c.setThisTurn = false;
@@ -612,6 +809,12 @@ export function* runAction(g: Game, action: Action): Process<void> {
       return;
     case 'GEMINI_SUMMON':
       yield* geminiSummon(g, action.player, action.uid);
+      return;
+    case 'PLACE_PENDULUM':
+      yield* placePendulum(g, action.player, action.uid);
+      return;
+    case 'PENDULUM_SUMMON':
+      yield* pendulumSummon(g, action.player);
       return;
     case 'DECLARE_ATTACK':
       yield* declareAttack(g, action.player, action.uid);

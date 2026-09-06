@@ -57,6 +57,14 @@ export function* damageStep(g: Game): Process<void> {
 
   g.log('Damage Step begins.', 'battle');
   b.damageStepStage = 'start';
+  {
+    const att = g.card(attackerUid);
+    if (!att.flags['effectsNegated']) getScript(g.name(attackerUid))?.onDamageStepStart?.(g, att, 'attacker');
+    if (b.target) {
+      const t = g.card(b.target);
+      if (t.faceUp && !t.flags['effectsNegated']) getScript(g.name(b.target))?.onDamageStepStart?.(g, t, 'target');
+    }
+  }
   yield* fastEffectWindow(g, { description: 'start of the Damage Step', damageStepStage: 'start' });
 
   // Before damage calculation: flip a face-down monster face-up.
@@ -85,12 +93,33 @@ export function* damageStep(g: Game): Process<void> {
   }
 
   const destroyed: string[] = [];
+  b.damageStepStage = 'calc';
   const attackerStats = g.stats(attackerUid);
   const attackerName = g.name(attackerUid);
+  const inflict = (player: PlayerId, amount: number, reason: string, source: string) => {
+    let dmg = amount;
+    const mod = b.damageModifier[String(player)];
+    const turnHalf = false;
+    const noBattle = g.player(player).turnFlags['noBattleDamage'];
+    if (b.directAttackByEffect && player === defender) {
+      dmg = Math.floor(dmg / 2);
+      g.log(`The battle damage is halved because the direct attack was allowed by a card effect: ${dmg}.`, 'rule');
+    }
+    if (mod === 'half' || turnHalf) {
+      dmg = Math.floor(dmg / 2);
+      g.log(`The battle damage is halved: ${dmg}.`, 'rule');
+    }
+    if (mod === 'none' || noBattle) {
+      g.log(`${g.playerName(player)} takes no battle damage from this battle (card effect).`, 'rule');
+      return;
+    }
+    if (dmg <= 0) return;
+    g.changeLP(player, -dmg, reason);
+    g.emit({ type: 'battleDamage', player, amount: dmg, attacker: source });
+  };
   if (!b.target) {
     g.log(`Damage calculation: ${attackerName} (ATK ${attackerStats.atk}) attacks directly.`, 'battle');
-    g.changeLP(defender, -attackerStats.atk, `direct attack by ${attackerName}`);
-    g.emit({ type: 'battleDamage', player: defender, amount: attackerStats.atk, attacker: attackerUid });
+    inflict(defender, attackerStats.atk, `direct attack by ${attackerName}`, attackerUid);
   } else {
     const targetUid = b.target;
     const target = g.card(targetUid);
@@ -102,14 +131,12 @@ export function* damageStep(g: Game): Process<void> {
         const dmg = attackerStats.atk - targetStats.atk;
         g.log(`${attackerName} wins the battle. ${targetName} will be destroyed; ${g.playerName(target.controller)} takes ${dmg} battle damage (the difference in ATK).`, 'battle');
         destroyed.push(targetUid);
-        g.changeLP(target.controller, -dmg, `battle: ${attackerName} vs ${targetName}`);
-        g.emit({ type: 'battleDamage', player: target.controller, amount: dmg, attacker: attackerUid });
+        inflict(target.controller, dmg, `battle: ${attackerName} vs ${targetName}`, attackerUid);
       } else if (attackerStats.atk < targetStats.atk) {
         const dmg = targetStats.atk - attackerStats.atk;
         g.log(`${targetName} wins the battle. ${attackerName} will be destroyed; ${g.playerName(attackerCtrl)} takes ${dmg} battle damage (the difference in ATK).`, 'battle');
         destroyed.push(attackerUid);
-        g.changeLP(attackerCtrl, -dmg, `battle: ${attackerName} vs ${targetName}`);
-        g.emit({ type: 'battleDamage', player: attackerCtrl, amount: dmg, attacker: targetUid });
+        inflict(attackerCtrl, dmg, `battle: ${attackerName} vs ${targetName}`, targetUid);
       } else {
         g.log(`Both monsters have equal ATK. Both will be destroyed, and no battle damage is inflicted.`, 'battle');
         destroyed.push(targetUid, attackerUid);
@@ -122,16 +149,14 @@ export function* damageStep(g: Game): Process<void> {
         if (hasPiercing(g, attackerUid)) {
           const dmg = attackerStats.atk - targetStats.def;
           g.log(`${attackerName} inflicts piercing battle damage: ${dmg}.`, 'battle');
-          g.changeLP(target.controller, -dmg, `piercing battle damage from ${attackerName}`);
-          g.emit({ type: 'battleDamage', player: target.controller, amount: dmg, attacker: attackerUid });
+          inflict(target.controller, dmg, `piercing battle damage from ${attackerName}`, attackerUid);
         } else {
           g.log('No battle damage is inflicted when attacking a Defense Position monster (unless the attacker has a piercing effect).', 'rule');
         }
       } else if (attackerStats.atk < targetStats.def) {
         const dmg = targetStats.def - attackerStats.atk;
         g.log(`${targetName}'s DEF is higher than ${attackerName}'s ATK. Neither monster is destroyed, but ${g.playerName(attackerCtrl)} takes ${dmg} battle damage (the difference).`, 'battle');
-        g.changeLP(attackerCtrl, -dmg, `battle: ${attackerName} attacked ${targetName} in Defense Position`);
-        g.emit({ type: 'battleDamage', player: attackerCtrl, amount: dmg, attacker: targetUid });
+        inflict(attackerCtrl, dmg, `battle: ${attackerName} attacked ${targetName} in Defense Position`, targetUid);
       } else {
         g.log(`${attackerName}'s ATK equals ${targetName}'s DEF. Nothing is destroyed and no damage is inflicted.`, 'battle');
       }
@@ -149,8 +174,37 @@ export function* damageStep(g: Game): Process<void> {
     if (!c || !g.isMonsterOnField(c)) continue;
     yield* g.destroyByBattle(uid, uid === attackerUid ? (b.target ?? attackerUid) : attackerUid);
   }
+  for (const uid of [attackerUid, b.target]) {
+    const c = uid ? g.state.cards[uid] : undefined;
+    if (!c || !g.isMonsterOnField(c)) continue;
+    c.flags['battledThisTurn'] = true;
+    if (c.flags['destroyAtEndOfDamageStep']) {
+      delete c.flags['destroyAtEndOfDamageStep'];
+      g.log(`${g.name(uid!)} is destroyed at the end of the Damage Step (${c.flags['destroyAtEndReason'] ?? 'card effect'}).`, 'effect');
+      yield* g.destroyByEffect([uid!], null);
+    }
+  }
   g.expireStatMods('endOfDamageStep');
   g.log('Damage Step ends.', 'battle');
   yield* processTriggers(g);
   yield* fastEffectWindow(g, { description: 'end of the Damage Step', damageStepStage: 'end' });
+}
+
+/** Expected battle damage to `player` for the current battle if it were calculated now (for "you would take damage" effects). */
+export function expectedBattleDamage(g: Game, player: PlayerId): number {
+  const b = g.state.battle;
+  if (!b || !b.attacker) return 0;
+  const att = g.card(b.attacker);
+  const a = g.stats(b.attacker);
+  if (!b.target) return att.controller !== player ? a.atk : 0;
+  const t = g.card(b.target);
+  const ts = g.stats(b.target);
+  if (t.position === 'ATK') {
+    if (a.atk > ts.atk && t.controller === player) return a.atk - ts.atk;
+    if (a.atk < ts.atk && att.controller === player) return ts.atk - a.atk;
+    return 0;
+  }
+  if (a.atk < ts.def && att.controller === player) return ts.def - a.atk;
+  if (a.atk > ts.def && t.controller === player && hasPiercing(g, b.attacker)) return a.atk - ts.def;
+  return 0;
 }

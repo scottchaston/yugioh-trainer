@@ -313,16 +313,28 @@ export function* activateEffect(
   return link;
 }
 
-/** Negate the activation of chain link `index` (0-based) and, for Spell/Trap cards, destroy the card. */
-export function* negateChainLink(g: Game, index: number, source: string, destroy: boolean): Process<void> {
+/**
+ * Negate chain link `index` (0-based). `mode`:
+ *  - 'destroy': negate the activation and destroy the card (Champion's Vigilance)
+ *  - 'activation': negate the activation; a Continuous/Field/Equip card is sent to the GY (Ghost Belle)
+ *  - 'effect': negate only the effect; the card stays as it is (Ash Blossom)
+ */
+export function* negateChainLink(g: Game, index: number, source: string, mode: boolean | 'destroy' | 'activation' | 'effect'): Process<void> {
   const link = g.state.chain[index];
   if (!link) return;
+  const m = mode === true ? 'destroy' : mode === false ? 'activation' : mode;
   link.negated = true;
-  g.log(`The activation of ${g.name(link.uid)} (Chain Link ${index + 1}) is negated by ${g.name(source)}.`, 'effect');
+  g.log(`The ${m === 'effect' ? 'effect' : 'activation'} of ${g.name(link.uid)} (Chain Link ${index + 1}) is negated by ${g.name(source)}.`, 'effect');
   g.fx({ type: 'negate', uid: link.uid });
-  if (destroy) {
-    const c = g.card(link.uid);
+  const c = g.card(link.uid);
+  if (m === 'destroy') {
     if (g.isOnField(c)) yield* g.destroyByEffect([link.uid], source);
+  } else if (m === 'activation') {
+    const d = g.def(link.uid);
+    if ((c.zone === 'spellTrap' || c.zone === 'field') && d.cardType !== 'Monster' && link.effectId === 'activate' && (d.property === 'Continuous' || d.property === 'Field' || d.property === 'Equip')) {
+      g.log(`${d.name}'s activation was negated, so it is sent to the Graveyard.`, 'rule');
+      g.sendToGraveyard(link.uid, 'rule');
+    }
   }
 }
 

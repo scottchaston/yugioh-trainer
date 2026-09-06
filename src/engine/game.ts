@@ -3,6 +3,7 @@
  * helpers (moving cards, damage, prompts) live here so that card scripts stay small.
  */
 import { getCard, isExtraDeckMonster, type CardDefinition } from '../cards';
+import { isUltimateCrystalName } from '../cards/archetypes';
 import { getScript } from './scripts';
 import { summonWindow } from './flow';
 import type { Process } from './scripts';
@@ -24,6 +25,22 @@ import type {
   ZoneRef,
 } from './types';
 
+export function tokenDefinition(t: NonNullable<CardInstance['token']>): CardDefinition {
+  return {
+    id: 'TOKEN',
+    name: t.name,
+    cardType: 'Monster',
+    text: 'This card can be used as a Token.',
+    setNumbers: [],
+    race: t.race,
+    monsterTypes: ['Normal'],
+    attribute: t.attribute as CardDefinition['attribute'],
+    level: t.level,
+    atk: t.atk,
+    def: t.def,
+  };
+}
+
 export class GameOver extends Error {
   constructor(public winner: PlayerId | null, public reason: string) {
     super(`Game over: ${reason}`);
@@ -42,10 +59,13 @@ export class Game {
     return c;
   }
   def(uid: string): CardDefinition {
-    return getCard(this.card(uid).cardId);
+    const c = this.card(uid);
+    if (c.token) return tokenDefinition(c.token);
+    return getCard(c.cardId);
   }
   name(uid: string): string {
-    return this.def(uid).name;
+    const c = this.card(uid);
+    return c.token ? c.token.name : getCard(c.cardId).name;
   }
   script(uid: string) {
     return getScript(this.name(uid));
@@ -130,6 +150,59 @@ export class Game {
   activeFieldCards(): CardInstance[] {
     return this.faceUpFieldCards().filter((c) => !c.flags['effectsNegated']);
   }
+  /** Current Attribute (continuous effects such as Advanced Dark can change it). */
+  attributeOf(uid: string): string {
+    const c = this.card(uid);
+    let attr = c.token ? c.token.attribute : (this.def(uid).attribute ?? '');
+    for (const src of this.activeFieldCards()) {
+      const s = getScript(this.name(src.uid));
+      const r = s?.modifyAttribute?.(this, src, c);
+      if (r) attr = r;
+    }
+    return attr;
+  }
+  /** Level of a monster (tokens carry their own). */
+  levelOf(uid: string): number {
+    const c = this.card(uid);
+    return c.token ? c.token.level : (this.def(uid).level ?? 0);
+  }
+  raceOf(uid: string): string {
+    const c = this.card(uid);
+    return c.token ? c.token.race : (this.def(uid).race ?? '');
+  }
+  /** Create a Token monster (not yet on the field). */
+  createToken(owner: PlayerId, token: NonNullable<CardInstance['token']>): string {
+    const uid = `token-${this.state.nextTokenId++}`;
+    this.state.cards[uid] = {
+      uid,
+      cardId: 'TOKEN',
+      owner,
+      controller: owner,
+      zone: 'banished',
+      index: -1,
+      faceUp: true,
+      position: null,
+      turnEnteredField: -1,
+      summonedThisTurn: false,
+      setThisTurn: false,
+      positionChangedThisTurn: false,
+      attacksDeclaredThisTurn: 0,
+      geminiEffectActive: false,
+      treatedAsSpell: null,
+      token,
+      fusionSummoned: false,
+      equippedTo: null,
+      properlySummoned: true,
+      statMods: [],
+      counters: {},
+      flags: {},
+    };
+    return uid;
+  }
+  private removeToken(c: CardInstance): void {
+    delete this.state.cards[c.uid];
+  }
+
   /**
    * Is this card currently a Normal Monster? True for Normal Monsters, and for Gemini monsters
    * that are on the field without their effect, or in the Graveyard.
@@ -180,9 +253,9 @@ export class Game {
   /** Current ATK/DEF including continuous effects and temporary modifiers. */
   stats(uid: string): { atk: number; def: number; originalAtk: number; originalDef: number } {
     const c = this.card(uid);
-    const d = this.def(uid);
-    let atk = d.atk ?? 0;
-    let def = d.def ?? 0;
+    const d = c.token ? null : this.def(uid);
+    let atk = c.token ? c.token.atk : (d?.atk ?? 0);
+    let def = c.token ? c.token.def : (d?.def ?? 0);
     const originalAtk = atk;
     const originalDef = def;
     for (const m of c.statMods) {
@@ -399,6 +472,32 @@ export class Game {
   sendToGraveyard(uid: string, reason: SendReason, source?: string): void {
     const c = this.card(uid);
     const wasFaceUp = c.faceUp;
+    if (c.token) {
+      this.detach(c);
+      this.leaveFieldCleanup(c, 'graveyard');
+      this.log(`${this.name(uid)} (a Token) leaves the field and disappears.`, 'rule');
+      this.removeToken(c);
+      return;
+    }
+    // Dimension Shifter: cards that would be sent to the GY are banished instead.
+    if (this.state.banishInsteadUntilTurn !== null && this.state.turn <= this.state.banishInsteadUntilTurn) {
+      this.log(`${this.name(uid)} would be sent to the Graveyard, but it is banished instead (Dimension Shifter).`, 'rule');
+      this.banish(uid);
+      return;
+    }
+    // Pendulum Monsters that would go from the field to the GY are placed face-up in the Extra Deck instead.
+    if (this.isOnField(c) && this.def(uid).monsterTypes?.includes('Pendulum')) {
+      const from = this.detach(c);
+      this.leaveFieldCleanup(c, 'extra');
+      c.zone = 'extra';
+      c.index = -1;
+      c.faceUp = true;
+      c.properlySummoned = false;
+      this.player(c.owner).extra.push(uid);
+      this.log(`${this.name(uid)} is a Pendulum Monster, so it goes to the Extra Deck face-up instead of the Graveyard.`, 'rule');
+      this.emit({ type: 'toGraveyard', uid, from, reason, source, wasFaceUp });
+      return;
+    }
     const from = this.detach(c);
     this.leaveFieldCleanup(c, 'graveyard');
     c.zone = 'graveyard';
@@ -411,6 +510,12 @@ export class Game {
 
   banish(uid: string, faceUp = true): void {
     const c = this.card(uid);
+    if (c.token) {
+      this.detach(c);
+      this.leaveFieldCleanup(c, 'banished');
+      this.removeToken(c);
+      return;
+    }
     const from = this.detach(c);
     this.leaveFieldCleanup(c, 'banished');
     c.zone = 'banished';
@@ -424,6 +529,12 @@ export class Game {
 
   toHand(uid: string): void {
     const c = this.card(uid);
+    if (c.token) {
+      this.detach(c);
+      this.leaveFieldCleanup(c, 'hand');
+      this.removeToken(c);
+      return;
+    }
     if (isExtraDeckMonster(this.def(uid))) {
       this.log(`${this.name(uid)} is an Extra Deck monster, so it returns to the Extra Deck instead of the hand.`, 'rule');
       this.toDeck(uid, 'top');
@@ -496,6 +607,27 @@ export class Game {
    * Special Summon a monster to `player`'s field. Returns false if it could not be summoned.
    * `how` is a short description for the log (e.g. "by Monster Reborn").
    */
+  /** Shuffle every card on the field into its owner's Deck (Extra Deck monsters return to the Extra Deck, Tokens vanish). */
+  shuffleFieldIntoDecks(except: string[] = []): number {
+    const all: string[] = [];
+    for (const p of [0, 1] as PlayerId[]) {
+      all.push(...this.fieldMonsters(p).map((m) => m.uid), ...this.spellTrapCards(p).map((c) => c.uid));
+      const f = this.fieldSpell(p);
+      if (f) all.push(f.uid);
+    }
+    let n = 0;
+    for (const uid of all) {
+      if (except.includes(uid)) continue;
+      const c = this.state.cards[uid];
+      if (!c) continue;
+      this.toDeck(uid, 'bottom');
+      n++;
+    }
+    for (const p of [0, 1] as PlayerId[]) this.shuffleDeck(p);
+    this.log(`${n} card${n === 1 ? '' : 's'} on the field ${n === 1 ? 'is' : 'are'} shuffled into the Deck.`, 'effect');
+    return n;
+  }
+
   *specialSummon(
     uid: string,
     player: PlayerId,
@@ -533,8 +665,54 @@ export class Game {
       const ok = yield* summonWindow(this, uid, player, 'special', opts.how);
       if (!ok) return false;
     }
+    if (isUltimateCrystalName(d.name) && c.owner === player) this.player(player).duelFlags['summonedUltimateCrystal'] = true;
     this.emit({ type: 'summon', uid, player, method: 'special', how: opts.how });
     return true;
+  }
+
+  addCounter(uid: string, counter: string, amount = 1): void {
+    const c = this.card(uid);
+    c.counters[counter] = (c.counters[counter] ?? 0) + amount;
+    this.log(`${this.name(uid)} gets ${amount} ${counter}${amount > 1 ? 's' : ''} (now ${c.counters[counter]}).`, 'effect');
+    this.emit({ type: 'counterAdded', uid, counter, amount });
+  }
+
+  /** Face-up Extra Deck cards (Pendulum Monsters) of a player. */
+  faceUpExtra(p: PlayerId): CardInstance[] {
+    return this.player(p).extra.map((u) => this.card(u)).filter((c) => c.faceUp);
+  }
+  /** Pendulum Zones are the leftmost and rightmost Spell & Trap Zones (indexes 0 and 4). */
+  pendulumCards(p: PlayerId): CardInstance[] {
+    return this.spellTrapCards(p).filter((c) => c.treatedAsSpell === 'pendulum');
+  }
+  /** Extra Monster Zone a player may use (the one they already occupy, or any free one). */
+  usableExtraMonsterZones(p: PlayerId): number[] {
+    const zones = this.state.extraMonsterZones;
+    const mine = zones.findIndex((u) => u && this.card(u).controller === p);
+    const theirs = zones.findIndex((u) => u && this.card(u).controller !== p);
+    if (mine >= 0) return [];
+    const out: number[] = [];
+    zones.forEach((u, i) => {
+      if (!u && i !== theirs) out.push(i);
+    });
+    return out;
+  }
+  placeInExtraMonsterZone(uid: string, controller: PlayerId, index: number, position: Position): void {
+    const c = this.card(uid);
+    this.detach(c);
+    c.zone = 'extraMonster';
+    c.index = index;
+    c.controller = controller;
+    c.faceUp = true;
+    c.position = position;
+    c.turnEnteredField = this.state.turn;
+    c.summonedThisTurn = true;
+    c.setThisTurn = false;
+    c.positionChangedThisTurn = false;
+    c.attacksDeclaredThisTurn = 0;
+    c.treatedAsSpell = null;
+    c.statMods = [];
+    this.state.extraMonsterZones[index] = uid;
   }
 
   // ------------------------------------------------------------------ links
@@ -556,6 +734,12 @@ export class Game {
 
   toDeck(uid: string, where: 'top' | 'bottom' | 'shuffle'): void {
     const c = this.card(uid);
+    if (c.token) {
+      this.detach(c);
+      this.leaveFieldCleanup(c, 'deck');
+      this.removeToken(c);
+      return;
+    }
     this.detach(c);
     this.leaveFieldCleanup(c, 'deck');
     const d = this.def(uid);
@@ -617,6 +801,10 @@ export class Game {
     c.attacksDeclaredThisTurn = 0;
     c.statMods = [];
     c.treatedAsSpell = null;
+    c.flags = {};
+    c.counters = {};
+    c.geminiEffectActive = false;
+    c.equippedTo = null;
     this.player(controller).monsterZones[index] = uid;
   }
 
@@ -739,6 +927,11 @@ export class Game {
   // ------------------------------------------------------------- life points
   changeLP(p: PlayerId, delta: number, reason: string): void {
     const pl = this.player(p);
+    if (delta < 0 && pl.turnFlags['halveDamage']) {
+      const halved = -Math.floor(-delta / 2);
+      this.log(`The damage is halved (${pl.turnFlags['halveDamage']}): ${-delta} → ${-halved}.`, 'rule');
+      delta = halved;
+    }
     const before = pl.lp;
     pl.lp = Math.max(0, pl.lp + delta);
     if (delta < 0) this.log(`${this.playerName(p)} takes ${-delta} damage (${reason}). LP: ${before} → ${pl.lp}`, 'lp');

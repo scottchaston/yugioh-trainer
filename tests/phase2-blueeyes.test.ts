@@ -457,7 +457,7 @@ describe('Other Blue-Eyes cards', () => {
       expect(r2.prompt.context).toMatch(/after damage calculation/);
     }
     const honest = tg.find(0, 'Honest', 'deck'); // 1100 ATK <= 1600
-    tg.run({ type: 'DECLARE_ATTACK', player: 1, uid: tiger }, A.activate(condenser), A.cards(tg.find(0, 'Rabidragon', 'hand')), A.cards(honest), A.zone(0, 'monster', 0));
+    tg.run({ type: 'DECLARE_ATTACK', player: 1, uid: tiger }, A.activate(condenser), A.cards(honest), A.zone(0, 'monster', 0));
     expect(tg.card(honest).zone).toBe('monster');
     expect(tg.state.players[0].lp).toBe(8000 - 1600);
   });
@@ -493,7 +493,7 @@ describe('Other Blue-Eyes cards', () => {
     const ofo = put(tg, 0, 'One for One', 'hand');
     const rabid = put(tg, 0, 'Rabidragon', 'hand');
     const stone = tg.find(0, 'The White Stone of Legend', 'deck');
-    tg.run({ type: 'ACTIVATE', player: 0, uid: ofo, effectId: 'activate' }, A.zone(0, 'spellTrap', 0), A.cards(rabid), A.cards(stone), A.option('ATK'), A.zone(0, 'monster', 0));
+    tg.run({ type: 'ACTIVATE', player: 0, uid: ofo, effectId: 'activate' }, A.zone(0, 'spellTrap', 0), A.cards(stone), A.option('ATK'), A.zone(0, 'monster', 0));
     expect(tg.card(stone).zone).toBe('monster');
     // Kaibaman: tribute, summon Blue-Eyes from hand
     const kaibaman = put(tg, 0, 'Kaibaman', 'monster');

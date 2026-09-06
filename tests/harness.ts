@@ -2,7 +2,7 @@
  * Test helpers: build a game with chosen hands/fields and drive actions with answers.
  */
 import { expect } from 'vitest';
-import { getCardByName } from '../src/cards';
+import { getCard, getCardByName } from '../src/cards';
 import { createGame, execute, getLegalActions } from '../src/engine';
 import type { Action, Answer, CardInstance, GameState, PlayerId, Prompt, Zone } from '../src/engine';
 import '../src/effects';
@@ -22,7 +22,7 @@ export interface TestGame {
   legal(player: PlayerId): ReturnType<typeof getLegalActions>;
 }
 
-export function makeGame(opts: { firstPlayer?: PlayerId; decks?: [string, string]; seed?: number } = {}): TestGame {
+export function makeGame(opts: { firstPlayer?: PlayerId; decks?: [string, string]; seed?: number; keepHands?: boolean } = {}): TestGame {
   let state = createGame({
     players: [
       { name: 'Player 1', deckId: opts.decks?.[0] ?? 'sdbe' },
@@ -31,6 +31,23 @@ export function makeGame(opts: { firstPlayer?: PlayerId; decks?: [string, string
     firstPlayer: opts.firstPlayer ?? 0,
     seed: opts.seed ?? 42,
   });
+  if (!opts.keepHands) {
+    // Neutral hands: put the dealt cards at the bottom of the Deck so scenarios only contain what they `put`.
+    // Reactive cards (hand traps, Quick-Plays, "from hand" effects) are moved to the very bottom.
+    for (const pl of state.players) {
+      const hand = pl.hand.slice();
+      pl.hand = [];
+      for (const u of hand) {
+        state.cards[u].zone = 'deck';
+        pl.deck.push(u);
+      }
+      const reactive = (u: string) => {
+        const d = getCard(state.cards[u].cardId);
+        return /\(Quick Effect\)|from your hand|Quick-Play/.test(d.text + (d.property ?? '')) || d.name === 'Honest' || d.name.startsWith('Ash Blossom') || d.name.startsWith('Ghost Belle') || d.name === 'Dimension Shifter' || d.name === 'Contact "C"' || d.name === 'Crystal Beast Rainbow Dragon' || d.name === 'Crystal Keeper';
+      };
+      pl.deck = [...pl.deck.filter((u) => !reactive(u)), ...pl.deck.filter(reactive)];
+    }
+  }
   const tg: TestGame = {
     get state() {
       return state;
@@ -39,20 +56,39 @@ export function makeGame(opts: { firstPlayer?: PlayerId; decks?: [string, string
       state = s;
     },
     run(action, ...answers) {
-      // Response windows the test does not answer explicitly are passed automatically.
-      const all = answers.slice();
-      for (let guard = 0; guard < 40; guard++) {
+      // Answers are matched to prompts by type: response windows and optional triggers the test does not
+      // answer explicitly are declined automatically.
+      const queue = answers.slice();
+      const all: Answer[] = [];
+      for (let guard = 0; guard < 60; guard++) {
         const r = execute(state, action, all);
         if (r.error) throw new Error(`Action ${action.type} failed: ${r.error}`);
         if (r.done) {
           state = r.state;
           return state;
         }
-        if (r.prompt?.type === 'fastEffects') {
+        const p = r.prompt!;
+        const next = queue[0];
+        const fits =
+          next !== undefined &&
+          ((p.type === 'fastEffects' && 'activation' in next) ||
+            (p.type === 'selectCards' && 'cards' in next) ||
+            (p.type === 'selectOption' && 'option' in next) ||
+            (p.type === 'selectZone' && 'zone' in next) ||
+            ('cancel' in next && !!next.cancel));
+        if (fits) {
+          all.push(queue.shift()!);
+          continue;
+        }
+        if (p.type === 'fastEffects') {
           all.push({ activation: null });
           continue;
         }
-        throw new Error(`Action ${action.type} stopped at prompt: ${JSON.stringify(r.prompt)}`);
+        if (p.type === 'selectOption' && p.title.startsWith('Activate ')) {
+          all.push({ option: 'no' });
+          continue;
+        }
+        throw new Error(`Action ${action.type} stopped at prompt: ${JSON.stringify(p)} (next answer: ${JSON.stringify(next)})`);
       }
       throw new Error('Too many prompts');
     },
@@ -91,7 +127,7 @@ export function put(
   player: PlayerId,
   name: string,
   zone: 'hand' | 'monster' | 'spellTrap' | 'field' | 'graveyard' | 'deckTop' | 'banished' | 'extra',
-  opts: { faceUp?: boolean; position?: 'ATK' | 'DEF'; index?: number; turnEnteredField?: number; setThisTurn?: boolean; treatedAsSpell?: 'continuous' | 'equip' | null } = {},
+  opts: { faceUp?: boolean; position?: 'ATK' | 'DEF'; index?: number; turnEnteredField?: number; setThisTurn?: boolean; treatedAsSpell?: 'continuous' | 'equip' | 'pendulum' | null } = {},
 ): string {
   const s = tg.state;
   const def = getCardByName(name);

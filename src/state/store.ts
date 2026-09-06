@@ -111,6 +111,10 @@ function describeAction(a: Action, state: GameState): string {
       return `${who}: Special Summon ${name(a.uid)}`;
     case 'GEMINI_SUMMON':
       return `${who}: Gemini Summon ${name(a.uid)}`;
+    case 'PLACE_PENDULUM':
+      return `${who}: place ${name(a.uid)} in a Pendulum Zone`;
+    case 'PENDULUM_SUMMON':
+      return `${who}: Pendulum Summon`;
     case 'DECLARE_ATTACK':
       return `${who}: ${name(a.uid)} attacks`;
     case 'TO_BATTLE_PHASE':
