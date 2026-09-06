@@ -126,12 +126,31 @@ describe('Save / replay', () => {
     for (let i = 0; i < 6 && getStore().pending; i++) answer({ activation: null });
     expect(getStore().history.length).toBe(3);
     const saved = saveDuel()!;
-    expect(saved.steps.length).toBe(2);
+    expect(saved.steps.length).toBe(3);
+    expect(saved.steps[0].action.type).toBe('START_GAME');
     const replayed = replayDuel(JSON.parse(JSON.stringify(saved)));
     expect(replayed.length).toBe(3);
     expect(JSON.stringify(replayed[2].state)).toBe(JSON.stringify(getStore().history[2].state));
   });
 });
+
+/** Answer whatever the engine asks with the most neutral choice (pass / "no" / the minimum selection). */
+function neutralAnswer(p: import('@/engine').Prompt): import('@/engine').Answer {
+  switch (p.type) {
+    case 'fastEffects':
+      return { activation: null };
+    case 'selectOption': {
+      const no = p.options.find((o) => /^(no|do not|don't|skip|decline)/i.test(o.label) || /^(no|skip|decline)$/i.test(o.id));
+      return { option: (no ?? p.options[p.options.length - 1]).id };
+    }
+    case 'selectCards':
+      return { cards: p.cards.slice(0, p.min) };
+    case 'selectZone':
+      return { zone: p.zones[0] };
+  }
+}
+
+const SEED = 4242;
 
 describe('Host session', () => {
   let host: HostSession;
@@ -143,7 +162,7 @@ describe('Host session', () => {
     setInterceptor(null);
     setOnline(null);
     clearGame();
-    host = new HostSession('TEST-1', { name: 'Hosty', deckId: 'sdbe' }, 0);
+    host = new HostSession('TEST-1', { name: 'Hosty', deckId: 'sdbe' }, 0, SEED);
     const [a, b] = loopbackPair<HostMessage, GuestMessage>();
     guestSide = b;
     received = [];
@@ -164,7 +183,9 @@ describe('Host session', () => {
     for (const u of v.view.players[1].hand) expect(v.view.cards[u].cardId).not.toBe(HIDDEN_CARD_ID);
     expect(v.prompt).toBeNull();
     expect(v.waiting?.player).toBe(0);
-    expect(v.legal.every((a) => !a.legal)).toBe(true);
+    // Not the guest's turn: nothing a turn player does is legal (a Quick Effect from the hand may be).
+    const turnOnly = new Set(['NORMAL_SUMMON', 'SET_MONSTER', 'SET_SPELL_TRAP', 'DECLARE_ATTACK', 'TO_BATTLE_PHASE', 'TO_MAIN2', 'END_TURN', 'FLIP_SUMMON', 'CHANGE_POSITION']);
+    expect(v.legal.filter((a) => a.legal && turnOnly.has(a.action.type))).toEqual([]);
     // Host's own view: guest's hand hidden
     const full = getStore().history[0].state;
     const hv = redactState(full, 0, null);
@@ -192,14 +213,13 @@ describe('Host session', () => {
     // Host ends its turn. The End Phase window asks the guest whether to respond.
     dispatch({ type: 'END_TURN', player: 0 });
     let guard = 0;
-    while (getStore().pending && guard++ < 6) {
+    while (getStore().pending && guard++ < 10) {
       const p = getStore().pending!.prompt;
-      if (p.player === 0) answer({ activation: null });
+      if (p.player === 0) answer(neutralAnswer(p));
       else {
         const gv = last('view')!.view;
         expect(gv.prompt?.player).toBe(1);
-        expect(gv.prompt?.type).toBe('fastEffects');
-        guestSide.send({ t: 'answer', answer: { activation: null } });
+        guestSide.send({ t: 'answer', answer: neutralAnswer(gv.prompt!) });
       }
     }
     const st = getStore().history[getStore().history.length - 1].state;
@@ -217,12 +237,14 @@ describe('Host session', () => {
     expect(host.guestView()?.prompt?.player).toBe(1);
     expect(getStore().pending!.prompt.player).toBe(1);
     guestSide.send({ t: 'answer', answer: { zone: { player: 1, zone: 'monster', index: 2 } } });
-    // Possible summon-response window for the host
-    while (getStore().pending) {
+    // Possible summon-response window / optional triggers for either player
+    guard = 0;
+    while (getStore().pending && guard++ < 10) {
       const p = getStore().pending!.prompt;
-      if (p.player === 0) answer({ activation: null });
-      else guestSide.send({ t: 'answer', answer: { activation: null } });
+      if (p.player === 0) answer(neutralAnswer(p));
+      else guestSide.send({ t: 'answer', answer: neutralAnswer(last('view')!.view.prompt!) });
     }
+    expect(getStore().notice).toBeNull();
     const after = getStore().history[getStore().history.length - 1].state;
     expect(after.players[1].monsterZones[2]).toBeTruthy();
     const summonUid = after.players[1].monsterZones[2]!;
@@ -250,7 +272,7 @@ describe('Host session', () => {
     guestSide.send({ t: 'suggest' });
     expect(Array.isArray(last('suggestions')?.suggestions)).toBe(true);
     // Save data was recorded for every step
-    expect(saveDuel()!.steps.length).toBe(getStore().history.length - 1);
+    expect(saveDuel()!.steps.length).toBe(getStore().history.length);
   });
 
   it('a reconnecting guest gets the whole game again; leaving ends the session', () => {
