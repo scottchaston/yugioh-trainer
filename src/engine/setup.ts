@@ -6,6 +6,8 @@ import type { CardInstance, GameState, PlayerId, PlayerState } from './types';
 export interface PlayerConfig {
   name: string;
   deckId: string;
+  /** This seat is played by the computer opponent (src/ai) at the given level. */
+  ai?: 'easy' | 'medium' | 'hard';
 }
 
 export interface GameConfig {

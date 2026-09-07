@@ -119,7 +119,28 @@ response windows, logs everything, and supports Undo. Accuracy over feature coun
   background music + volume), winner screen.
 * Single-file build: `npm run build:single` → `dist/single/practice-table.html`.
 
-## Phones, previews, end of the Duel (latest session)
+## Computer opponent (`src/ai`)
+* `player.ts`: `aiDecide(committed, pending, seat, level)` returns either an action or an answer to the prompt
+  addressed to the computer. It only ever chooses among `getLegalActions()` and the engine's prompts. Medium and
+  hard score candidates by *rollout*: `execute()` the action (or the rest of the pending one) in a copy, answering
+  the computer's own prompts with cheap heuristics (`quickAnswer`) and the human's with "decline / minimum"
+  (`opponentDefault`), then `evaluate()` the end state (LP/300, monster stats, back-row and hand counts, plus a
+  threat/pressure term weighted 0.5 for medium and 1 for hard). Attack targets branch per target; a face-down target
+  is estimated (DEF ≈ 1500) instead of simulated so the computer never learns what a Set monster is. Easy is random
+  with light structure (attacks 90% of the time, responds 30%). `rankCards` decides which cards to give up or take
+  from prompt wording; `candidateAnswers` keeps the branching small (≤ 8 single cards, min/max sets).
+* `controller.ts`: subscribes to the store; when it is the computer's move it decides after 450–900 ms and calls
+  `localDispatch`/`localAnswer`. Engine-rejected actions are remembered per history length so they are not retried;
+  a 40-actions-per-turn cap ends the turn. `undoAgainstComputer()` undoes until the human is to act again.
+  `PlayerConfig.ai` (engine setup) marks the seat; the App locks the perspective to the human, hides the computer's
+  prompts, disables the turn buttons while it acts, and shows only the human's end-of-Duel outcome.
+* Tests: `tests/ai.test.ts` (self-play across all deck pairs and levels with no illegal moves, hard beats easy,
+  strongest-monster Summon, Set when outclassed, Trap Hole response). Browser: `e2e/solo.mjs`.
+* Known limits: no multi-turn planning (one action at a time); rollouts use the real deck order for the computer's
+  own draws/excavations; evaluation is generic (no per-archetype strategy), so combo-heavy lines (Traptrix Rafflesia
+  choices, Resonator Synchro chains) are found only when each step looks good on its own.
+
+## Phones, previews, end of the Duel
 * `src/ui/styles.css` `@media (max-width: 900px)`: the board and the side panels stack; `App.tsx` measures the board
   container with a `ResizeObserver` and applies CSS `zoom` to `.board-scale` so all seven columns fit the width
   (the FX layer keeps working because `getBoundingClientRect` reports zoomed sizes). New decisions scroll into view;
@@ -255,7 +276,8 @@ Related issues found while fixing these:
 * Danger! monsters discard a random card using the seeded random generator, so Undo replays the same result.
 
 ## Suggested next steps
-1. Play-testing feedback: wording of explanations, prompts that feel noisy, any rule that seems wrong.
+1. Play-testing feedback: wording of explanations, prompts that feel noisy, any rule that seems wrong; how the
+   computer opponent feels at each level (its evaluation weights live at the top of `src/ai/player.ts`).
 2. Save/load of a Duel (state is plain JSON; add localStorage or file export), and a "replay" viewer.
 3. More decks: the card data pipeline (`scripts/extract-cards.py`) and script registry make this straightforward;
    each new card needs a script and tests. Xyz, Link, Synchro, Fusion, Pendulum and Gemini mechanics all exist now, so

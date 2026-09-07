@@ -12,7 +12,7 @@ page.on('console', (m) => { if (m.type() === 'error') errors.push('CONSOLE ' + m
 await page.goto('http://localhost:5173/?seed=55');
 await page.waitForSelector('text=Start Duel');
 await page.locator('select').nth(0).selectOption('sdbt');
-await page.locator('select').nth(1).selectOption('sdck');
+await page.locator('select').nth(2).selectOption('sdck'); // Player 2's deck (after the Opponent dropdown)
 await page.click('text=Player 1 first');
 await page.click('text=Start Duel');
 await page.waitForSelector('.board');
