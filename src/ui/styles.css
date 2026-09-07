@@ -334,3 +334,5 @@ button { font: inherit; }
 .waiting-banner { background: #2c3446; color: var(--text); font-weight: 500; }
 .waiting-banner b { color: var(--accent2); }
 .undo-wait { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); background: #10243a; border: 1px solid var(--accent2); border-radius: 8px; padding: 8px 14px; z-index: 20; }
+
+.card-materials { position: absolute; right: 3px; top: 34%; font-size: 9px; line-height: 1; color: #ffe066; background: rgba(0,0,0,.65); border-radius: 6px; padding: 2px 3px; text-shadow: 0 0 3px #000; letter-spacing: 1px; }

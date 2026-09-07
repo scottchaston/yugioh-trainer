@@ -56,7 +56,25 @@ export type MotifKind =
   | 'shovel'
   | 'melody'
   | 'value'
-  | 'fiendish';
+  | 'fiendish'
+  | 'hole'
+  | 'garden'
+  | 'tune'
+  | 'lightning'
+  | 'feather'
+  | 'armor'
+  | 'sanctum'
+  | 'scales'
+  | 'flame'
+  | 'crimson'
+  | 'gear'
+  | 'horn'
+  | 'pot'
+  | 'golem'
+  | 'zone'
+  | 'crown'
+  | 'fist'
+  | 'roots';
 
 function Gem({ x, y, r, color }: { x: number; y: number; r: number; color: string }) {
   return (
@@ -100,6 +118,213 @@ export function Motif({ kind, p: raw, backdrop = true }: { kind: MotifKind; p: M
   const p: MotifPalette = { main: `url(#${id}-m)`, accent: `url(#${id}-a)`, glow: raw.glow };
   const body = (() => {
     switch (kind) {
+      case 'hole':
+        return (
+          <g>
+            <ellipse cx={50} cy={62} rx={34} ry={14} fill="#0b0d14" stroke={p.main} strokeWidth={3} />
+            <ellipse cx={50} cy={62} rx={24} ry={9} fill="#000" />
+            <path d="M26,58 L30,66 L34,58 L38,66 L42,58 M58,58 L62,66 L66,58 L70,66 L74,58" stroke={p.accent} strokeWidth={1.4} fill="none" />
+            <path d="M50,20 L50,44 M44,38 L50,46 L56,38" stroke={p.glow} strokeWidth={3} fill="none" strokeLinecap="round" />
+            <ellipse cx={50} cy={84} rx={30} ry={4} fill="#0006" />
+          </g>
+        );
+      case 'garden':
+        return (
+          <g>
+            <rect x={14} y={70} width={72} height={14} rx={4} fill={p.accent} />
+            {[24, 40, 56, 72].map((x, i) => (
+              <g key={x}>
+                <path d={`M${x},70 L${x},${48 - i * 2}`} stroke={p.main} strokeWidth={3} strokeLinecap="round" />
+                {[0, 72, 144, 216, 288].map((r) => (
+                  <ellipse key={r} cx={x} cy={44 - i * 2} rx={5} ry={2.4} fill={i % 2 ? p.glow : '#ff7aa0'} transform={`rotate(${r} ${x} ${44 - i * 2})`} />
+                ))}
+              </g>
+            ))}
+            <ellipse cx={50} cy={64} rx={22} ry={6} fill="#0b0d14" opacity={0.8} />
+          </g>
+        );
+      case 'tune':
+        return (
+          <g>
+            {[0, 1, 2].map((i) => (
+              <g key={i} transform={`translate(${28 + i * 20} ${40 + (i % 2) * 14})`}>
+                <ellipse cx={-4} cy={12} rx={6} ry={4} fill={p.main} transform="rotate(-20 -4 12)" />
+                <rect x={1} y={-18} width={3} height={30} fill={p.main} />
+                <path d="M4,-18 C14,-14 16,-4 8,0" stroke={p.accent} strokeWidth={3} fill="none" />
+              </g>
+            ))}
+            <path d="M14,80 q18,-10 36,0 q18,10 36,0" stroke={p.glow} strokeWidth={2} fill="none" opacity={0.7} />
+          </g>
+        );
+      case 'lightning':
+        return (
+          <g>
+            <path d="M54,6 L36,50 L50,50 L40,94 L70,42 L54,42 L66,6Z" fill={p.glow} stroke={p.accent} strokeWidth={1.5} strokeLinejoin="round" />
+            <path d="M22,30 L14,44 L22,44 L16,58" stroke={p.main} strokeWidth={2} fill="none" opacity={0.7} />
+            <path d="M80,36 L74,48 L82,48 L76,62" stroke={p.main} strokeWidth={2} fill="none" opacity={0.7} />
+          </g>
+        );
+      case 'feather':
+        return (
+          <g>
+            <path d="M28,84 C30,50 52,22 78,14 C76,40 60,72 28,84Z" fill={p.main} stroke="#0007" strokeWidth={0.7} />
+            <path d="M28,84 C46,60 62,40 78,14" stroke={p.accent} strokeWidth={2} fill="none" />
+            {[0, 1, 2, 3, 4].map((i) => (
+              <path key={i} d={`M${40 + i * 7},${70 - i * 10} L${52 + i * 6},${66 - i * 11}`} stroke="#0006" strokeWidth={0.8} />
+            ))}
+            <circle cx={22} cy={30} r={4} fill={p.glow} opacity={0.6} />
+            <circle cx={84} cy={64} r={3} fill={p.glow} opacity={0.6} />
+          </g>
+        );
+      case 'armor':
+        return (
+          <g>
+            <path d="M30,22 L50,14 L70,22 L74,60 C74,74 62,84 50,90 C38,84 26,74 26,60Z" fill={p.main} stroke="#0007" strokeWidth={0.8} />
+            <path d="M50,20 L50,86 M32,44 L68,44 M34,64 L66,64" stroke={p.accent} strokeWidth={2} />
+            <circle cx={50} cy={54} r={6} fill={p.glow} opacity={0.8} />
+          </g>
+        );
+      case 'sanctum':
+        return (
+          <g>
+            <rect x={22} y={40} width={56} height={44} fill={p.main} stroke="#0007" strokeWidth={0.8} />
+            <path d="M16,42 L50,16 L84,42Z" fill={p.accent} />
+            {[30, 46, 62].map((x) => (
+              <rect key={x} x={x} y={52} width={8} height={32} fill="#0b0d14" opacity={0.7} />
+            ))}
+            <circle cx={50} cy={30} r={5} fill={p.glow} />
+          </g>
+        );
+      case 'scales':
+        return (
+          <g>
+            <rect x={48} y={16} width={4} height={64} fill={p.main} />
+            <rect x={30} y={80} width={40} height={6} rx={2} fill={p.main} />
+            <path d="M14,30 L86,30" stroke={p.accent} strokeWidth={3} />
+            <path d="M14,30 L4,52 L24,52Z M86,30 L76,52 L96,52Z" fill={p.accent} opacity={0.9} />
+            <ellipse cx={14} cy={52} rx={10} ry={3} fill={p.glow} opacity={0.6} />
+            <ellipse cx={86} cy={52} rx={10} ry={3} fill={p.glow} opacity={0.6} />
+          </g>
+        );
+      case 'flame':
+        return (
+          <g>
+            <path d="M50,10 C62,26 74,38 70,58 C68,76 58,86 50,90 C42,86 32,76 30,58 C26,38 38,26 50,10Z" fill={p.main} />
+            <path d="M50,34 C58,44 62,52 60,64 C58,74 54,80 50,82 C46,80 42,74 40,64 C38,52 42,44 50,34Z" fill={p.glow} />
+            <path d="M50,54 C54,60 55,66 52,72 C50,76 50,76 48,72 C45,66 46,60 50,54Z" fill="#fff3b0" />
+            <path d="M22,70 q6,-14 14,-4 M78,70 q-6,-14 -14,-4" stroke={p.accent} strokeWidth={2} fill="none" />
+          </g>
+        );
+      case 'crimson':
+        return (
+          <g>
+            <circle cx={50} cy={50} r={30} fill={p.main} stroke="#0007" strokeWidth={0.8} />
+            <path d="M22,44 C34,36 46,40 58,32 C66,28 74,32 80,42" stroke={p.accent} strokeWidth={5} fill="none" opacity={0.8} />
+            <path d="M24,62 C36,70 50,60 62,68 C70,72 76,66 78,58" stroke={p.accent} strokeWidth={4} fill="none" opacity={0.7} />
+            <ellipse cx={50} cy={50} rx={40} ry={9} fill="none" stroke={p.glow} strokeWidth={2} transform="rotate(-18 50 50)" />
+          </g>
+        );
+      case 'gear':
+        return (
+          <g>
+            {[0, 1].map((k) => {
+              const cx = k === 0 ? 40 : 66;
+              const cy = k === 0 ? 50 : 64;
+              const r = k === 0 ? 20 : 13;
+              return (
+                <g key={k}>
+                  {Array.from({ length: 8 }, (_, i) => (
+                    <rect key={i} x={cx - 3} y={cy - r - 5} width={6} height={10} fill={p.main} transform={`rotate(${i * 45} ${cx} ${cy})`} />
+                  ))}
+                  <circle cx={cx} cy={cy} r={r} fill={p.main} stroke="#0007" strokeWidth={0.8} />
+                  <circle cx={cx} cy={cy} r={r * 0.4} fill={p.accent} />
+                </g>
+              );
+            })}
+            <circle cx={40} cy={50} r={4} fill={p.glow} />
+          </g>
+        );
+      case 'horn':
+        return (
+          <g>
+            <path d="M20,60 C34,54 48,52 60,40 C68,32 74,30 84,32 C78,44 72,54 60,62 C48,70 34,74 20,68Z" fill={p.main} stroke="#0007" strokeWidth={0.8} />
+            <ellipse cx={84} cy={32} rx={6} ry={9} fill={p.accent} transform="rotate(30 84 32)" />
+            <path d="M20,60 q-6,4 0,8" stroke={p.accent} strokeWidth={3} fill="none" />
+            {[0, 1, 2].map((i) => (
+              <path key={i} d={`M${88 + i * 4},${24 - i * 4} q6,-4 8,-8`} stroke={p.glow} strokeWidth={2} fill="none" opacity={0.7 - i * 0.2} />
+            ))}
+          </g>
+        );
+      case 'pot':
+        return (
+          <g>
+            <path d="M32,36 C30,20 70,20 68,36 L76,74 C78,84 22,84 24,74Z" fill={p.main} stroke="#0007" strokeWidth={0.8} />
+            <ellipse cx={50} cy={34} rx={18} ry={6} fill={p.accent} />
+            <ellipse cx={50} cy={34} rx={11} ry={3.5} fill="#0b0d14" />
+            <circle cx={42} cy={54} r={4} fill={p.glow} opacity={0.9} />
+            <circle cx={58} cy={60} r={3} fill={p.glow} opacity={0.9} />
+            <path d="M40,66 q10,4 20,0" stroke={p.glow} strokeWidth={2} fill="none" />
+          </g>
+        );
+      case 'golem':
+        return (
+          <g>
+            <rect x={34} y={24} width={32} height={26} rx={6} fill={p.main} stroke="#0007" strokeWidth={0.8} />
+            <rect x={26} y={50} width={48} height={30} rx={6} fill={p.main} stroke="#0007" strokeWidth={0.8} />
+            <rect x={14} y={52} width={12} height={26} rx={4} fill={p.accent} />
+            <rect x={74} y={52} width={12} height={26} rx={4} fill={p.accent} />
+            <rect x={30} y={80} width={14} height={12} rx={3} fill={p.accent} />
+            <rect x={56} y={80} width={14} height={12} rx={3} fill={p.accent} />
+            <rect x={40} y={32} width={8} height={5} fill={p.glow} />
+            <rect x={52} y={32} width={8} height={5} fill={p.glow} />
+          </g>
+        );
+      case 'zone':
+        return (
+          <g>
+            <path d="M14,70 L36,30 L64,30 L86,70Z" fill={p.main} opacity={0.85} stroke={p.accent} strokeWidth={2} />
+            {[38, 50, 62].map((x) => (
+              <path key={x} d={`M${x - 6},70 L${x},30 L${x + 6},70`} stroke={p.accent} strokeWidth={1} fill="none" opacity={0.5} />
+            ))}
+            <path d="M30,50 L70,50" stroke={p.glow} strokeWidth={2} strokeDasharray="4 3" />
+            <circle cx={50} cy={22} r={5} fill={p.glow} />
+          </g>
+        );
+      case 'crown':
+        return (
+          <g>
+            <path d="M22,72 L18,30 L36,50 L50,22 L64,50 L82,30 L78,72Z" fill={p.main} stroke="#0007" strokeWidth={0.8} />
+            <rect x={22} y={70} width={56} height={12} fill={p.accent} />
+            <circle cx={50} cy={22} r={4} fill={p.glow} />
+            <circle cx={18} cy={30} r={3} fill={p.glow} />
+            <circle cx={82} cy={30} r={3} fill={p.glow} />
+            {[34, 50, 66].map((x) => (
+              <circle key={x} cx={x} cy={76} r={2.5} fill={p.glow} />
+            ))}
+          </g>
+        );
+      case 'fist':
+        return (
+          <g>
+            <path d="M30,88 L30,54 C30,42 40,36 52,38 L70,42 L70,66 C70,80 60,88 48,88Z" fill={p.main} stroke="#0007" strokeWidth={0.8} />
+            {[46, 56, 66].map((y) => (
+              <path key={y} d={`M32,${y} L68,${y}`} stroke="#0007" strokeWidth={0.8} />
+            ))}
+            <path d="M30,60 L18,54 L20,44 L32,50" fill={p.accent} stroke="#0007" strokeWidth={0.6} />
+            {[0, 1, 2].map((i) => (
+              <path key={i} d={`M${60 + i * 8},${26 - i * 4} L${64 + i * 8},${14 - i * 4}`} stroke={p.glow} strokeWidth={2.5} strokeLinecap="round" />
+            ))}
+          </g>
+        );
+      case 'roots':
+        return (
+          <g>
+            <rect x={44} y={10} width={12} height={40} rx={4} fill={p.accent} />
+            <path d="M50,50 C40,60 30,64 20,80 M50,50 C54,64 62,70 74,84 M50,50 C48,66 42,76 36,90 M50,50 C58,60 64,64 84,66" stroke={p.main} strokeWidth={5} fill="none" strokeLinecap="round" />
+            <path d="M30,68 C26,72 24,74 18,72 M66,74 C72,76 74,78 80,76" stroke={p.main} strokeWidth={3} fill="none" strokeLinecap="round" />
+            <circle cx={50} cy={52} r={5} fill={p.glow} />
+          </g>
+        );
       case 'swords':
         return (
           <g>

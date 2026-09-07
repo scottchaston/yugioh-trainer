@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Game, type GameState, type LegalActionInfo } from '../engine';
-import { CardView, typeLine } from './CardView';
+import { CardView, linkArrowText, typeLine } from './CardView';
+import { getCard } from '../cards';
 import { defOf } from './cardDef';
 
 interface Props {
@@ -67,12 +68,22 @@ export function Inspector({ view, uid, hidden, actions, revealHint = true, onAct
           {d.cardType === 'Monster' && (
             <>
               <div className="fact">
-                {d.attribute} · Level {d.level}
+                {d.attribute} · {d.linkRating ? `Link-${d.linkRating} (arrows ${linkArrowText(d)})` : d.rank ? `Rank ${d.rank}` : `Level ${d.level}`}
                 {d.pendulumScale !== undefined ? ` · Scale ${d.pendulumScale}` : ''}
+                {c.materials.length > 0 ? ` · ${c.materials.length} Xyz material${c.materials.length > 1 ? 's' : ''} (${c.materials.map((m) => getCard(view.cards[m].cardId).name).join(', ')})` : ''}
               </div>
               <div className="fact">
-                ATK {stats ? stats.atk : d.atk} / DEF {stats ? stats.def : d.def}
-                {stats && (stats.atk !== d.atk || stats.def !== d.def) ? ` (printed ${d.atk}/${d.def})` : ''}
+                {d.linkRating ? (
+                  <>
+                    ATK {stats ? stats.atk : d.atk} (Link Monsters have no DEF)
+                    {stats && stats.atk !== d.atk ? ` (printed ${d.atk})` : ''}
+                  </>
+                ) : (
+                  <>
+                    ATK {stats ? stats.atk : d.atk} / DEF {stats ? stats.def : d.def}
+                    {stats && (stats.atk !== d.atk || stats.def !== d.def) ? ` (printed ${d.atk}/${d.def})` : ''}
+                  </>
+                )}
               </div>
             </>
           )}

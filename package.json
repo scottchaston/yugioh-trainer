@@ -11,7 +11,7 @@
     "test:watch": "vitest",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "build:single": "npm run build && node scripts/build-single.mjs",
-    "e2e": "node e2e/smoke.mjs && node e2e/scenario.mjs && node e2e/gallery.mjs",
+    "e2e": "node e2e/smoke.mjs && node e2e/scenario.mjs && node e2e/placement.mjs && node e2e/extradeck.mjs && node e2e/gallery.mjs",
     "e2e:online": "node e2e/online.mjs",
     "peerserver": "node e2e/peerserver.mjs"
   },

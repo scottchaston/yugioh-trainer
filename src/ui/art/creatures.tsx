@@ -131,7 +131,16 @@ export type Archetype =
   | 'insect'
   | 'ghost'
   | 'titan'
-  | 'stone';
+  | 'stone'
+  | 'traptrix'
+  | 'plant'
+  | 'kaiju'
+  | 'fiend'
+  | 'archfiend'
+  | 'knight'
+  | 'hand'
+  | 'relic'
+  | 'psychic';
 
 export interface CreatureSpec {
   archetype: Archetype;
@@ -536,6 +545,220 @@ function Stone({ p }: { p: Palette }) {
   );
 }
 
+
+/** Traptrix: a small plant-woman with a flower crown and a pitcher/petal skirt (venus-flytrap style). */
+function Traptrix({ p, f }: { p: Palette; f: Set<string> }) {
+  return (
+    <g>
+      {f.has('web') && <path d="M10,20 L90,80 M10,80 L90,20 M50,10 L50,90 M10,50 L90,50" stroke="#fff" strokeWidth={0.6} opacity={0.35} />}
+      {/* petal skirt */}
+      {[-30, -15, 0, 15, 30].map((a) => (
+        <path key={a} d="M0,0 C-10,14 -10,34 0,42 C10,34 10,14 0,0Z" fill={p.body} stroke="#0007" strokeWidth={0.6} transform={`translate(50 56) rotate(${a})`} />
+      ))}
+      <path d="M40,50 C40,42 60,42 60,50 L58,64 L42,64Z" fill={p.accent} />
+      <circle cx={50} cy={34} r={9} fill="#f6d9c4" stroke="#0007" strokeWidth={0.6} />
+      <path d="M40,32 C41,20 59,20 60,32 C56,28 44,28 40,32Z" fill={p.belly} />
+      {/* flower crown */}
+      {[38, 50, 62].map((x, i) => (
+        <g key={x}>
+          {[0, 72, 144, 216, 288].map((r) => (
+            <ellipse key={r} cx={x} cy={22 - (i === 1 ? 3 : 0)} rx={3.5} ry={1.8} fill={p.eye} transform={`rotate(${r} ${x} ${22 - (i === 1 ? 3 : 0)})`} />
+          ))}
+          <circle cx={x} cy={22 - (i === 1 ? 3 : 0)} r={1.8} fill="#fff3b0" />
+        </g>
+      ))}
+      {/* teeth of the trap */}
+      <path d="M22,76 L26,84 L30,76 L34,84 L38,76 M62,76 L66,84 L70,76 L74,84 L78,76" stroke="#fff" strokeWidth={1.2} fill="none" />
+      <circle cx={47} cy={34} r={1.3} fill={p.eye} />
+      <circle cx={53} cy={34} r={1.3} fill={p.eye} />
+      <path d="M47,39 q3,2 6,0" stroke="#0007" strokeWidth={0.8} fill="none" />
+      {f.has('crystal') && <Gem x={50} y={48} r={4} color={p.glow} />}
+    </g>
+  );
+}
+
+/** Plant: a blossom on a stem with leaves (Lonefire Blossom, Rose Lover). */
+function Plant({ p, f }: { p: Palette; f: Set<string> }) {
+  return (
+    <g>
+      <path d="M50,88 C48,70 52,60 50,46" stroke={p.accent} strokeWidth={4} fill="none" strokeLinecap="round" />
+      <path d="M50,70 C36,66 30,58 30,50 C40,52 48,58 50,70Z" fill={p.accent} />
+      <path d="M50,78 C62,74 70,66 70,58 C60,60 52,66 50,78Z" fill={p.accent} />
+      {[0, 45, 90, 135, 180, 225, 270, 315].map((r) => (
+        <ellipse key={r} cx={50} cy={30} rx={7} ry={16} fill={p.body} stroke="#0007" strokeWidth={0.5} transform={`rotate(${r} 50 44)`} />
+      ))}
+      <circle cx={50} cy={44} r={9} fill={p.belly} />
+      <circle cx={50} cy={44} r={4} fill={p.eye} />
+      {f.has('fire') && <Fire x={50} y={20} s={0.9} color={p.glow} />}
+      {f.has('thorns') && <path d="M44,80 L40,76 M56,84 L60,80 M46,64 L42,62" stroke="#0007" strokeWidth={1.4} />}
+    </g>
+  );
+}
+
+/** Kaiju: a giant bulky monster with spines and a wide jaw. */
+function Kaiju({ p, f }: { p: Palette; f: Set<string> }) {
+  return (
+    <g>
+      <ellipse cx={50} cy={64} rx={30} ry={22} fill={p.body} stroke="#0007" strokeWidth={0.9} />
+      <ellipse cx={50} cy={72} rx={18} ry={10} fill={p.belly} />
+      {[26, 38, 50, 62, 74].map((x, i) => (
+        <path key={x} d={`M${x - 5},${44 - (i === 2 ? 4 : 0)} L${x},${28 - (i === 2 ? 6 : 0)} L${x + 5},${44 - (i === 2 ? 4 : 0)}Z`} fill={p.accent} />
+      ))}
+      <rect x={26} y={80} width={12} height={12} rx={4} fill={p.body} />
+      <rect x={62} y={80} width={12} height={12} rx={4} fill={p.body} />
+      <path d="M22,54 L10,40 L20,44 L14,30 L26,46Z" fill={p.body} />
+      <path d="M78,54 L90,40 L80,44 L86,30 L74,46Z" fill={p.body} />
+      <path d="M34,60 L66,60 L62,70 L38,70Z" fill="#2a1420" />
+      <path d="M38,60 L41,66 L44,60 L47,66 L50,60 L53,66 L56,60 L59,66 L62,60" stroke="#fff" strokeWidth={1.2} fill="none" />
+      <circle cx={40} cy={52} r={3} fill={p.eye} />
+      <circle cx={60} cy={52} r={3} fill={p.eye} />
+      {f.has('dust') && [20, 34, 66, 80].map((x) => <circle key={x} cx={x} cy={90} r={3} fill={p.glow} opacity={0.5} />)}
+      {f.has('web') && <path d="M6,24 L94,76 M6,76 L94,24" stroke="#fff" strokeWidth={0.8} opacity={0.5} />}
+    </g>
+  );
+}
+
+/** Fiend: a small horned imp holding a tuning fork (Resonators) or a clock (Battle Fader). */
+function Fiend({ p, f }: { p: Palette; f: Set<string> }) {
+  return (
+    <g>
+      <path d="M40,90 C30,82 30,70 36,62 L64,62 C70,70 70,82 60,90Z" fill={p.body} stroke="#0007" strokeWidth={0.8} />
+      <circle cx={50} cy={46} r={15} fill={p.body} stroke="#0007" strokeWidth={0.8} />
+      <path d="M38,36 L30,18 L44,32Z M62,36 L70,18 L56,32Z" fill={p.accent} />
+      <ellipse cx={50} cy={52} rx={8} ry={4} fill={p.belly} />
+      <path d="M44,50 L47,54 L50,50 L53,54 L56,50" stroke="#fff" strokeWidth={1} fill="none" />
+      <circle cx={44} cy={44} r={2.5} fill={p.eye} />
+      <circle cx={56} cy={44} r={2.5} fill={p.eye} />
+      <path d="M40,40 L46,42 M60,40 L54,42" stroke="#0009" strokeWidth={1.2} />
+      {f.has('fork') && (
+        <g transform="translate(74 40)">
+          <rect x={-1.5} y={0} width={3} height={44} fill="#e8edf5" />
+          <path d="M-8,-18 L-8,4 M8,-18 L8,4 M-8,4 L8,4" stroke="#e8edf5" strokeWidth={3} fill="none" />
+          <path d="M-14,-20 q6,-6 12,0 M2,-20 q6,-6 12,0" stroke={p.glow} strokeWidth={1.2} fill="none" opacity={0.8} />
+        </g>
+      )}
+      {f.has('clock') && (
+        <g transform="translate(24 66)">
+          <circle r={11} fill="#e8edf5" stroke="#0007" strokeWidth={0.8} />
+          <path d="M0,0 L0,-7 M0,0 L5,3" stroke="#0009" strokeWidth={1.6} />
+        </g>
+      )}
+      {f.has('wings') && (
+        <g transform="translate(50 58)">
+          <Wing side="L" color={p.accent} spread={0.6} />
+          <Wing side="R" color={p.accent} spread={0.6} />
+        </g>
+      )}
+      {f.has('crown') && <path d="M40,32 L42,22 L47,30 L50,20 L53,30 L58,22 L60,32Z" fill="#ffe066" stroke="#0007" strokeWidth={0.6} />}
+    </g>
+  );
+}
+
+/** Archfiend dragon: a demonic dragon with curved horns, clawed wings and a flaming core (Red Dragon Archfiend). */
+function Archfiend({ p, f }: { p: Palette; f: Set<string> }) {
+  const fire = f.has('nova');
+  return (
+    <g>
+      <g transform="translate(50 46)">
+        <Wing side="L" color={p.accent} spread={1.05} />
+        <Wing side="R" color={p.accent} spread={1.05} />
+      </g>
+      <path d="M56,72 C72,74 84,80 92,94" stroke={p.body} strokeWidth={7} fill="none" strokeLinecap="round" />
+      <path d="M86,86 L96,90 L90,98Z" fill={p.accent} />
+      <ellipse cx={50} cy={66} rx={20} ry={16} fill={p.body} stroke="#0007" strokeWidth={0.9} />
+      <path d="M40,70 L60,70 L56,84 L44,84Z" fill={p.belly} />
+      <rect x={34} y={80} width={9} height={14} rx={3} fill={p.body} />
+      <rect x={57} y={80} width={9} height={14} rx={3} fill={p.body} />
+      <path d="M40,42 C36,30 44,22 54,26 C62,30 62,42 58,50 L42,50Z" fill={p.body} stroke="#0007" strokeWidth={0.9} />
+      <path d="M40,32 C30,26 26,14 34,8 C34,18 38,24 44,28Z" fill={p.accent} />
+      <path d="M58,30 C68,24 72,12 64,6 C64,16 60,22 54,26Z" fill={p.accent} />
+      <path d="M42,50 L58,50 L54,58 L46,58Z" fill="#2a1420" />
+      <path d="M44,50 L46,55 L49,50 L52,55 L55,50" stroke="#fff" strokeWidth={1} fill="none" />
+      <circle cx={46} cy={40} r={2.2} fill={p.eye} />
+      <circle cx={54} cy={40} r={2.2} fill={p.eye} />
+      <circle cx={50} cy={64} r={4} fill={p.glow} opacity={0.9} />
+      {fire && (
+        <>
+          <Fire x={22} y={56} s={0.9} color={p.glow} />
+          <Fire x={78} y={56} s={0.9} color={p.glow} />
+          <Fire x={50} y={20} s={0.7} color={p.glow} />
+        </>
+      )}
+      {f.has('crown') && <path d="M42,26 L44,16 L48,24 L50,14 L52,24 L56,16 L58,26Z" fill="#ffe066" stroke="#0007" strokeWidth={0.6} />}
+      {f.has('scars') && <path d="M44,60 L52,72 M48,58 L56,70" stroke="#ff4d6d" strokeWidth={1.4} opacity={0.8} />}
+    </g>
+  );
+}
+
+/** Knight: an angular armoured figure with a glowing crystal core (Mekk-Knights). */
+function Knight({ p, f }: { p: Palette; f: Set<string> }) {
+  return (
+    <g>
+      <path d="M50,14 L64,24 L62,44 L50,50 L38,44 L36,24Z" fill={p.body} stroke="#0007" strokeWidth={0.8} />
+      <path d="M42,30 L58,30 L56,38 L44,38Z" fill={p.eye} opacity={0.9} />
+      <path d="M30,52 L70,52 L76,78 L62,92 L38,92 L24,78Z" fill={p.accent} stroke="#0007" strokeWidth={0.8} />
+      <path d="M50,52 L58,72 L50,90 L42,72Z" fill={p.glow} opacity={0.8} />
+      <path d="M24,56 L12,62 L18,80 L28,74Z M76,56 L88,62 L82,80 L72,74Z" fill={p.body} stroke="#0007" strokeWidth={0.8} />
+      {f.has('blade') && <path d="M84,12 L88,14 L80,70 L76,68Z" fill="#e8edf5" stroke="#0007" strokeWidth={0.6} />}
+      {[0, 1, 2].map((i) => (
+        <path key={i} d={`M${20 + i * 30},8 L${24 + i * 30},2 L${28 + i * 30},8`} stroke={p.glow} strokeWidth={1} fill="none" opacity={0.6} />
+      ))}
+    </g>
+  );
+}
+
+/** Hand: an elemental hand (fire / ice / thunder) rising from the ground. */
+function Hand({ p, f }: { p: Palette; f: Set<string> }) {
+  return (
+    <g>
+      <path d="M32,90 L32,60 C32,50 40,44 50,44 C60,44 68,50 68,60 L68,90Z" fill={p.body} stroke="#0007" strokeWidth={0.8} />
+      {[36, 44, 52, 60].map((x, i) => (
+        <rect key={x} x={x - 3.5} y={22 + (i === 0 || i === 3 ? 8 : 0)} width={7} height={30} rx={3.5} fill={p.body} stroke="#0007" strokeWidth={0.6} />
+      ))}
+      <rect x={66} y={40} width={7} height={22} rx={3.5} fill={p.body} stroke="#0007" strokeWidth={0.6} transform="rotate(-25 66 40)" />
+      {f.has('fire') && [36, 44, 52, 60].map((x) => <Fire key={x} x={x} y={18} s={0.6} color={p.glow} />)}
+      {f.has('ice') && [36, 44, 52, 60].map((x) => <path key={x} d={`M${x},10 L${x + 3},18 L${x - 3},18Z`} fill="#e0f7ff" stroke={p.glow} strokeWidth={0.8} />)}
+      {f.has('thunder') && <path d="M44,4 L52,4 L46,16 L56,16 L40,34 L46,20 L38,20Z" fill={p.glow} stroke="#0007" strokeWidth={0.5} />}
+      <ellipse cx={50} cy={90} rx={30} ry={5} fill="#0007" />
+    </g>
+  );
+}
+
+/** Relic: an Artifact sword-and-halo emblem (Artifact Moralltach). */
+function Relic({ p }: { p: Palette }) {
+  return (
+    <g>
+      <circle cx={50} cy={46} r={26} fill="none" stroke={p.accent} strokeWidth={4} opacity={0.8} />
+      <circle cx={50} cy={46} r={18} fill={p.glow} opacity={0.2} />
+      <path d="M50,10 L56,20 L54,72 L50,80 L46,72 L44,20Z" fill="#e8edf5" stroke="#0007" strokeWidth={0.7} />
+      <rect x={36} y={70} width={28} height={5} rx={2} fill={p.accent} />
+      <rect x={47} y={75} width={6} height={14} fill={p.body} />
+      <circle cx={50} cy={92} r={3.5} fill={p.eye} />
+      {[0, 60, 120, 180, 240, 300].map((r) => (
+        <path key={r} d="M50,14 L52,20 L48,20Z" fill={p.eye} transform={`rotate(${r} 50 46)`} />
+      ))}
+    </g>
+  );
+}
+
+/** Psychic: a hooded figure with a floating mirror-orb (Psi-Reflector). */
+function Psychic({ p }: { p: Palette }) {
+  return (
+    <g>
+      <path d="M50,24 L32,90 L68,90Z" fill={p.body} stroke="#0007" strokeWidth={0.8} />
+      <path d="M50,36 L42,86 L58,86Z" fill={p.belly} />
+      <circle cx={50} cy={28} r={8} fill="#2a2540" />
+      <circle cx={47} cy={28} r={1.5} fill={p.eye} />
+      <circle cx={53} cy={28} r={1.5} fill={p.eye} />
+      <circle cx={76} cy={40} r={11} fill={p.glow} opacity={0.35} />
+      <circle cx={76} cy={40} r={7} fill="none" stroke={p.accent} strokeWidth={2.5} />
+      <circle cx={24} cy={56} r={8} fill={p.glow} opacity={0.3} />
+      <circle cx={24} cy={56} r={5} fill="none" stroke={p.accent} strokeWidth={2} />
+      <path d="M60,44 L70,42 M34,54 L44,52" stroke={p.accent} strokeWidth={1.2} strokeDasharray="2 2" />
+    </g>
+  );
+}
+
 const BACKDROP_FOR: Record<Archetype, BackdropKind> = {
   dragon: 'sky',
   feline: 'cavern',
@@ -552,6 +775,15 @@ const BACKDROP_FOR: Record<Archetype, BackdropKind> = {
   ghost: 'mist',
   titan: 'storm',
   stone: 'dark',
+  traptrix: 'forest',
+  plant: 'forest',
+  kaiju: 'storm',
+  fiend: 'dark',
+  archfiend: 'storm',
+  knight: 'sky',
+  hand: 'cavern',
+  relic: 'heaven',
+  psychic: 'mist',
 };
 
 export function Creature({ spec, children, backdrop = true }: { spec: CreatureSpec; children?: ReactNode; backdrop?: boolean }) {
@@ -593,6 +825,24 @@ export function Creature({ spec, children, backdrop = true }: { spec: CreatureSp
         return <Titan p={p} />;
       case 'stone':
         return <Stone p={p} />;
+      case 'traptrix':
+        return <Traptrix p={p} f={f} />;
+      case 'plant':
+        return <Plant p={p} f={f} />;
+      case 'kaiju':
+        return <Kaiju p={p} f={f} />;
+      case 'fiend':
+        return <Fiend p={p} f={f} />;
+      case 'archfiend':
+        return <Archfiend p={p} f={f} />;
+      case 'knight':
+        return <Knight p={p} f={f} />;
+      case 'hand':
+        return <Hand p={p} f={f} />;
+      case 'relic':
+        return <Relic p={p} />;
+      case 'psychic':
+        return <Psychic p={p} />;
     }
   })();
   return (

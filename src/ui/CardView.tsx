@@ -33,6 +33,11 @@ export function attributeIcon(attr?: string): string {
   }
 }
 
+const ARROW_GLYPH: Record<string, string> = { TL: '↖', T: '↑', TR: '↗', L: '←', R: '→', BL: '↙', B: '↓', BR: '↘' };
+export function linkArrowText(d: CardDefinition): string {
+  return (d.linkArrows ?? []).map((a) => ARROW_GLYPH[a] ?? a).join('');
+}
+
 export function typeLine(d: CardDefinition): string {
   if (d.cardType !== 'Monster') return `${d.property ?? 'Normal'} ${d.cardType}`;
   return [d.race, ...(d.monsterTypes ?? [])].filter(Boolean).join(' / ');
@@ -96,8 +101,8 @@ export function CardView({ card, def, faceDown, size = 'md', stats, selected, hi
             {d.cardType === 'Monster' ? <span className="card-attr">{attributeIcon(d.attribute)}</span> : <span className="card-attr">{propertyIcon(d)}</span>}
           </div>
           {d.cardType === 'Monster' && (
-            <div className="card-stars" title={`Level ${d.level}`}>
-              {'★'.repeat(Math.min(d.level ?? 0, 12))}
+            <div className="card-stars" title={d.linkRating ? `Link-${d.linkRating}` : d.rank ? `Rank ${d.rank}` : `Level ${d.level}`}>
+              {d.linkRating ? `LINK-${d.linkRating} ${linkArrowText(d)}` : d.rank ? '◆'.repeat(Math.min(d.rank, 12)) : '★'.repeat(Math.min(d.level ?? 0, 12))}
             </div>
           )}
           <div className="card-art">
@@ -107,10 +112,11 @@ export function CardView({ card, def, faceDown, size = 'md', stats, selected, hi
           {d.cardType === 'Monster' && (
             <div className={`card-stats${boosted ? ' boosted' : ''}`}>
               <span>ATK {stats ? stats.atk : d.atk}</span>
-              <span>DEF {stats ? stats.def : d.def}</span>
+              {d.linkRating ? <span>LINK {d.linkRating}</span> : <span>DEF {stats ? stats.def : d.def}</span>}
             </div>
           )}
           {badge && <div className="card-badge">{badge}</div>}
+          {card && card.materials.length > 0 && <div className="card-materials" title={`${card.materials.length} Xyz material${card.materials.length > 1 ? 's' : ''} attached`}>{'◉'.repeat(Math.min(card.materials.length, 5))}</div>}
         </>
       )}
     </div>

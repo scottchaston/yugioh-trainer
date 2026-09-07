@@ -9,8 +9,13 @@ Supported decks (official TCG card text, all effects implemented):
 
 * **Saga of Blue-Eyes White Dragon** (Structure Deck: 40 Main Deck + 1 Extra Deck card)
 * **Legend of the Crystal Beasts** (Structure Deck: 44 Main Deck + 2 Extra Deck cards)
+* **Beware of Traptrix** (Structure Deck: 40 Main Deck + 6 Extra Deck cards; Xyz and Link Monsters, "Hole" Traps,
+  Kaiju, Mekk-Knights, Artifacts and hand traps)
+* **The Crimson King** (Structure Deck: 40 Main Deck + 9 Extra Deck cards; Red Dragon Archfiend and its Synchro
+  family, Resonators, Red Nova, King Calamity, Assault Mode)
 
-A Main Deck must have 40 to 60 cards, so both preconstructed decks are legal as printed.
+A Main Deck must have 40 to 60 cards, so all four preconstructed decks are legal as printed. Any deck can be
+played against any other.
 
 See `PROJECT_STATUS.md` for what works today and what is planned.
 
@@ -51,17 +56,33 @@ it, and two people can duel each other from different places.
   Spell & Trap Zones); with both placed, a **Pendulum Summon** button appears.
 * Rainbow Dragon, Rainbow Dark Dragon, Hamon, Rainbow Overdragon and Overdrive offer their own
   **Special Summon** actions when their conditions are met (click the card, or open the Extra Deck).
+* **Xyz Summon** (Traptrix Rafflesia, Allomerus): with two monsters of the right Level on the field, open the Extra Deck
+  and click the Xyz Monster. The materials stay attached under it (a ◉ badge on the card, listed in the inspector)
+  and effects that "detach" send one of them to the Graveyard.
+* **Link Summon** (Traptrix Sera, Cularia, Pinguicula, Atypus, Mantis): the materials go to the Graveyard and the Link
+  Monster is placed in an Extra Monster Zone or a zone one of your Link arrows points to (the table asks which). Link
+  Monsters show their LINK rating and arrows instead of Level and DEF.
+* **Synchro Summon** with the Crimson King deck: Resonators are Tuners; Red Dragon Archfiend, Scarlight, Abyss, Bane,
+  Red Rising and the Level 12 Red Nova / Red Supernova / King Calamity (which need two Tuners) all appear as actions in
+  the Extra Deck once the Levels add up. Burning Soul and King's Synchro Synchro Summon during a chain.
+* **Kaiju** (Gadarla, Kumongous) are Special Summoned to the *opponent's* field by Tributing one of their monsters.
+  Mekk-Knights count cards in a column; Artifacts are Set as Spells; Shade Brigandine and Holeutea become monsters.
+* **Hand traps and Quick Effects from the hand** (Ash Blossom, Ghost Belle, Battle Fader, Retaliating "C", Evenly
+  Matched, Dimension Shifter) are offered in RESPONSE AVAILABLE windows like any other response.
 * Every card has a generated illustration (no official artwork): monsters charge across the board when
   they attack, and Spells/Traps are revealed with their emblem when activated.
 * **Suggest move** gives optional strategy ideas, always labelled STRATEGY: they are advice, never rules.
 * **Rules help** opens a beginner's reference (phases, summons, positions, battle, Spell Speeds and chains,
-  costs versus effects, Crystal Beasts, Pendulum and Gemini monsters).
+  costs versus effects, Crystal Beasts, Pendulum, Xyz, Link (and columns), Kaiju, effects from the hand, Gemini).
 * The right-hand panel shows a turn checklist and, while cards respond to each other, the chain and its
   resolution order.
 * **Sound**: every monster has its own voice (dragons roar, the Crystal Beast tiger and cat growl, warriors
-  swing swords, the pegasus whinnies, the tortoise thuds), each Spell/Trap has a fitting sound (a chain rattles
-  for Kunai with Chain and Fiendish Chain, Swords of Revealing Light swooshes, Burst Stream charges and blasts,
-  Crystal cards chime), and swaps, bounces and position changes swoosh. Browsers only allow audio after you
+  swing swords, the pegasus whinnies, the tortoise thuds, Traptrix giggle and snap their traps shut, Kaiju bellow,
+  Resonators ring their tuning forks, Red Dragon Archfiend's family roars with a flame burst, the Hands crackle,
+  Mekk-Knights hum), each Spell/Trap has a fitting sound (a chain rattles for Kunai with Chain and Fiendish Chain,
+  Swords of Revealing Light swooshes, Burst Stream charges and blasts, Crystal cards chime, Trap Holes open with a
+  rumble and a drop, Raigeki cracks, the Feather Duster gusts, Red Zone and Red Reign blare horns, Resonator Spells
+  chime, Burning Soul roars), and swaps, bounces and position changes swoosh. Browsers only allow audio after you
   click something, so the first click on the page turns it on.
 * **Music**: an optional looping "duel theme" in the spirit of the anime soundtracks (composed and played by
   the app itself, no copyrighted recordings). It gets more intense during the Battle Phase. Turn it on/off
