@@ -119,6 +119,27 @@ response windows, logs everything, and supports Undo. Accuracy over feature coun
   background music + volume), winner screen.
 * Single-file build: `npm run build:single` → `dist/single/practice-table.html`.
 
+## Phones, previews, end of the Duel (latest session)
+* `src/ui/styles.css` `@media (max-width: 900px)`: the board and the side panels stack; `App.tsx` measures the board
+  container with a `ResizeObserver` and applies CSS `zoom` to `.board-scale` so all seven columns fit the width
+  (the FX layer keeps working because `getBoundingClientRect` reports zoomed sizes). New decisions scroll into view;
+  a fixed bottom bar (`.mobile-cardbar`) names the tapped card and jumps to the Card details panel. Hover lifts are
+  disabled on touch devices.
+* Installable web app: `public/manifest.webmanifest`, `public/icon-192.png` / `icon-512.png` (generated from an
+  SVG with Playwright), `public/sw.js` (network-first page, cache-first hashed assets, same-origin only), registered
+  from `src/main.tsx` in production builds served over http(s) only. `index.html` carries the theme-color and Apple
+  home-screen tags.
+* Card previews in prompts (`PromptPanel.tsx`): every option in a select-cards or response prompt has a **read card**
+  link that opens a compact `CardSummary` inside the prompt and shows the card in the inspector; clicking a card on
+  the board while choosing also updates the inspector.
+* End of the Duel (`src/ui/DuelEnd.tsx`): DEFEAT (white flash, cracks drawn with stroke-dashoffset, falling shards,
+  `playSound('defeat')`) then VICTORY (rotating rays, confetti, crown, `playSound('victory')`); the buttons fade in
+  after the sequence. Online only the local seat's outcome plays; with animations off a static card shows at once.
+* Sound: `Settings.sfxVolume` (0–2, default 1) drives the effects bus through `setSfxVolume`; the bus now runs into a
+  `DynamicsCompressorNode` so loud settings do not clip. A "test (dragon roar)" link sits next to the slider.
+* Browser check: `e2e/mobile.mjs` (390×844 viewport, prompt preview, both end screens). The store exposes
+  `window.__ygoDebug.endDuel(winner, reason)` in development builds only (`import.meta.env.DEV`) for that script.
+
 ## Online play (two browsers)
 
 * `src/net/`: `protocol.ts` (JSON messages), `transport.ts` (channel interface + in-memory loopback for tests),
@@ -239,7 +260,8 @@ Related issues found while fixing these:
 3. More decks: the card data pipeline (`scripts/extract-cards.py`) and script registry make this straightforward;
    each new card needs a script and tests. Xyz, Link, Synchro, Fusion, Pendulum and Gemini mechanics all exist now, so
    most structure decks need only card scripts.
-4. Mobile/tablet layout (the board is designed for a laptop screen or larger).
+4. Mobile polish: a bottom-sheet inspector instead of the jump-to-details bar, landscape-specific layout, larger tap
+   targets for the zoomed board.
 5. Online play improvements: a chat line, a "spectator" third connection, and an optional relay server for
    networks where WebRTC cannot connect directly (the transport interface makes this a drop-in).
 6. Save/load for hot-seat Duels (the replayable save format already exists in the store).

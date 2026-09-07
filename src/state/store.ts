@@ -74,6 +74,8 @@ export interface Settings {
   sound: boolean;
   music: boolean;
   musicVolume: number;
+  /** Sound-effects loudness (1 = normal, up to 2). */
+  sfxVolume: number;
 }
 
 export interface StoreState {
@@ -101,10 +103,22 @@ export function setInterceptor(i: Interceptor | null): void {
   interceptor = i;
 }
 
-const defaultSettings: Settings = { askAtPhaseWindows: false, revealAll: false, perspective: 'turn', animations: true, sound: true, music: true, musicVolume: 0.22 };
+const defaultSettings: Settings = { askAtPhaseWindows: false, revealAll: false, perspective: 'turn', animations: true, sound: true, music: true, musicVolume: 0.22, sfxVolume: 1 };
 
 let store: StoreState = { history: [], pending: null, settings: loadSettings(), notice: null, config: null, online: null };
 const listeners = new Set<Listener>();
+
+// Development helper for the browser checks (e2e/): ends the current Duel without playing it out.
+if (import.meta.env.DEV && typeof window !== 'undefined') {
+  (window as unknown as { __ygoDebug?: unknown }).__ygoDebug = {
+    endDuel(winner: PlayerId, reason = 'Ended by the development helper.') {
+      const h = store.history;
+      if (!h.length) return;
+      const last = h[h.length - 1];
+      set({ history: [...h.slice(0, -1), { ...last, state: { ...last.state, winner, winReason: reason } }], pending: null });
+    },
+  };
+}
 
 function loadSettings(): Settings {
   try {

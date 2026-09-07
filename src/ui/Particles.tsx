@@ -43,11 +43,22 @@ export function ParticleCanvas({ container, enabled }: { container: RefObject<HT
     let particles: Particle[] = [];
     let raf = 0;
     let last = performance.now();
+    // Measure the host with the canvas hidden: otherwise the canvas's own size keeps the host's scroll
+    // size from shrinking (on phones that pushed the page wider than the screen).
+    const measure = (): [number, number] => {
+      canvas.style.display = 'none';
+      const size: [number, number] = [host.scrollWidth, host.scrollHeight];
+      canvas.style.display = '';
+      return size;
+    };
     const resize = () => {
-      canvas.width = host.scrollWidth;
-      canvas.height = host.scrollHeight;
+      const [w, h] = measure();
+      if (canvas.width !== w) canvas.width = w;
+      if (canvas.height !== h) canvas.height = h;
     };
     resize();
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => resize()) : null;
+    ro?.observe(host);
     const spawn = (b: Burst) => {
       const n = b.kind === 'impact' ? 34 : b.kind === 'shatter' ? 26 : b.kind === 'crystal' ? 18 : 22;
       for (let i = 0; i < n; i++) {
@@ -73,7 +84,7 @@ export function ParticleCanvas({ container, enabled }: { container: RefObject<HT
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
       while (queue.length) spawn(queue.shift()!);
-      if (canvas.width !== host.scrollWidth || canvas.height !== host.scrollHeight) resize();
+      if (canvas.width < host.clientWidth || canvas.height < host.clientHeight) resize();
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       particles = particles.filter((p) => p.life < p.maxLife);
       for (const p of particles) {
@@ -116,7 +127,10 @@ export function ParticleCanvas({ container, enabled }: { container: RefObject<HT
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
+    return () => {
+      cancelAnimationFrame(raf);
+      ro?.disconnect();
+    };
   }, [container, enabled]);
   if (!enabled) return null;
   return <canvas ref={canvasRef} className="particle-canvas" aria-hidden="true" />;

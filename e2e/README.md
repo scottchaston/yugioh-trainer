@@ -3,7 +3,7 @@
 These scripts drive the real app in Chromium (Playwright) and take screenshots.
 
 1. Start the app: `npm run dev`
-2. In another terminal: `node e2e/smoke.mjs`, `node e2e/scenario.mjs` (a duel with a Trap response and attack animation), `node e2e/placement.mjs` (Crystal Beast placement), `node e2e/extradeck.mjs` (an Xyz Summon and a Link Summon with the Traptrix deck) or `node e2e/gallery.mjs` (screenshots every card illustration)
+2. In another terminal: `node e2e/smoke.mjs`, `node e2e/scenario.mjs` (a duel with a Trap response and attack animation), `node e2e/placement.mjs` (Crystal Beast placement), `node e2e/extradeck.mjs` (an Xyz Summon and a Link Summon with the Traptrix deck), `node e2e/mobile.mjs` (phone layout, card previews in prompts, the end-of-Duel animations; it ends the Duel through the development-only `window.__ygoDebug.endDuel()` helper) or `node e2e/gallery.mjs` (screenshots every card illustration)
 
 Screenshots are written to `$SHOTS_DIR` (default `/tmp/ygo-shots`).
 `scenario.mjs` uses `?seed=3380`, `placement.mjs` `?seed=38` and `extradeck.mjs` `?seed=55` so the opening hands are always the same.

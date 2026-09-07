@@ -9,9 +9,17 @@ let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
 let sfxBus: GainNode | null = null;
 let enabled = true;
+/** 1 = normal loudness; the Settings slider goes from 0 to 2. */
+let sfxVolume = 1;
+const SFX_BASE_GAIN = 0.8;
 
 export function setSoundEnabled(on: boolean): void {
   enabled = on;
+}
+
+export function setSfxVolume(v: number): void {
+  sfxVolume = Math.max(0, Math.min(2, v));
+  if (sfxBus && ctx) sfxBus.gain.setTargetAtTime(SFX_BASE_GAIN * sfxVolume, ctx.currentTime, 0.02);
 }
 
 export function audioContext(): AudioContext | null {
@@ -31,9 +39,17 @@ function ensure(): AudioContext | null {
       master = ctx.createGain();
       master.gain.value = 0.8;
       master.connect(ctx.destination);
+      // Effects go through a compressor so they can be turned up loud without clipping.
+      const comp = ctx.createDynamicsCompressor();
+      comp.threshold.value = -18;
+      comp.knee.value = 12;
+      comp.ratio.value = 6;
+      comp.attack.value = 0.003;
+      comp.release.value = 0.2;
+      comp.connect(master);
       sfxBus = ctx.createGain();
-      sfxBus.gain.value = 0.4;
-      sfxBus.connect(master);
+      sfxBus.gain.value = SFX_BASE_GAIN * sfxVolume;
+      sfxBus.connect(comp);
     }
     if (ctx.state === 'suspended') void ctx.resume();
     return ctx;
@@ -608,11 +624,43 @@ export function playMotif(kind: MotifKind, isTrap: boolean): void {
 // Generic game sounds
 // ---------------------------------------------------------------------------
 
-export type SoundName = 'draw' | 'summon' | 'specialSummon' | 'attack' | 'impact' | 'damage' | 'heal' | 'spell' | 'trap' | 'monsterEffect' | 'destroy' | 'negate' | 'flip' | 'crystal' | 'boost' | 'swoosh' | 'click' | 'set';
+export type SoundName = 'victory' | 'defeat' | 'draw' | 'summon' | 'specialSummon' | 'attack' | 'impact' | 'damage' | 'heal' | 'spell' | 'trap' | 'monsterEffect' | 'destroy' | 'negate' | 'flip' | 'crystal' | 'boost' | 'swoosh' | 'click' | 'set';
 
 export function playSound(name: SoundName): void {
   if (!enabled) return;
   switch (name) {
+    case 'victory': {
+      // A brass fanfare: three rising notes, a held major chord, chimes and drum hits.
+      const brass = (f: number, start: number, dur: number, g = 0.28) => {
+        tone(f, start, dur, { type: 'sawtooth', lowpass: 2600, gain: g, attack: 0.02, vibratoHz: 5, vibratoDepth: f * 0.006 });
+        tone(f * 0.5, start, dur, { type: 'square', lowpass: 1200, gain: g * 0.5, attack: 0.02 });
+      };
+      brass(523, 0, 0.22);
+      brass(659, 0.24, 0.22);
+      brass(784, 0.48, 0.22);
+      brass(1046, 0.74, 1.6, 0.3);
+      brass(784, 0.74, 1.6, 0.2);
+      brass(659, 0.74, 1.6, 0.18);
+      chime(2093, 0.8, 1.4, 0.16);
+      chime(2637, 0.95, 1.3, 0.12);
+      chime(3136, 1.1, 1.2, 0.1);
+      thud(0, 0.5);
+      thud(0.24, 0.45);
+      thud(0.48, 0.45);
+      thud(0.74, 0.7);
+      noise(0.74, 1.2, { type: 'highpass', filter: 5000, gain: 0.08, attack: 0.05 });
+      break;
+    }
+    case 'defeat': {
+      // A falling minor sting, a crumbling rumble and a low drone that fades.
+      tone(330, 0, 0.45, { type: 'sawtooth', slideTo: 311, lowpass: 1800, gain: 0.28, attack: 0.02 });
+      tone(311, 0.45, 0.45, { type: 'sawtooth', slideTo: 262, lowpass: 1600, gain: 0.26 });
+      tone(262, 0.9, 1.6, { type: 'sawtooth', slideTo: 131, lowpass: 1200, gain: 0.26 });
+      tone(65, 0.9, 2.2, { type: 'square', slideTo: 45, lowpass: 400, gain: 0.32, attack: 0.1 });
+      noise(0.9, 1.4, { type: 'lowpass', filter: 500, filterTo: 120, gain: 0.35, attack: 0.05 });
+      thud(0.95, 0.7);
+      break;
+    }
     case 'draw':
       noise(0, 0.12, { type: 'highpass', filter: 3000, gain: 0.25 });
       tone(900, 0.02, 0.08, { type: 'triangle', slideTo: 1400, gain: 0.12 });

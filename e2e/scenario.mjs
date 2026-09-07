@@ -53,7 +53,7 @@ for (let i = 0; i < 6; i++) {
   await page.waitForTimeout(300);
 }
 await page.waitForSelector('.prompt-response');
-await page.click('.response-option:has-text("Kunai") button');
+await page.click('.response-option:has-text("Kunai") button.btn-primary');
 await page.waitForTimeout(300);
 await page.click('.btn-option:has-text("both")');
 await page.waitForTimeout(600);
