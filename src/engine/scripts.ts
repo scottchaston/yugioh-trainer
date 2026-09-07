@@ -76,9 +76,13 @@ export interface EffectDef {
   tags?: EffectTag[];
   /** Can be activated in the special window that opens while a monster is being Summoned (to negate the Summon). */
   respondsToSummon?: boolean;
+  /** A Trap that may be activated from the hand under a condition (Evenly Matched when you control no cards). */
+  fromHand?: (g: Game, card: CardInstance, ctx: ActivationContext) => boolean;
+  /** A Set Trap that may be activated the turn it was Set under a condition (Shade Brigandine with no Traps in the GY). */
+  canActivateTurnSet?: (g: Game, card: CardInstance, ctx: ActivationContext) => boolean;
 }
 
-export type EffectTag = 'searchDeck' | 'summonFromDeck' | 'sendFromDeck' | 'addFromGY' | 'summonFromGY' | 'banishFromGY';
+export type EffectTag = 'searchDeck' | 'summonFromDeck' | 'sendFromDeck' | 'addFromGY' | 'summonFromGY' | 'banishFromGY' | 'specialSummon';
 
 export interface StatModification {
   atk?: number;
@@ -127,6 +131,31 @@ export interface CardScript {
   specialSummon?: SpecialSummonProcedure[];
   /** Called when the card leaves the field, to clean up related state (equips etc.). */
   onLeaveField?: (g: Game, self: CardInstance) => void;
+  /** Name the card is treated as having while on the field / in the GY (Scarlight Red Dragon Archfiend). */
+  treatedAsName?: (g: Game, self: CardInstance) => string | null;
+  /** Continuous: is this card unaffected by the effects of `source` (Traptrix monsters vs "Hole" Normal Traps)? */
+  unaffectedBy?: (g: Game, self: CardInstance, source: CardInstance) => boolean;
+  /** Continuous: may the controller activate `trap` from the hand (Traptrix Atrax: "Hole" Normal Traps)? */
+  allowTrapActivationFromHand?: (g: Game, self: CardInstance, trap: CardInstance) => boolean;
+  /** Continuous: the activation/effect of `link`'s card cannot be negated (Traptrix Atrax: Normal Traps on your field). */
+  preventNegation?: (g: Game, self: CardInstance, link: { uid: string; player: PlayerId; zone: Zone }) => string | null;
+  /** After a Trap the controller activated finishes resolving: return true to keep it on the field instead of sending it to the GY (Traptrix Cularia Sets it again). */
+  afterTrapResolves?: (g: Game, self: CardInstance, trap: CardInstance) => Process<boolean>;
+  /** Synchro material rules for this monster: it may be used as a non-Tuner (Phantom King Hydride), or only for certain Synchro Monsters (Magical King Moonstar). */
+  synchroAsNonTuner?: boolean;
+  synchroMaterialRestriction?: (g: Game, self: CardInstance, synchroUid: string) => string | null;
+  /** Xyz Summon requirements (for Xyz Monsters). */
+  xyz?: XyzRequirement;
+  /** Link Summon requirements (for Link Monsters). */
+  link?: LinkRequirement;
+  /** Special Summon procedures that are not Summons (Artifact Moralltach: Set as a Spell) use this label after they complete. */
+  procedureIsNotSummon?: boolean;
+  /** Continuous: while this card is face-up, any card sent to the GY is banished instead (Retaliating "C"). */
+  banishInsteadOfGraveyard?: (g: Game, self: CardInstance) => boolean;
+  /** From the Graveyard: replace the destruction of `target` (Soul Resonator banishes itself instead). Return true if replaced. */
+  replaceDestructionFromGraveyard?: (g: Game, self: CardInstance, target: CardInstance, reason: 'battle' | 'effect') => Process<boolean>;
+  /** "Cannot be destroyed by an opponent's card effects." */
+  immuneToOpponentEffectDestruction?: boolean;
 }
 
 export interface SynchroRequirement {
@@ -134,7 +163,31 @@ export interface SynchroRequirement {
   tuner?: (g: Game, card: CardInstance) => boolean;
   /** Does this monster qualify as a non-Tuner material? (default: any non-Tuner) */
   nonTuner?: (g: Game, card: CardInstance) => boolean;
+  /** Number of Tuners required (default 1; Red Nova Dragon needs 2, Red Supernova Dragon 3). */
+  tuners?: number;
+  /** Number of non-Tuner materials allowed [min, max] (default [1, any]). */
+  nonTuners?: [number, number];
   /** Human-readable material text. */
+  text: string;
+}
+
+export interface XyzRequirement {
+  /** Level the materials must have. */
+  level: number;
+  /** Number of materials [min, max]. */
+  count: [number, number];
+  /** Extra material filter (default: any face-up monster of that Level). */
+  material?: (g: Game, card: CardInstance) => boolean;
+  text: string;
+}
+
+export interface LinkRequirement {
+  /** Number of materials [min, max] (Link Monsters may count as 1 or as their Link Rating). */
+  count: [number, number];
+  /** Material filter (default: any face-up monster). */
+  material?: (g: Game, card: CardInstance) => boolean;
+  /** At least one material must satisfy this (Traptrix Atypus: "including an Insect or Plant monster"). */
+  including?: (g: Game, card: CardInstance) => boolean;
   text: string;
 }
 

@@ -24,7 +24,7 @@ export function extraAttacksFor(g: Game, uid: string): number {
 
 export function hasPiercing(g: Game, uid: string): boolean {
   const m = g.card(uid);
-  if (m.flags['piercing']) return true;
+  if (m.flags['piercing'] || m.flags['piercingThisTurn']) return true;
   for (const src of g.activeFieldCards()) {
     const s = getScript(g.name(src.uid));
     if (s?.piercing?.(g, src, m)) return true;
@@ -57,6 +57,14 @@ export function* damageStep(g: Game): Process<void> {
 
   g.log('Damage Step begins.', 'battle');
   b.damageStepStage = 'start';
+  for (const uid of [attackerUid, b.target]) {
+    const m = uid ? g.state.cards[uid] : undefined;
+    const boost = m?.flags['atkBoostInBattleThisTurn'] as { atk: number; source: string } | undefined;
+    if (m && boost && m.faceUp) {
+      g.addStatMod(uid!, boost.atk, 0, 'endOfDamageStep', boost.source);
+      g.log(`${g.name(uid!)} gains ${boost.atk} ATK until the end of the Damage Step (${boost.source}).`, 'effect');
+    }
+  }
   {
     const att = g.card(attackerUid);
     if (!att.flags['effectsNegated']) getScript(g.name(attackerUid))?.onDamageStepStart?.(g, att, 'attacker');
@@ -112,6 +120,11 @@ export function* damageStep(g: Game): Process<void> {
     if (mod === 'none' || noBattle) {
       g.log(`${g.playerName(player)} takes no battle damage from this battle (card effect).`, 'rule');
       return;
+    }
+    const src = g.state.cards[source];
+    if (src && src.controller !== player && src.flags['doubleBattleDamageThisTurn']) {
+      dmg *= 2;
+      g.log(`The battle damage is doubled (${src.flags['doubleBattleDamageThisTurn']}): ${dmg}.`, 'rule');
     }
     if (dmg <= 0) return;
     g.changeLP(player, -dmg, reason);

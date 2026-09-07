@@ -288,6 +288,68 @@ export function playCreature(archetype: Archetype, mode: 'attack' | 'call' = 'at
       noise(0, 0.9, { type: 'lowpass', filter: 300, filterTo: 120, gain: 0.5, attack: 0.05 });
       tone(60, 0, 0.8, { type: 'triangle', slideTo: 40, gain: 0.3 });
       break;
+    case 'traptrix':
+      // A sweet call, then the snap of a trap closing.
+      tone(880, 0, long ? 0.25 : 0.2, { type: 'triangle', slideTo: 1320, gain: 0.2, attack: 0.02 });
+      tone(1320, 0.22, 0.2, { type: 'triangle', slideTo: 1100, gain: 0.16 });
+      if (long) {
+        noise(0.5, 0.08, { type: 'highpass', filter: 2500, gain: 0.5, attack: 0.002 });
+        thud(0.52, 0.5);
+        clink(2400, 0.55, 0.15, 0.25);
+      }
+      break;
+    case 'plant':
+      // Leaves rustling and a soft pop.
+      noise(0, long ? 0.6 : 0.35, { type: 'bandpass', filter: 1800, filterTo: 900, q: 0.7, gain: 0.35, attack: 0.05 });
+      tone(520, 0.2, 0.15, { type: 'sine', slideTo: 780, gain: 0.15 });
+      break;
+    case 'kaiju':
+      // Colossal roar and stomping footsteps.
+      tone(50, 0, long ? 1.4 : 0.7, { type: 'sawtooth', via: 110, slideTo: 40, fmHz: 18, fmIndex: 80, distort: true, lowpass: 700, gain: 0.6, attack: 0.1 });
+      noise(0.05, long ? 1.2 : 0.5, { type: 'lowpass', filter: 600, filterTo: 200, gain: 0.4, attack: 0.1 });
+      thud(0.3, 0.9);
+      if (long) thud(0.75, 0.9);
+      break;
+    case 'fiend':
+      // Cackle plus a tuning-fork ring.
+      for (let i = 0; i < 4; i++) tone(700 - i * 60, i * 0.09, 0.08, { type: 'square', slideTo: 900 - i * 60, gain: 0.14, lowpass: 3000 });
+      chime(1760, 0.3, long ? 0.9 : 0.5, 0.18);
+      chime(2637, 0.32, long ? 0.8 : 0.4, 0.1);
+      break;
+    case 'archfiend':
+      // A hellish dragon roar: lower and harsher than a dragon, with crackling fire.
+      tone(55, 0, long ? 1.3 : 0.7, { type: 'sawtooth', via: 130, slideTo: 45, fmHz: 22, fmIndex: 90, distort: true, lowpass: 800, gain: 0.6, attack: 0.06 });
+      tone(110, 0.05, long ? 1.1 : 0.5, { type: 'square', via: 220, slideTo: 70, fmHz: 27, fmIndex: 110, distort: true, lowpass: 1200, gain: 0.3, attack: 0.1 });
+      noise(0.15, long ? 1.0 : 0.5, { type: 'bandpass', filter: 900, filterTo: 300, q: 0.6, gain: 0.4, attack: 0.1 });
+      for (let i = 0; i < 6; i++) clink(300 + Math.random() * 500, 0.3 + i * 0.09, 0.05, 0.12);
+      break;
+    case 'knight':
+      // Armour clank, a resonant hum and a blade swing.
+      clink(1200, 0, 0.2, 0.3);
+      tone(220, 0.05, long ? 0.8 : 0.4, { type: 'sine', fmHz: 4, fmIndex: 10, gain: 0.22, attack: 0.1 });
+      if (long) {
+        swoosh(0.4, 0.3, 0.6);
+        clink(3200, 0.7, 0.4, 0.3);
+      }
+      break;
+    case 'hand':
+      // Elemental crackle and a slap.
+      noise(0, long ? 0.6 : 0.3, { type: 'highpass', filter: 1500, gain: 0.35, attack: 0.02 });
+      tone(180, 0.1, 0.3, { type: 'sawtooth', slideTo: 90, distort: true, lowpass: 900, gain: 0.25 });
+      thud(0.3, 0.6);
+      break;
+    case 'relic':
+      // A holy sword drawn from its sheath.
+      swoosh(0, 0.25, 0.4);
+      clink(4200, 0.2, 0.9, 0.35);
+      chime(1568, 0.25, 1.0, 0.16);
+      chime(2093, 0.3, 1.0, 0.12);
+      break;
+    case 'psychic':
+      // Warbling telekinetic hum.
+      tone(330, 0, long ? 0.9 : 0.5, { type: 'sine', vibratoHz: 9, vibratoDepth: 40, gain: 0.22, attack: 0.1 });
+      tone(660, 0.1, long ? 0.8 : 0.4, { type: 'triangle', slideTo: 990, vibratoHz: 6, vibratoDepth: 30, gain: 0.12, attack: 0.1 });
+      break;
   }
 }
 
@@ -438,6 +500,103 @@ export function playMotif(kind: MotifKind, isTrap: boolean): void {
       tone(659, 0, 0.25, { type: 'triangle', gain: 0.22 });
       tone(784, 0.25, 0.25, { type: 'triangle', gain: 0.22 });
       tone(988, 0.5, 0.5, { type: 'triangle', gain: 0.22 });
+      break;
+    case 'hole':
+      // A trapdoor drops open, the victim falls with a whoosh, then a distant thud.
+      clink(900, 0, 0.1, 0.3);
+      tone(600, 0.05, 0.6, { type: 'sine', slideTo: 120, gain: 0.25 });
+      noise(0.05, 0.6, { type: 'bandpass', filter: 2000, filterTo: 300, q: 0.8, gain: 0.35 });
+      thud(0.7, 0.8);
+      break;
+    case 'garden':
+      noise(0, 0.6, { type: 'bandpass', filter: 1600, filterTo: 800, q: 0.8, gain: 0.3, attack: 0.1 });
+      chime(1046, 0.1, 0.6, 0.14);
+      chime(1318, 0.3, 0.6, 0.12);
+      chime(1568, 0.5, 0.8, 0.1);
+      break;
+    case 'tune':
+      tone(523, 0, 0.18, { type: 'triangle', gain: 0.22 });
+      tone(659, 0.18, 0.18, { type: 'triangle', gain: 0.22 });
+      tone(784, 0.36, 0.18, { type: 'triangle', gain: 0.22 });
+      tone(1046, 0.54, 0.4, { type: 'triangle', gain: 0.22 });
+      break;
+    case 'lightning':
+      noise(0, 0.08, { type: 'highpass', filter: 3000, gain: 0.9, attack: 0.001 });
+      tone(2200, 0, 0.12, { type: 'sawtooth', slideTo: 200, distort: true, gain: 0.35 });
+      noise(0.08, 0.9, { type: 'lowpass', filter: 3000, filterTo: 150, gain: 0.7, attack: 0.005 });
+      tone(60, 0.1, 0.9, { type: 'sawtooth', slideTo: 35, distort: true, lowpass: 300, gain: 0.4 });
+      break;
+    case 'feather':
+      swoosh(0, 0.35, 0.35);
+      swoosh(0.3, 0.35, 0.3);
+      noise(0.6, 0.5, { type: 'highpass', filter: 2500, gain: 0.2, attack: 0.1 });
+      break;
+    case 'armor':
+      clink(800, 0, 0.25, 0.4);
+      clink(1100, 0.12, 0.25, 0.35);
+      thud(0.25, 0.5);
+      tone(160, 0.3, 0.5, { type: 'sine', gain: 0.2, attack: 0.05 });
+      break;
+    case 'sanctum':
+      chime(784, 0, 1.0, 0.16);
+      chime(1046, 0.15, 1.0, 0.14);
+      chime(1318, 0.3, 1.2, 0.12);
+      tone(196, 0, 1.2, { type: 'sine', gain: 0.15, attack: 0.2 });
+      break;
+    case 'scales':
+      clink(1500, 0, 0.3, 0.3);
+      tone(440, 0.1, 0.5, { type: 'triangle', slideTo: 330, gain: 0.18 });
+      clink(1500, 0.55, 0.3, 0.3);
+      break;
+    case 'flame':
+      noise(0, 0.9, { type: 'bandpass', filter: 800, filterTo: 2000, q: 0.5, gain: 0.45, attack: 0.05 });
+      tone(120, 0, 0.8, { type: 'sawtooth', slideTo: 240, distort: true, lowpass: 900, gain: 0.3, attack: 0.1 });
+      for (let i = 0; i < 5; i++) clink(400 + Math.random() * 600, 0.2 + i * 0.1, 0.05, 0.12);
+      break;
+    case 'crimson':
+      tone(110, 0, 1.0, { type: 'sawtooth', fmHz: 3, fmIndex: 20, lowpass: 600, gain: 0.3, attack: 0.15 });
+      tone(165, 0.2, 0.8, { type: 'sine', vibratoHz: 5, vibratoDepth: 8, gain: 0.2, attack: 0.1 });
+      noise(0.3, 0.6, { type: 'lowpass', filter: 500, gain: 0.25, attack: 0.1 });
+      break;
+    case 'gear':
+      for (let i = 0; i < 6; i++) clink(700 + (i % 2) * 300, i * 0.1, 0.08, 0.25);
+      tone(90, 0, 0.7, { type: 'square', fmHz: 12, fmIndex: 8, lowpass: 500, gain: 0.2, attack: 0.05 });
+      break;
+    case 'horn':
+      tone(330, 0, 0.5, { type: 'sawtooth', slideTo: 440, lowpass: 2000, gain: 0.3, attack: 0.05 });
+      tone(440, 0.45, 0.6, { type: 'sawtooth', lowpass: 2200, vibratoHz: 6, vibratoDepth: 6, gain: 0.3, attack: 0.02 });
+      break;
+    case 'pot':
+      clink(600, 0, 0.3, 0.35);
+      tone(300, 0.1, 0.4, { type: 'sine', slideTo: 500, gain: 0.2 });
+      for (let i = 0; i < 3; i++) chime(1300 + i * 200, 0.4 + i * 0.1, 0.5, 0.12);
+      break;
+    case 'golem':
+      thud(0, 1.0);
+      thud(0.3, 1.0);
+      tone(70, 0, 0.8, { type: 'sawtooth', slideTo: 50, distort: true, lowpass: 300, gain: 0.35 });
+      clink(500, 0.35, 0.2, 0.3);
+      break;
+    case 'zone':
+      tone(220, 0, 0.5, { type: 'square', slideTo: 330, lowpass: 1500, gain: 0.2, attack: 0.02 });
+      tone(330, 0.3, 0.5, { type: 'square', slideTo: 220, lowpass: 1500, gain: 0.2 });
+      noise(0.1, 0.5, { type: 'bandpass', filter: 1200, q: 2, gain: 0.2 });
+      break;
+    case 'crown':
+      chime(1046, 0, 0.6, 0.18);
+      chime(1318, 0.12, 0.6, 0.16);
+      chime(1568, 0.24, 0.9, 0.16);
+      tone(261, 0.3, 0.8, { type: 'sawtooth', lowpass: 1500, gain: 0.18, attack: 0.1 });
+      break;
+    case 'fist':
+      swoosh(0, 0.2, 0.6);
+      thud(0.2, 1.0);
+      noise(0.2, 0.3, { type: 'lowpass', filter: 1500, filterTo: 200, gain: 0.5, attack: 0.002 });
+      break;
+    case 'roots':
+      noise(0, 0.8, { type: 'lowpass', filter: 900, filterTo: 300, gain: 0.4, attack: 0.1 });
+      for (let i = 0; i < 5; i++) clink(200 + i * 60, i * 0.12, 0.1, 0.2);
+      tone(80, 0.2, 0.6, { type: 'sawtooth', slideTo: 60, lowpass: 400, gain: 0.25 });
       break;
     case 'value':
       for (let i = 0; i < 5; i++) clink(2200 + Math.random() * 800, i * 0.08, 0.2, 0.2);

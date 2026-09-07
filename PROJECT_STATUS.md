@@ -14,11 +14,12 @@ response windows, logs everything, and supports Undo. Accuracy over feature coun
 | 2 | All Saga of Blue-Eyes card effects (Synchro, Gemini, Azure-Eyes, Honest, Kaiser Glider, traps…) + tests | **Done** (all 41 cards) |
 | 3 | Legend of the Crystal Beasts incl. Crystal Beasts as Continuous Spells, Rainbow Ruins, Rainbow Dragon, Fusion | **Done** (all 46 cards) |
 | 4 | Chains/timing refinement, teaching explanations, "What can I do?" polish, strategy suggestions | **Done**: chain stack panel, turn checklist, Rules help, "Suggest move" (strategy, clearly separated) |
-| 5 | Interface polish, animations, online play, adding more decks | Shaded card art with scene backdrops, creature battle animations, particles, screen shake, per-creature voices and per-card Spell/Trap sounds, optional procedural duel music; adding decks still needs scripts |
+| 5 | Interface polish, animations, online play, adding more decks | **Done**: shaded card art with scene backdrops, creature battle animations, particles, screen shake, per-creature voices and per-card Spell/Trap sounds, optional procedural duel music; online play over WebRTC with GitHub Pages deployment; **Beware of Traptrix** (all 46 cards) and **The Crimson King** (all 49 cards) with Xyz and Link Summons |
 
 ## What works now (Phase 1)
-* Two players, deck lists for both Structure Decks with official TCG text (86 cards),
-  Extra Deck correctly separated (Azure-Eyes; Rainbow Overdragon; Ultimate Crystal Rainbow Dragon Overdrive).
+* Two players, deck lists for four Structure Decks with official TCG text (179 distinct cards),
+  Extra Deck correctly separated (Azure-Eyes; Rainbow Overdragon; Ultimate Crystal Rainbow Dragon Overdrive; the
+  Traptrix Xyz/Link monsters; the Red Dragon Archfiend Synchro family).
 * Coin flip / choice of first player; 5-card opening hands; first turn: no draw, no Battle Phase.
 * Draw, Standby, Main 1, Battle, Main 2, End Phases; hand-size limit (discard to 6); deck-out loss; LP 0 loss.
 * Normal Summon, Set, Tribute Summon (1 / 2 Tributes by Level), one Normal Summon/Set per turn,
@@ -55,16 +56,45 @@ response windows, logs everything, and supports Undo. Accuracy over feature coun
 * Engine features added for it: Pendulum Zones/Summon, Extra Monster Zone use, Pendulum monsters to the Extra Deck,
   Tokens, Attribute changes, effect-allowed direct attacks, battle-damage modifiers (halve / none), "banish instead"
   replacement (Dimension Shifter), effect tags for hand traps, extra Normal Summons, damage-step start hooks.
+* **All Beware of Traptrix cards are implemented** (`src/effects/traptrix`): the eight Main Deck Traptrix (Pudica,
+  Arachnocampa, Atrax, Myrmeleo, Nepenthes, Dionaea, Genlisea, Vesiculo), the Extra Deck Traptrix (Rafflesia Xyz with
+  "apply a Hole Trap from the Deck", Allomerus, Cularia, Pinguicula, Atypus, Sera, Mantis Link Monsters), the Kaiju
+  (Gadarla, Kumongous: Summon to the opponent's field by Tributing their monster), Retaliating "C", Resonance Insect,
+  Lonefire Blossom, Rose Lover, Sauge de Fleur, Mekk-Knights (column counting; Blue Sky search), Artifact Moralltach
+  (Set as a Spell, Summons itself when destroyed on the opponent's turn), Fire/Ice/Thunder Hand, Traptrip Garden
+  (extra Normal Summon, destruction replacement), Traptantalizing Tune, Raigeki, Harpie's Feather Duster, the whole
+  "Hole" Trap family (Trap Hole, Bottomless, Void, Floodgate, Gravedigger's, Traptrix Trap Hole Nightmare, Terrifying
+  Trap Hole Nightmare), Trap Trick, The Phantom Knights of Shade Brigandine and Traptrix Holeutea (Traps that become
+  monsters), Artifact Sanctum, Naturia Sacred Tree, Evenly Matched (from the hand at the end of the Battle Phase).
+* **All The Crimson King cards are implemented** (`src/effects/crimsonKing`): every Resonator (Soul, Vision, Dark,
+  Creation, Synkron, Red, Crimson), Bone Archfiend, Vice Dragon, Battle Fader, Red Sprinter, Red Warg, Wandering King
+  Wildwind, Phantom King Hydride (Tuner treated as non-Tuner), Magical King Moonstar, Absolute King Back Jack, Red
+  Dragon Archfiend/Assault Mode (+ Assault Mode Activate and Assault Beast), Psi-Reflector, Fire Ant Ascator, Ascator
+  Dawnwalker, Danger! Nessie! / Chupacabra! (random discard), Witch of the Black Forest, Absolute Powerforce, Crimson
+  Gaia, Resonator Engine / Call / Command, Burning Soul (Synchro Summon mid-chain), Pot of Extravagance, Fiendish
+  Golem, Red Zone, King's Synchro, Red Reign, Time to Stand Up, Powerful Rebirth, Terrors of the Overroot, and the
+  Synchro family: Red Dragon Archfiend, Scarlight and Scarred (treated as "Red Dragon Archfiend"), Hot Red Dragon
+  Archfiend Abyss / Bane / King Calamity, Red Nova Dragon, Red Supernova Dragon, Red Rising Dragon.
+* Engine features added for them (`src/engine/xyz.ts`, `link.ts`, generalised `synchro.ts`): Xyz Summon with
+  attached materials (a `material` zone, `attachMaterial` / `detachMaterials`, materials to the GY when the Xyz
+  monster leaves), Link Summon with LINK ratings, arrows and placement in the Extra Monster Zones or linked zones
+  (`linkArrowTargets`, `usableLinkZones`), field columns (`column` procedures), Synchro Summons with several Tuners
+  and Synchro monsters as material, Traps treated as monsters, cards Set as Spells (Artifacts), "unaffected by" hooks,
+  effect negation for a turn, Level modifiers, random choices (`Game.random`), "cannot Special Summon except…" turn
+  locks, "cannot activate cards/effects in response" locks, trap activation from the hand, the rule that a card
+  already on the chain cannot be activated again, and card art/sound archetypes for Traptrix, plants, Kaiju, fiends,
+  archfiends, knights, hands, relics and psychics (`src/ui/art`, `src/ui/sound.ts`).
 * Teaching (Phase 4): `src/ui/TeachPanels.tsx` (chain stack with resolution order, per-turn checklist, Rules help
   modal) and `src/strategy/suggest.ts` (heuristic suggestions labelled STRATEGY; never used for legality). Board
   orientation defaults to "turn player at the bottom" so highlighted zones stay on the owner's side; highlighted
   zones are labelled with the deciding player's name and rows carry "Player X's side" tags.
 * Sound (`src/ui/sound.ts`): a small Web Audio synth toolkit (tones with slides/vibrato/FM/distortion, filtered
   noise, chimes, swooshes, thuds) builds every sound at runtime, so there are no audio files. `playCreature(archetype,
-  'attack' | 'call')` gives each of the 15 creature archetypes a voice (dragon roar, feline roar, tortoise thud, bird
+  'attack' | 'call')` gives each of the 24 creature archetypes a voice (dragon roar, feline roar, tortoise thud, bird
   screech, pegasus whinny and hooves, mammoth trumpet, carbuncle chirp, angel chimes, sword swing and ring, mage zap,
-  serpent hiss, insect buzz, ghost wail, titan thunder, stone rumble). `playMotif(kind, isTrap)` gives each of the 45
-  Spell/Trap emblems its own sound (chain rattle for Kunai with Chain / Fiendish Chain / Crystal Release, sword
+  serpent hiss, insect buzz, ghost wail, titan thunder, stone rumble, Traptrix giggle and snap, plant rustle, Kaiju
+  bellow, fiend cackle, archfiend roar with flame, knight hum, hand crackle, relic ring, psychic pulse).
+  `playMotif(kind, isTrap)` gives each of the 63 Spell/Trap emblems its own sound (chain rattle for Kunai with Chain / Fiendish Chain / Crystal Release, sword
   swooshes, Burst Stream charge and blast, Stamping Destruction stomp, wing flaps, card shuffles, crystal chimes,
   cyclone, horns, soul wail, device beeps, and so on). Generic sounds (draw, set, summon, attack, impact, damage,
   heal, negate, flip, boost, swoosh, click) cover everything else; bounces, banishes, control swaps and position
@@ -76,8 +106,8 @@ response windows, logs everything, and supports Undo. Accuracy over feature coun
   is running and stops at the winner screen or on returning to setup. Settings → Background music and volume.
 * Particles/shake: `src/ui/Particles.tsx` draws impact/shatter/sparkle bursts on a canvas; damage shakes the board.
 * Card art (`src/ui/art`): every monster has a procedurally drawn creature (dragon, feline, tortoise, bird, pegasus,
-  mammoth, carbuncle, angel, warrior, mage, serpent, insect, ghost, titan, stone) with a per-card palette and
-  features; every Spell/Trap has its own emblem. Used on card faces, in the attack animation (attacker charges the
+  mammoth, carbuncle, angel, warrior, mage, serpent, insect, ghost, titan, stone, traptrix, plant, kaiju, fiend,
+  archfiend, knight, hand, relic, psychic) with a per-card palette and features; every Spell/Trap has its own emblem. Used on card faces, in the attack animation (attacker charges the
   defender) and in the activation spotlight. `?gallery=1` shows all illustrations.
 * Visual effects layer (`src/ui/FxLayer.tsx`): attack beam + impact, spotlight reveal for Spell/Trap/monster effect
   activations, destruction shatter, floating LP damage, summon glow, NEGATED stamp, ATK/DEF boosts, "Continuous Spell"
@@ -124,12 +154,14 @@ response windows, logs everything, and supports Undo. Accuracy over feature coun
 * Legal actions + explanations: `src/engine/legality.ts`.
 
 ## Tests
-`npm test` → 101 Vitest tests in `tests/` (setup, turns, summons, battle, Spell/Trap timing, legality listing,
+`npm test` → 149 Vitest tests in `tests/` (setup, turns, summons, battle, Spell/Trap timing, legality listing,
 Blue-Eyes interactions in `phase2-blueeyes.test.ts`, Crystal Beast placement in `crystal-beasts-base.test.ts`,
-the Crystal Beast deck in `phase3-crystal-beasts.test.ts`). The harness deals neutral hands by default
+the Crystal Beast deck in `phase3-crystal-beasts.test.ts`, online play in `online.test.ts`, the independent-review
+fixes in `rules-review.test.ts`, Xyz/Link/Hole Traps/Kaiju/Artifacts in `phase5-traptrix.test.ts`, the Red Dragon
+Archfiend Synchro family and Resonators in `phase5-crimson-king.test.ts`). The harness deals neutral hands by default
 (`keepHands: true` to keep the dealt cards) and matches answers to prompt types.
 Helpers in `tests/harness.ts` (`makeGame`, `put`, `start`, `endTurn`, answer builders `A`).
-Browser smoke tests: `e2e/` (needs `npm run dev` running).
+Browser smoke tests: `e2e/` (needs `npm run dev` running); `e2e/extradeck.mjs` performs an Xyz and a Link Summon.
 
 ## Rules-engine fixes from the independent review
 
@@ -187,12 +219,26 @@ Related issues found while fixing these:
 * Perspective auto-follows whoever must decide; on a shared screen the other player's hand is hidden unless
   "Reveal all" is on.
 * Card artwork is a clean generated frame (no copyrighted art), by design.
+* Fusion, Synchro and Xyz Monsters are placed in Main Monster Zones; only Link Monsters use the Extra Monster Zones
+  (the Master Rule 2020 change that lets other Extra Deck monsters use Main Monster Zones makes this legal play).
+* Traptrix Sera and other "when a card is activated" triggers resolve after the chain they respond to instead of
+  chaining to it; Sera's Summon therefore happens right after the Trap resolves.
+* Hot Red Dragon Archfiend King Calamity's rest-of-turn lock on the opponent's field cards is enforced, but the
+  clause "your opponent cannot activate cards or effects in response to this effect's activation" is not (they may
+  still chain to it). Kaiju Counters never come into play (no card in these decks places them).
+* Trap Trick needs a second copy of the chosen Trap in the Deck (as printed) and Evenly Matched is offered only at the
+  end of the Battle Phase, as its text requires, so it never fires on the first turn.
+* Traptrix Pudica's "during the next Standby Phase, your opponent can Special Summon 1 of their banished monsters" is a
+  scheduled Standby Phase prompt. Traptrix Rafflesia's applied "Hole" Trap uses that Trap's own activation conditions
+  and targets.
+* Danger! monsters discard a random card using the seeded random generator, so Undo replays the same result.
 
 ## Suggested next steps
 1. Play-testing feedback: wording of explanations, prompts that feel noisy, any rule that seems wrong.
 2. Save/load of a Duel (state is plain JSON; add localStorage or file export), and a "replay" viewer.
 3. More decks: the card data pipeline (`scripts/extract-cards.py`) and script registry make this straightforward;
-   each new card needs a script and tests.
+   each new card needs a script and tests. Xyz, Link, Synchro, Fusion, Pendulum and Gemini mechanics all exist now, so
+   most structure decks need only card scripts.
 4. Mobile/tablet layout (the board is designed for a laptop screen or larger).
 5. Online play improvements: a chat line, a "spectator" third connection, and an optional relay server for
    networks where WebRTC cannot connect directly (the transport interface makes this a drop-in).

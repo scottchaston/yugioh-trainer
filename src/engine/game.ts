@@ -7,7 +7,7 @@ import { isUltimateCrystalName } from '../cards/archetypes';
 import { getScript } from './scripts';
 import { summonWindow } from './flow';
 import type { Process } from './scripts';
-import { shuffleWithState } from './rng';
+import { nextRandom, shuffleWithState } from './rng';
 import type {
   Answer,
   CardInstance,
@@ -61,7 +61,30 @@ export class Game {
   def(uid: string): CardDefinition {
     const c = this.card(uid);
     if (c.token) return tokenDefinition(c.token);
-    return getCard(c.cardId);
+    const d = getCard(c.cardId);
+    if (c.treatedAsMonster) {
+      // A Trap Card Special Summoned as a Normal Monster (it is not treated as a Trap while on the field).
+      return { ...d, cardType: 'Monster', monsterTypes: ['Normal'], race: c.treatedAsMonster.race, attribute: c.treatedAsMonster.attribute as CardDefinition['attribute'], level: c.treatedAsMonster.level, atk: c.treatedAsMonster.atk, def: c.treatedAsMonster.def, property: undefined };
+    }
+    return d;
+  }
+  /** Does the card count as having this name right now (Scarlight / Scarred Dragon Archfiend become "Red Dragon Archfiend")? */
+  isNamed(uid: string, name: string): boolean {
+    if (this.name(uid) === name) return true;
+    const c = this.card(uid);
+    const s = getScript(this.name(uid));
+    return !!s?.treatedAsName && s.treatedAsName(this, c) === name;
+  }
+  /** Does the card's text mention another card by name (e.g. "a card that mentions Red Dragon Archfiend")? */
+  mentions(uid: string, name: string): boolean {
+    const d = this.def(uid);
+    return d.name !== name && d.text.includes(`"${name}"`);
+  }
+  /** A number in [0, n) from the Duel's seeded random generator (random discards, Pot of Extravagance ...). */
+  random(n: number): number {
+    const r = nextRandom(this.state.rngState);
+    this.state.rngState = r.state;
+    return Math.min(n - 1, Math.floor(r.value * n));
   }
   name(uid: string): string {
     const c = this.card(uid);
@@ -161,10 +184,166 @@ export class Game {
     }
     return attr;
   }
-  /** Level of a monster (tokens carry their own). */
+  /** Level of a monster (tokens carry their own; card effects can raise, lower or set it). Xyz and Link Monsters have no Level (0). */
   levelOf(uid: string): number {
     const c = this.card(uid);
+    if (this.isOnField(c)) {
+      if (typeof c.flags['levelSet'] === 'number') return c.flags['levelSet'] as number;
+      const base = c.token ? c.token.level : (this.def(uid).level ?? 0);
+      if (base === 0) return 0; // Xyz / Link Monsters have no Level
+      return Math.max(1, base + ((c.flags['levelMod'] as number | undefined) ?? 0));
+    }
     return c.token ? c.token.level : (this.def(uid).level ?? 0);
+  }
+  /** Rank of an Xyz Monster (0 for other monsters). */
+  rankOf(uid: string): number {
+    return this.def(uid).rank ?? 0;
+  }
+  isLinkMonster(uid: string): boolean {
+    return !!this.def(uid).monsterTypes?.includes('Link');
+  }
+  isXyzMonster(uid: string): boolean {
+    return !!this.def(uid).monsterTypes?.includes('Xyz');
+  }
+  isSynchroMonster(uid: string): boolean {
+    return !!this.def(uid).monsterTypes?.includes('Synchro');
+  }
+  /** Column (0-4, seen from Player 1's side) of a card on the field; null for Field Zone / off-field cards. */
+  columnOf(c: CardInstance): number | null {
+    if (c.zone === 'monster' || c.zone === 'spellTrap') return c.controller === 0 ? c.index : 4 - c.index;
+    if (c.zone === 'extraMonster') return c.index === 0 ? 1 : 3;
+    return null;
+  }
+  /** All cards on the field (both players) in a column. */
+  cardsInColumn(col: number): CardInstance[] {
+    const out: CardInstance[] = [];
+    for (const p of [0, 1] as PlayerId[]) {
+      for (const c of [...this.fieldMonsters(p), ...this.spellTrapCards(p)]) if (this.columnOf(c) === col) out.push(c);
+    }
+    return out;
+  }
+  /** Main Monster Zone index of `player` that lies in `col`. */
+  mainZoneInColumn(player: PlayerId, col: number): number {
+    return player === 0 ? col : 4 - col;
+  }
+  /** The zones a Link Monster's arrows point to (as { player, zone, index } refs). */
+  linkArrowTargets(uid: string): ZoneRef[] {
+    const c = this.card(uid);
+    const d = this.def(uid);
+    if (!this.isMonsterOnField(c) || !d.linkArrows) return [];
+    const col = this.columnOf(c)!;
+    // Rows: 0 = Player 1's Main Monster Zones, 1 = Extra Monster Zones, 2 = Player 2's Main Monster Zones.
+    const row = c.zone === 'extraMonster' ? 1 : c.controller === 0 ? 0 : 2;
+    const s = c.controller === 0 ? 1 : -1; // "top" = towards the opponent
+    const out: ZoneRef[] = [];
+    for (const a of d.linkArrows) {
+      const dr = a.startsWith('T') ? s : a.startsWith('B') ? -s : 0;
+      const dc = a.endsWith('L') ? -s : a.endsWith('R') ? s : 0;
+      const r = row + dr;
+      const cc = col + dc;
+      if (cc < 0 || cc > 4) continue;
+      if (r === 0) out.push({ player: 0, zone: 'monster', index: cc });
+      else if (r === 2) out.push({ player: 1, zone: 'monster', index: 4 - cc });
+      else if (r === 1 && (cc === 1 || cc === 3)) out.push({ player: 0, zone: 'extraMonster', index: cc === 1 ? 0 : 1 });
+    }
+    return out;
+  }
+  /** Main Monster Zone indexes of `player` that a Link Monster (anyone's) points to. */
+  linkedMainZones(player: PlayerId): number[] {
+    const out = new Set<number>();
+    for (const p of [0, 1] as PlayerId[]) {
+      for (const m of this.fieldMonsters(p)) {
+        if (!m.faceUp || !this.isLinkMonster(m.uid)) continue;
+        for (const z of this.linkArrowTargets(m.uid)) if (z.zone === 'monster' && z.player === player) out.add(z.index);
+      }
+    }
+    return [...out].sort();
+  }
+  /** Zones where `player` may place a monster Summoned from the Extra Deck that needs a linked zone (Link Monsters, Pendulum Monsters from the Extra Deck). */
+  usableLinkZones(player: PlayerId): ZoneRef[] {
+    const out: ZoneRef[] = this.usableExtraMonsterZones(player).map((index) => ({ player, zone: 'extraMonster' as const, index }));
+    const free = this.freeMonsterZones(player);
+    for (const i of this.linkedMainZones(player)) if (free.includes(i)) out.push({ player, zone: 'monster', index: i });
+    return out;
+  }
+  /** Reason why `uid` cannot be Special Summoned from the Extra Deck right now because of a "for the rest of this turn" restriction. */
+  extraDeckSummonProblem(player: PlayerId, uid: string): string | null {
+    const codes = (this.player(player).turnFlags['extraDeckOnly'] as string[] | undefined) ?? [];
+    const d = this.def(uid);
+    const attr = d.attribute;
+    const race = d.race;
+    for (const code of codes) {
+      switch (code) {
+        case 'darkSynchro':
+          if (!(attr === 'DARK' && this.isSynchroMonster(uid))) return 'This turn you can only Special Summon DARK Synchro Monsters from the Extra Deck (Soul Resonator).';
+          break;
+        case 'darkDragonSynchro':
+          if (!(attr === 'DARK' && race === 'Dragon' && this.isSynchroMonster(uid))) return 'This turn you can only Special Summon DARK Dragon Synchro Monsters from the Extra Deck (a card effect you used this turn).';
+          break;
+        case 'synchro':
+          if (!this.isSynchroMonster(uid)) return 'This turn you can only Special Summon Synchro Monsters from the Extra Deck (a card effect you used this turn).';
+          break;
+        case 'insectPlant':
+          if (!(race === 'Insect' || race === 'Plant')) return 'This turn you can only Special Summon Insect or Plant monsters from the Extra Deck (Traptrix Arachnocampa).';
+          break;
+      }
+    }
+    return null;
+  }
+  /** Add a "for the rest of this turn" Extra Deck restriction for a player. */
+  restrictExtraDeck(player: PlayerId, code: string): void {
+    const pl = this.player(player);
+    const codes = (pl.turnFlags['extraDeckOnly'] as string[] | undefined) ?? [];
+    if (!codes.includes(code)) pl.turnFlags['extraDeckOnly'] = [...codes, code];
+  }
+  /** Is `target` unaffected by the effect of `source` (Traptrix monsters vs "Hole" Traps, Link Summoned Traptrix vs Traps ...)? */
+  isUnaffected(targetUid: string, sourceUid: string | null): boolean {
+    if (!sourceUid) return false;
+    const t = this.state.cards[targetUid];
+    const src = this.state.cards[sourceUid];
+    if (!t || !src || !this.isOnField(t) || !t.faceUp || t.flags['effectsNegated']) return false;
+    if (typeof t.flags['unaffectedByOtherEffectsUntil'] === 'number' && this.state.turn <= (t.flags['unaffectedByOtherEffectsUntil'] as number) && sourceUid !== targetUid) return true;
+    if (t.flags['unaffectedByOpponentTrapsThisTurn'] && this.def(sourceUid).cardType === 'Trap' && !src.treatedAsMonster && src.controller !== t.controller) return true;
+    const s = getScript(this.name(targetUid));
+    return !!s?.unaffectedBy && s.unaffectedBy(this, t, src);
+  }
+  /** Turn a face-up monster face-down in Defense Position by a card effect (Floodgate Trap Hole, Crimson Gaia). */
+  setFaceDownDefense(uid: string, source: string, lock?: string): boolean {
+    const c = this.card(uid);
+    if (!this.isMonsterOnField(c)) return false;
+    if (this.isLinkMonster(uid)) {
+      this.log(`${this.name(uid)} is a Link Monster, so it cannot be turned face-down.`, 'rule');
+      return false;
+    }
+    if (this.isUnaffected(uid, source)) {
+      this.log(`${this.name(uid)} is unaffected by ${this.name(source)}.`, 'rule');
+      return false;
+    }
+    c.faceUp = false;
+    c.position = 'DEF';
+    // A face-down monster loses its face-up state (stat changes, negation ...).
+    c.statMods = [];
+    delete c.flags['effectsNegated'];
+    delete c.flags['negatedBy'];
+    if (lock) c.flags['cannotChangePosition'] = lock;
+    this.log(`${this.name(uid)} is changed to face-down Defense Position by ${this.name(source)}.`, 'effect');
+    this.fx({ type: 'position', uid });
+    this.emit({ type: 'positionChanged', uid });
+    return true;
+  }
+  /** Negate a monster's effects while it is on the field (optionally only until the end of this turn). */
+  negateMonsterEffects(uid: string, source: string, untilEndOfTurn = false): void {
+    const c = this.card(uid);
+    if (!this.isMonsterOnField(c)) return;
+    if (this.isUnaffected(uid, source)) {
+      this.log(`${this.name(uid)} is unaffected by ${this.name(source)}, so its effects are not negated.`, 'rule');
+      return;
+    }
+    c.flags['effectsNegated'] = true;
+    c.flags['negatedBy'] = this.name(source);
+    if (untilEndOfTurn) c.flags['effectsNegatedThisTurn'] = true;
+    this.fx({ type: 'negate', uid });
+    this.log(`${this.name(uid)}'s effects are negated${untilEndOfTurn ? ' until the end of this turn' : ' while it is on the field'} (${this.name(source)}).`, 'effect');
   }
   raceOf(uid: string): string {
     const c = this.card(uid);
@@ -192,7 +371,10 @@ export class Game {
       token,
       fusionSummoned: false,
       equippedTo: null,
-      properlySummoned: true,
+      treatedAsMonster: null,
+    materials: [],
+    attachedTo: null,
+    properlySummoned: true,
       statMods: [],
       counters: {},
       flags: {},
@@ -277,13 +459,13 @@ export class Game {
     return { atk: Math.max(0, atk), def: Math.max(0, def), originalAtk, originalDef };
   }
 
-  addStatMod(uid: string, atk: number, def: number, until: 'endOfTurn' | 'endOfDamageStep' | 'permanent', source: string): void {
+  addStatMod(uid: string, atk: number, def: number, until: 'endOfTurn' | 'endOfDamageStep' | 'permanent' | 'endOfNextTurn', source: string): void {
     this.card(uid).statMods.push({ atk, def, until, source });
     this.fx({ type: 'boost', uid, atk, def });
   }
 
   /** Place a monster card in the Spell & Trap Zone, treated as a Spell Card there. */
-  *placeMonsterAsSpell(uid: string, player: PlayerId, kind: 'continuous' | 'equip'): Process<boolean> {
+  *placeMonsterAsSpell(uid: string, player: PlayerId, kind: 'continuous' | 'equip' | 'artifact'): Process<boolean> {
     const free = this.freeSpellTrapZones(player);
     if (free.length === 0) {
       this.log(`${this.playerName(player)} has no free Spell & Trap Zone for ${this.name(uid)}.`, 'rule');
@@ -298,16 +480,20 @@ export class Game {
     } else {
       this.detach(c);
     }
-    this.placeSpellTrap(uid, player, zone, true);
+    this.placeSpellTrap(uid, player, zone, kind !== 'artifact');
     c.treatedAsSpell = kind;
-    this.fx({ type: 'toSpellZone', uid });
+    if (kind === 'artifact') c.setThisTurn = true;
+    this.fx({ type: kind === 'artifact' ? 'set' : 'toSpellZone', uid });
     this.emit({ type: 'placedInSpellTrapZone', uid, player });
     return true;
   }
 
   expireStatMods(until: 'endOfTurn' | 'endOfDamageStep'): void {
     for (const c of Object.values(this.state.cards)) {
-      if (c.statMods.length) c.statMods = c.statMods.filter((m) => m.until !== until);
+      if (!c.statMods.length) continue;
+      c.statMods = c.statMods.filter((m) => m.until !== until);
+      // "until the end of the next turn" becomes "until the end of the turn" once a turn has ended.
+      if (until === 'endOfTurn') for (const m of c.statMods) if (m.until === 'endOfNextTurn') m.until = 'endOfTurn';
     }
   }
 
@@ -429,8 +615,89 @@ export class Game {
       case 'extraMonster':
         if (this.state.extraMonsterZones[c.index] === c.uid) this.state.extraMonsterZones[c.index] = null;
         break;
+      case 'material': {
+        const host = c.attachedTo ? this.state.cards[c.attachedTo] : undefined;
+        if (host) host.materials = host.materials.filter((u) => u !== c.uid);
+        c.attachedTo = null;
+        break;
+      }
     }
     return from;
+  }
+
+  // ------------------------------------------------------------ Xyz material
+  /** Attach a card to an Xyz Monster as material (it leaves wherever it was). */
+  attachMaterial(xyzUid: string, uid: string): void {
+    const c = this.card(uid);
+    if (c.token) {
+      this.detach(c);
+      this.leaveFieldCleanup(c, 'material');
+      this.removeToken(c);
+      return;
+    }
+    // A monster used as material takes its own materials to the Graveyard.
+    for (const m of c.materials.slice()) this.sendToGraveyard(m, 'rule');
+    this.detach(c);
+    this.leaveFieldCleanup(c, 'material');
+    c.zone = 'material';
+    c.index = -1;
+    c.faceUp = false;
+    c.position = null;
+    c.attachedTo = xyzUid;
+    c.controller = c.owner;
+    this.card(xyzUid).materials.push(uid);
+    this.emit({ type: 'attached', uid, to: xyzUid });
+  }
+  /** Detach `n` materials from an Xyz Monster (a cost); they go to the Graveyard. Returns the detached uids. */
+  *detachMaterials(xyzUid: string, n: number, player: PlayerId, title?: string): Process<string[]> {
+    const host = this.card(xyzUid);
+    if (host.materials.length < n) throw new Error(`${this.name(xyzUid)} does not have ${n} material${n > 1 ? 's' : ''} to detach.`);
+    const chosen = yield* this.selectCards(player, title ?? `Detach ${n} material${n > 1 ? 's' : ''} from ${this.name(xyzUid)}`, host.materials.slice(), n, n);
+    for (const u of chosen) {
+      this.log(`${this.name(u)} is detached from ${this.name(xyzUid)} and sent to the Graveyard.`, 'effect');
+      this.emit({ type: 'detached', uid: u, from: xyzUid });
+      this.sendToGraveyard(u, 'detached', xyzUid);
+    }
+    return chosen;
+  }
+
+  /** Set a Spell/Trap face-down from anywhere (Deck, GY, hand) to `player`'s field. Returns false without a free zone. */
+  *setSpellTrapFromAnywhere(uid: string, player: PlayerId, opts: { canActivateThisTurn?: boolean; banishWhenLeaves?: boolean } = {}): Process<boolean> {
+    const free = this.freeSpellTrapZones(player);
+    if (free.length === 0) {
+      this.log(`${this.playerName(player)} has no free Spell & Trap Zone to Set ${this.name(uid)}.`, 'rule');
+      return false;
+    }
+    const zone = yield* this.chooseSpellTrapZone(player, `Choose a Spell & Trap Zone to Set ${this.name(uid)}`);
+    const c = this.card(uid);
+    const shuffle = c.zone === 'deck';
+    this.detach(c);
+    this.leaveFieldCleanup(c, 'spellTrap');
+    this.placeSpellTrap(uid, player, zone, false);
+    c.setThisTurn = true;
+    if (opts.canActivateThisTurn) c.flags['canActivateThisTurn'] = true;
+    if (opts.banishWhenLeaves) c.flags['banishWhenLeavesField'] = true;
+    this.log(`${this.name(uid)} is Set to ${this.playerName(player)}'s field${opts.canActivateThisTurn ? ' (it can be activated this turn)' : ''}.`, 'effect');
+    this.fx({ type: 'set', uid });
+    if (shuffle) this.shuffleDeck(c.owner);
+    return true;
+  }
+
+  /** Special Summon a Trap Card as a Normal Monster (it stops being a Trap while on the field). */
+  *specialSummonTrapAsMonster(uid: string, player: PlayerId, stats: NonNullable<CardInstance['treatedAsMonster']>, how: string): Process<boolean> {
+    const c = this.card(uid);
+    if (this.freeMonsterZones(player).length === 0) {
+      this.log(`${this.playerName(player)} has no free Monster Zone for ${this.name(uid)}.`, 'rule');
+      return false;
+    }
+    if (this.isOnField(c)) {
+      this.detach(c);
+      this.leaveFieldCleanup(c, 'monster');
+    }
+    c.treatedAsMonster = stats;
+    const ok = yield* this.specialSummon(uid, player, { position: 'DEF', how });
+    if (!ok) c.treatedAsMonster = null;
+    return ok;
   }
 
   private leaveFieldCleanup(c: CardInstance, to: Zone): void {
@@ -447,6 +714,13 @@ export class Game {
         }
       }
     }
+    // Xyz materials go to the Graveyard when the Xyz Monster leaves the field.
+    for (const m of c.materials.slice()) {
+      this.log(`${this.name(m)} (material of ${this.name(c.uid)}) is sent to the Graveyard.`, 'rule');
+      this.sendToGraveyard(m, 'rule');
+    }
+    c.materials = [];
+    c.treatedAsMonster = null;
     c.position = null;
     c.faceUp = to === 'graveyard' || to === 'banished';
     c.summonedThisTurn = false;
@@ -474,10 +748,19 @@ export class Game {
    * be paid with such cards: Tokens cease to exist, a Pendulum Monster on the field goes to the Extra Deck
    * instead, and while Dimension Shifter's effect applies everything is banished instead.
    */
+  /** Name of the effect that currently banishes cards instead of sending them to the GY, if any. */
+  banishInsteadSource(): string | null {
+    if (this.state.banishInsteadUntilTurn !== null && this.state.turn <= this.state.banishInsteadUntilTurn) return 'Dimension Shifter';
+    for (const src of this.activeFieldCards()) {
+      if (getScript(this.name(src.uid))?.banishInsteadOfGraveyard?.(this, src)) return this.name(src.uid);
+    }
+    return null;
+  }
+
   canBeSentToGraveyard(uid: string): boolean {
     const c = this.card(uid);
     if (c.token) return false;
-    if (this.state.banishInsteadUntilTurn !== null && this.state.turn <= this.state.banishInsteadUntilTurn) return false;
+    if (this.banishInsteadSource()) return false;
     if (this.isOnField(c) && !!this.def(uid).monsterTypes?.includes('Pendulum')) return false;
     return true;
   }
@@ -485,13 +768,19 @@ export class Game {
   whyCannotBeSentToGraveyard(uid: string): string {
     const c = this.card(uid);
     if (c.token) return `${this.name(uid)} is a Token; Tokens cannot be sent to the Graveyard, so they cannot pay a "send to the GY" cost.`;
-    if (this.state.banishInsteadUntilTurn !== null && this.state.turn <= this.state.banishInsteadUntilTurn) return `Dimension Shifter's effect banishes cards instead of sending them to the Graveyard, so a cost that sends a card to the Graveyard cannot be paid right now.`;
+    const macro = this.banishInsteadSource();
+    if (macro) return `${macro}'s effect banishes cards instead of sending them to the Graveyard, so a cost that sends a card to the Graveyard cannot be paid right now.`;
     return `${this.name(uid)} is a Pendulum Monster on the field: it would go to the Extra Deck instead of the Graveyard, so it cannot pay a "send to the GY" cost.`;
   }
 
   sendToGraveyard(uid: string, reason: SendReason, source?: string): void {
     const c = this.card(uid);
     if (reason === 'cost' && !this.canBeSentToGraveyard(uid)) throw new Error(this.whyCannotBeSentToGraveyard(uid));
+    if (c.flags['banishWhenLeavesField'] && this.isOnField(c) && !c.token) {
+      this.log(`${this.name(uid)} is banished instead of going to the Graveyard (it must be banished when it leaves the field).`, 'rule');
+      this.banish(uid, true, source);
+      return;
+    }
     const wasFaceUp = c.faceUp;
     if (c.token) {
       this.detach(c);
@@ -500,9 +789,10 @@ export class Game {
       this.removeToken(c);
       return;
     }
-    // Dimension Shifter: cards that would be sent to the GY are banished instead.
-    if (this.state.banishInsteadUntilTurn !== null && this.state.turn <= this.state.banishInsteadUntilTurn) {
-      this.log(`${this.name(uid)} would be sent to the Graveyard, but it is banished instead (Dimension Shifter).`, 'rule');
+    // Dimension Shifter / Retaliating "C": cards that would be sent to the GY are banished instead.
+    const macro = this.banishInsteadSource();
+    if (macro) {
+      this.log(`${this.name(uid)} would be sent to the Graveyard, but it is banished instead (${macro}).`, 'rule');
       this.banish(uid);
       return;
     }
@@ -524,12 +814,13 @@ export class Game {
     c.zone = 'graveyard';
     c.index = -1;
     c.faceUp = true;
+    c.flags['sentToGYTurn'] = this.state.turn;
     // A properly Special Summoned Extra Deck monster keeps that status in the GY (it may be revived from there).
     this.player(c.owner).graveyard.push(uid);
     this.emit({ type: 'toGraveyard', uid, from, reason, source, wasFaceUp });
   }
 
-  banish(uid: string, faceUp = true): void {
+  banish(uid: string, faceUp = true, source?: string): void {
     const c = this.card(uid);
     if (c.token) {
       this.detach(c);
@@ -537,6 +828,7 @@ export class Game {
       this.removeToken(c);
       return;
     }
+    const byPlayer = source ? this.state.cards[source]?.controller : undefined;
     const from = this.detach(c);
     this.leaveFieldCleanup(c, 'banished');
     c.zone = 'banished';
@@ -545,7 +837,7 @@ export class Game {
     // Proper-Summon status is kept while banished too (only returning to the Extra Deck/hand/Deck resets it).
     this.player(c.owner).banished.push(uid);
     this.fx({ type: 'banish', uid });
-    this.emit({ type: 'banished', uid, from });
+    this.emit({ type: 'banished', uid, from, source, byPlayer });
   }
 
   toHand(uid: string): void {
@@ -657,16 +949,31 @@ export class Game {
   ): Process<boolean> {
     const c = this.card(uid);
     const d = this.def(uid);
-    if (this.freeMonsterZones(player).length === 0) {
-      this.log(`${d.name} cannot be Special Summoned because ${this.playerName(player)} has no free Monster Zone.`, 'rule');
+    const isLink = this.isLinkMonster(uid);
+    const linkZones = isLink ? this.usableLinkZones(player) : [];
+    if (isLink ? linkZones.length === 0 : this.freeMonsterZones(player).length === 0) {
+      this.log(`${d.name} cannot be Special Summoned because ${this.playerName(player)} has no free ${isLink ? 'Extra Monster Zone or linked Monster Zone' : 'Monster Zone'}.`, 'rule');
       return false;
     }
     if (isExtraDeckMonster(d) && (c.zone === 'graveyard' || c.zone === 'banished') && !c.properlySummoned) {
       this.log(`${d.name} cannot be Special Summoned from the ${c.zone === 'graveyard' ? 'Graveyard' : 'banished cards'} because it was not properly Special Summoned first.`, 'rule');
       return false;
     }
+    if (c.zone === 'extra') {
+      const problem = this.extraDeckSummonProblem(player, uid);
+      if (problem) {
+        this.log(`${d.name} cannot be Special Summoned: ${problem}`, 'rule');
+        return false;
+      }
+    }
+    if (this.player(player).turnFlags['onlySynchroSummon'] && opts.how !== 'synchro') {
+      this.log(`${d.name} cannot be Special Summoned: this turn ${this.playerName(player)} can only Special Summon by Synchro Summon (${this.player(player).turnFlags['onlySynchroSummon']}).`, 'rule');
+      return false;
+    }
     let position: Position = 'ATK';
-    if (opts.position === 'choose') {
+    if (isLink) {
+      position = 'ATK'; // Link Monsters have no DEF and are always in Attack Position
+    } else if (opts.position === 'choose') {
       const choice = yield* this.selectOption(player, `Special Summon ${d.name} in which position?`, [
         { id: 'ATK', label: 'Attack Position' },
         { id: 'DEF', label: 'Defense Position' },
@@ -675,13 +982,26 @@ export class Game {
     } else if (opts.position) {
       position = opts.position;
     }
-    const zone = yield* this.chooseMonsterZone(player, `Choose a Monster Zone for ${d.name}`);
     const faceUp = opts.faceUp ?? true;
-    this.placeMonster(uid, player, zone, position, faceUp);
+    const wasTrap = !!c.treatedAsMonster;
+    if (isLink) {
+      let z = linkZones[0];
+      if (linkZones.length > 1) z = yield* this.selectZone(player, `Choose a zone for ${d.name} (an Extra Monster Zone, or a Main Monster Zone a Link Monster points to)`, linkZones);
+      if (z.zone === 'extraMonster') this.placeInExtraMonsterZone(uid, player, z.index, 'ATK');
+      else this.placeMonster(uid, player, z.index, 'ATK', true);
+    } else {
+      const zone = yield* this.chooseMonsterZone(player, `Choose a Monster Zone for ${d.name}`);
+      this.placeMonster(uid, player, zone, position, faceUp);
+    }
     c.summonedThisTurn = true;
+    c.flags['specialSummoned'] = true;
+    c.flags['specialSummonedThisTurn'] = true;
+    if (wasTrap) c.flags['summonedAsMonsterFromTrap'] = true;
+    this.player(player).turnFlags['specialSummonedThisTurn'] = true;
     if (opts.proper) c.properlySummoned = true;
     const st = this.stats(uid);
-    this.log(`${d.name} is Special Summoned ${opts.how} (ATK ${st.atk} / DEF ${st.def}) in ${faceUp ? '' : 'face-down '}${position === 'ATK' ? 'Attack' : 'Defense'} Position.`, 'effect');
+    const howText = opts.how === 'synchro' ? 'by Synchro Summon' : opts.how === 'xyz' ? 'by Xyz Summon' : opts.how === 'link' ? 'by Link Summon' : opts.how;
+    this.log(`${d.name} is Special Summoned ${howText} (ATK ${st.atk}${isLink ? '' : ` / DEF ${st.def}`}) in ${faceUp ? '' : 'face-down '}${position === 'ATK' ? 'Attack' : 'Defense'} Position.`, 'effect');
     this.fx({ type: 'summon', uid, method: 'special' });
     if (faceUp) {
       const ok = yield* summonWindow(this, uid, player, 'special', opts.how);
@@ -734,6 +1054,9 @@ export class Game {
     c.attacksDeclaredThisTurn = 0;
     c.treatedAsSpell = null;
     c.statMods = [];
+    c.flags = {};
+    c.counters = {};
+    c.equippedTo = null;
     this.state.extraMonsterZones[index] = uid;
   }
 
@@ -787,6 +1110,10 @@ export class Game {
 
   draw(p: PlayerId, n: number, reason = 'draws'): string[] {
     const drawn: string[] = [];
+    if (reason !== 'draws' && this.player(p).turnFlags['noEffectDraws']) {
+      this.log(`${this.playerName(p)} cannot draw cards by card effects this turn (${this.player(p).turnFlags['noEffectDraws']}).`, 'rule');
+      return drawn;
+    }
     for (let i = 0; i < n; i++) {
       const pl = this.player(p);
       if (pl.deck.length === 0) {
@@ -867,16 +1194,25 @@ export class Game {
     for (const uid of uids) {
       const c = this.state.cards[uid];
       if (!c || !this.isOnField(c)) continue;
+      if (this.isUnaffected(uid, source)) {
+        this.log(`${this.name(uid)} is unaffected by ${this.name(source!)}, so it is not destroyed.`, 'rule');
+        continue;
+      }
+      const byPlayer = source ? this.state.cards[source]?.controller : undefined;
       const protection = this.effectDestructionProtection(c);
       if (protection) {
         this.log(`${this.name(uid)} is not destroyed: ${protection}`, 'rule');
+        continue;
+      }
+      if (c.faceUp && !c.flags['effectsNegated'] && byPlayer !== undefined && byPlayer !== c.controller && getScript(this.name(uid))?.immuneToOpponentEffectDestruction) {
+        this.log(`${this.name(uid)} cannot be destroyed by an opponent's card effects.`, 'rule');
         continue;
       }
       const replaced = yield* this.tryDestructionReplacement(c, 'effect');
       if (replaced) continue;
       this.log(`${this.name(uid)} is destroyed${source ? ` by ${this.name(source)}` : ''} and sent to the Graveyard.`, 'effect');
       this.fx({ type: 'destroy', uid, by: 'effect' });
-      this.emit({ type: 'destroyed', uid, reason: 'effect', source: source ?? undefined });
+      this.emit({ type: 'destroyed', uid, reason: 'effect', source: source ?? undefined, byPlayer });
       this.sendToGraveyard(uid, 'destroyedEffect', source ?? undefined);
       destroyed.push(uid);
     }
@@ -894,7 +1230,7 @@ export class Game {
     if (replaced) return true;
     this.log(`${this.name(uid)} is destroyed by battle and sent to the Graveyard.`, 'battle');
     this.fx({ type: 'destroy', uid, by: 'battle' });
-    this.emit({ type: 'destroyed', uid, reason: 'battle', source: attacker });
+    this.emit({ type: 'destroyed', uid, reason: 'battle', source: attacker, byPlayer: this.state.cards[attacker]?.controller });
     this.sendToGraveyard(uid, 'destroyedBattle', attacker);
     return true;
   }
@@ -905,6 +1241,11 @@ export class Game {
       if (s?.replaceDestruction && src.uid !== c.uid) {
         if (yield* s.replaceDestruction(this, src, c, reason)) return true;
       }
+    }
+    // Cards in the Graveyard that can replace the destruction (Soul Resonator).
+    for (const u of this.player(c.controller).graveyard.slice()) {
+      const s = getScript(this.name(u));
+      if (s?.replaceDestructionFromGraveyard && (yield* s.replaceDestructionFromGraveyard(this, this.card(u), c, reason))) return true;
     }
     if (!this.isMonsterOnField(c) || c.flags['effectsNegated']) return false;
     const s = getScript(this.name(c.uid));
@@ -935,7 +1276,9 @@ export class Game {
   }
 
   /** Can `target` be targeted by an effect controlled by `sourcePlayer`? */
-  targetingProtection(target: CardInstance, sourcePlayer: PlayerId): string | null {
+  targetingProtection(target: CardInstance, sourcePlayer: PlayerId, sourceUid?: string): string | null {
+    if (sourceUid && this.isUnaffected(target.uid, sourceUid)) return `it is unaffected by ${this.name(sourceUid)}.`;
+    if (this.player(sourcePlayer).turnFlags['cannotTargetSynchros'] && this.isOnField(target) && this.isSynchroMonster(target.uid) && target.controller !== sourcePlayer) return 'Synchro Monsters cannot be targeted by your card effects this turn (Burning Soul).';
     for (const src of this.activeFieldCards()) {
       const s = getScript(this.name(src.uid));
       const r = s?.preventTargeting?.(this, src, target, sourcePlayer);

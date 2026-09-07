@@ -500,7 +500,8 @@
   "cardType": "Trap",
   "text": "Activate this card by targeting 1 Effect Monster on the field; negate the effects of that face-up monster while it is on the field, also that face-up monster cannot attack. When it is destroyed, destroy this card.",
   "setNumbers": [
-   "SDBE-EN034"
+   "SDBE-EN034",
+   "SDCK-EN037"
   ],
   "property": "Continuous"
  },
@@ -578,6 +579,726 @@
   "atk": 2500,
   "def": 3000,
   "materials": "1 Tuner + 1 or more non-Tuner Normal Monsters"
+ },
+ {
+  "id": "49027020",
+  "konamiId": 18308,
+  "name": "Traptrix Pudica",
+  "cardType": "Monster",
+  "text": "Unaffected by the effects of \"Hole\" Normal Traps. You can only use each of the following effects of \"Traptrix Pudica\" once per turn. When this card is Normal Summoned: You can add 1 \"Traptrip Garden\" from your Deck to your hand. If this card is Special Summoned: You can target 1 Special Summoned monster your opponent controls; banish it, also during the next Standby Phase, your opponent can Special Summon 1 of their banished monsters.",
+  "setNumbers": [
+   "SDBT-EN001"
+  ],
+  "race": "Plant",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "EARTH",
+  "level": 4,
+  "atk": 900,
+  "def": 1900
+ },
+ {
+  "id": "75416738",
+  "konamiId": 18309,
+  "name": "Traptrix Arachnocampa",
+  "cardType": "Monster",
+  "text": "Unaffected by the effects of \"Hole\" Normal Traps. The first time each Set card in your Spell & Trap Zone would be destroyed by card effect each turn, it is not destroyed. During the Main Phase, if you control a \"Traptrix\" monster (Quick Effect): You can Special Summon this card from your hand, also you cannot Special Summon monsters from the Extra Deck for the rest of this turn, except Insect or Plant monsters. You can only use this effect of \"Traptrix Arachnocampa\" once per turn.",
+  "setNumbers": [
+   "SDBT-EN002"
+  ],
+  "race": "Insect",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "EARTH",
+  "level": 4,
+  "atk": 1300,
+  "def": 1500
+ },
+ {
+  "id": "55428242",
+  "konamiId": 10635,
+  "name": "Traptrix Atrax",
+  "cardType": "Monster",
+  "text": "Unaffected by the effects of \"Hole\" Normal Traps. You can activate \"Hole\" Normal Trap Cards from your hand. The activation and effects of Normal Traps activated on your field cannot be negated.",
+  "setNumbers": [
+   "SDBT-EN003"
+  ],
+  "race": "Insect",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "EARTH",
+  "level": 4,
+  "atk": 1800,
+  "def": 1000
+ },
+ {
+  "id": "91812341",
+  "konamiId": 10636,
+  "name": "Traptrix Myrmeleo",
+  "cardType": "Monster",
+  "text": "Unaffected by the effects of \"Hole\" Normal Traps. When this card is Normal Summoned: You can add 1 \"Hole\" Normal Trap from your Deck to your hand. If this card is Special Summoned: Target 1 Spell/Trap your opponent controls; destroy that target.",
+  "setNumbers": [
+   "SDBT-EN004"
+  ],
+  "race": "Insect",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "EARTH",
+  "level": 4,
+  "atk": 1600,
+  "def": 1200
+ },
+ {
+  "id": "28201945",
+  "konamiId": 10637,
+  "name": "Traptrix Nepenthes",
+  "cardType": "Monster",
+  "text": "Unaffected by the effects of \"Hole\" Normal Traps. If you activate a \"Hole\" Normal Trap Card (except during the Damage Step): You can add to your hand, or Special Summon, 1 \"Traptrix\" monster from your Deck, except \"Traptrix Nepenthes\". You can only use this effect of \"Traptrix Nepenthes\" once per turn.",
+  "setNumbers": [
+   "SDBT-EN005"
+  ],
+  "race": "Plant",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "EARTH",
+  "level": 4,
+  "atk": 800,
+  "def": 2000
+ },
+ {
+  "id": "45803070",
+  "konamiId": 11054,
+  "name": "Traptrix Dionaea",
+  "cardType": "Monster",
+  "text": "Unaffected by the effects of \"Hole\" Normal Traps. When this card is Normal Summoned: You can target 1 \"Traptrix\" monster in your GY; Special Summon that target in Defense Position. When this card is Special Summoned: You can target 1 \"Hole\" Normal Trap in your GY; Set that target, but banish it during the End Phase of your next turn if it is still on the field. You can only use this effect of \"Traptrix Dionaea\" once per turn.",
+  "setNumbers": [
+   "SDBT-EN006"
+  ],
+  "race": "Plant",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "EARTH",
+  "level": 4,
+  "atk": 1700,
+  "def": 1100
+ },
+ {
+  "id": "88078306",
+  "konamiId": 15147,
+  "name": "Traptrix Genlisea",
+  "cardType": "Monster",
+  "text": "Unaffected by the effects of \"Hole\" Normal Traps. You can Tribute this card; Set 2 \"Hole\" Normal Traps with different names, 1 from your Deck and 1 from your GY, but banish them when they leave the field. You can only use this effect of \"Traptrix Genlisea\" once per turn.",
+  "setNumbers": [
+   "SDBT-EN007"
+  ],
+  "race": "Plant",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "EARTH",
+  "level": 4,
+  "atk": 1200,
+  "def": 1600
+ },
+ {
+  "id": "28868394",
+  "konamiId": 15977,
+  "name": "Traptrix Vesiculo",
+  "cardType": "Monster",
+  "text": "Unaffected by the effects of \"Hole\" Normal Traps. You can only use 1 of the following effects of \"Traptrix Vesiculo\" per turn, and only once that turn. You can send 1 Set Trap you control to the GY; Special Summon this card from your hand. If you control no cards in your Spell & Trap Zone: You can banish this card from your GY, then target 1 \"Hole\" Normal Trap in your GY; Set it to your field.",
+  "setNumbers": [
+   "SDBT-EN008"
+  ],
+  "race": "Plant",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "EARTH",
+  "level": 4,
+  "atk": 1400,
+  "def": 1400
+ },
+ {
+  "id": "36956512",
+  "konamiId": 12248,
+  "name": "Gadarla, the Mystery Dust Kaiju",
+  "cardType": "Monster",
+  "text": "You can Special Summon this card (from your hand) to your opponent's field in Attack Position, by Tributing 1 monster they control. If your opponent controls a \"Kaiju\" monster, you can Special Summon this card (from your hand) in Attack Position. You can only control 1 \"Kaiju\" monster. Once per turn (Quick Effect): You can remove 3 Kaiju Counters from anywhere on the field; the ATK/DEF of all other monsters on the field become halved.",
+  "setNumbers": [
+   "SDBT-EN009"
+  ],
+  "race": "Insect",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "WIND",
+  "level": 8,
+  "atk": 2700,
+  "def": 1600
+ },
+ {
+  "id": "29726552",
+  "konamiId": 12039,
+  "name": "Kumongous, the Sticky String Kaiju",
+  "cardType": "Monster",
+  "text": "You can Special Summon this card (from your hand) to your opponent's field in Attack Position, by Tributing 1 monster they control. If your opponent controls a \"Kaiju\" monster, you can Special Summon this card (from your hand) in Attack Position. You can only control 1 \"Kaiju\" monster. When your opponent Normal or Special Summons a monster(s) (except during the Damage Step): You can remove 2 Kaiju Counters from anywhere on the field; until the end of the next turn, that monster(s) cannot attack and its effects are negated.",
+  "setNumbers": [
+   "SDBT-EN010"
+  ],
+  "race": "Insect",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "EARTH",
+  "level": 7,
+  "atk": 2400,
+  "def": 2500
+ },
+ {
+  "id": "46502744",
+  "konamiId": 11829,
+  "name": "Retaliating \"C\"",
+  "cardType": "Monster",
+  "text": "When your opponent activates a Spell Card that includes an effect that Special Summons a monster(s) (Quick Effect): You can Special Summon this card from your hand. If Summoned this way, while this card is face-up on the field, any card sent to the GY is banished instead. If this card is sent from the field to the GY: You can add 1 EARTH Insect monster with 1500 or less ATK from your Deck to your hand, except \"Retaliating \"C\"\".",
+  "setNumbers": [
+   "SDBT-EN011"
+  ],
+  "race": "Insect",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "EARTH",
+  "level": 4,
+  "atk": 1400,
+  "def": 1400
+ },
+ {
+  "id": "96938986",
+  "konamiId": 11248,
+  "name": "Resonance Insect",
+  "cardType": "Monster",
+  "text": "If this card is sent from the field to the GY: You can add 1 Level 5 or higher Insect monster from your Deck to your hand. If this card is banished: You can send 1 Insect monster from your Deck to the GY, except \"Resonance Insect\".",
+  "setNumbers": [
+   "SDBT-EN012"
+  ],
+  "race": "Insect",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "EARTH",
+  "level": 4,
+  "atk": 1000,
+  "def": 700
+ },
+ {
+  "id": "48686504",
+  "konamiId": 7568,
+  "name": "Lonefire Blossom",
+  "cardType": "Monster",
+  "text": "Once per turn: You can Tribute 1 face-up Plant monster; Special Summon 1 Plant monster from your Deck.",
+  "setNumbers": [
+   "SDBT-EN013"
+  ],
+  "race": "Plant",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "FIRE",
+  "level": 3,
+  "atk": 500,
+  "def": 1400
+ },
+ {
+  "id": "89252157",
+  "konamiId": 9409,
+  "name": "Rose Lover",
+  "cardType": "Monster",
+  "text": "You can banish this card from your GY; Special Summon 1 Plant monster from your hand, and if you do, it is unaffected by your opponent's Trap effects this turn. You can only use this effect of \"Rose Lover\" once per turn.",
+  "setNumbers": [
+   "SDBT-EN015"
+  ],
+  "race": "Plant",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "EARTH",
+  "level": 1,
+  "atk": 800,
+  "def": 800
+ },
+ {
+  "id": "85032782",
+  "konamiId": 16383,
+  "name": "Sauge de Fleur",
+  "cardType": "Monster",
+  "text": "You can target 1 monster you control and 1 card on the field; Special Summon this card from your hand, and if you do, destroy them. If this card is sent from the field to your GY: You can target 1 other monster in your GY; shuffle it into the Deck, then add 1 Level 1 Plant monster from your Deck or GY to your hand. You can only use each effect of \"Sauge de Fleur\" once per turn.",
+  "setNumbers": [
+   "SDBT-EN016"
+  ],
+  "race": "Spellcaster",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "DARK",
+  "level": 8,
+  "atk": 2900,
+  "def": 0
+ },
+ {
+  "id": "28692962",
+  "konamiId": 13390,
+  "name": "Mekk-Knight Purple Nightfall",
+  "cardType": "Monster",
+  "text": "If 2 or more cards are in the same column, you can Special Summon this card (from your hand) in that column. You can only Special Summon \"Mekk-Knight Purple Nightfall\" once per turn this way. (Quick Effect): You can target 1 \"Mekk-Knight\" monster you control; banish it (until the Standby Phase of your next turn), and if you do, add 1 \"Mekk-Knight\" monster from your Deck to your hand, except \"Mekk-Knight Purple Nightfall\". You can only use this effect of \"Mekk-Knight Purple Nightfall\" once per turn.",
+  "setNumbers": [
+   "SDBT-EN017"
+  ],
+  "race": "Psychic",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "LIGHT",
+  "level": 8,
+  "atk": 2500,
+  "def": 2000
+ },
+ {
+  "id": "20537097",
+  "konamiId": 13384,
+  "name": "Mekk-Knight Blue Sky",
+  "cardType": "Monster",
+  "text": "If 2 or more cards are in the same column, you can Special Summon this card (from your hand) in that column. You can only Special Summon \"Mekk-Knight Blue Sky\" once per turn this way. If this card is Normal or Special Summoned from the hand: You can add \"Mekk-Knight\" monsters with different names, except \"Mekk-Knight Blue Sky\", from your Deck to your hand, equal to the number of your opponent's cards in this card's column. You can only use this effect of \"Mekk-Knight Blue Sky\" once per turn.",
+  "setNumbers": [
+   "SDBT-EN018"
+  ],
+  "race": "Psychic",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "LIGHT",
+  "level": 5,
+  "atk": 2000,
+  "def": 2500
+ },
+ {
+  "id": "85103922",
+  "konamiId": 11040,
+  "name": "Artifact Moralltach",
+  "cardType": "Monster",
+  "text": "You can Set this card from your hand to your Spell & Trap Zone as a Spell. During your opponent's turn, if this Set card in the Spell & Trap Zone is destroyed and sent to your GY: Special Summon it. If this card is Special Summoned during your opponent's turn: You can destroy 1 face-up card your opponent controls.",
+  "setNumbers": [
+   "SDBT-EN019"
+  ],
+  "race": "Fairy",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "LIGHT",
+  "level": 5,
+  "atk": 2100,
+  "def": 1400
+ },
+ {
+  "id": "68535320",
+  "konamiId": 11190,
+  "name": "Fire Hand",
+  "cardType": "Monster",
+  "text": "When this card in your possession is destroyed by your opponent's card and sent to your GY: You can target 1 monster they control; destroy that target, then you can Special Summon 1 \"Ice Hand\" from your Deck.",
+  "setNumbers": [
+   "SDBT-EN020"
+  ],
+  "race": "Pyro",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "FIRE",
+  "level": 4,
+  "atk": 1600,
+  "def": 1000
+ },
+ {
+  "id": "95929069",
+  "konamiId": 11191,
+  "name": "Ice Hand",
+  "cardType": "Monster",
+  "text": "When this card in your possession is destroyed by your opponent's card and sent to your GY: You can target 1 Spell/Trap they control; destroy that target, then you can Special Summon 1 \"Fire Hand\" from your Deck.",
+  "setNumbers": [
+   "SDBT-EN021"
+  ],
+  "race": "Aqua",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "WATER",
+  "level": 4,
+  "atk": 1400,
+  "def": 1600
+ },
+ {
+  "id": "16223761",
+  "konamiId": 15265,
+  "name": "Thunder Hand",
+  "cardType": "Monster",
+  "text": "If a face-up monster(s) you control with 1600 original ATK or DEF is destroyed by battle or an opponent's card effect and sent to the GY, while this card is in your hand or GY: You can Special Summon this card (but banish it when it leaves the field), and if you do, destroy 1 card your opponent controls. You can only use this effect of \"Thunder Hand\" once per turn.",
+  "setNumbers": [
+   "SDBT-EN022"
+  ],
+  "race": "Thunder",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "LIGHT",
+  "level": 4,
+  "atk": 1600,
+  "def": 1600
+ },
+ {
+  "id": "12801833",
+  "konamiId": 18310,
+  "name": "Traptrip Garden",
+  "cardType": "Spell",
+  "text": "During your Main Phase, you can Normal Summon 1 \"Traptrix\" monster, in addition to your Normal Summon/Set. (You can only gain this effect once per turn.) The first time each Insect or Plant monster you control would be destroyed by battle each turn, it is not destroyed. You can banish 1 monster you control; Special Summon 1 \"Traptrix\" monster from your hand or GY. You can only use this effect of \"Traptrip Garden\" once per turn.",
+  "setNumbers": [
+   "SDBT-EN023"
+  ],
+  "property": "Field"
+ },
+ {
+  "id": "48805472",
+  "konamiId": 18311,
+  "name": "Traptantalizing Tune",
+  "cardType": "Spell",
+  "text": "Discard 1 Level 4 Insect or Plant monster, or 1 Normal Trap; draw 2 cards. You can banish this card from your GY, then target 1 of your banished Level 4 Insect or Plant monsters, or Normal Traps; place it on the bottom of the Deck. You can only use each effect of \"Traptantalizing Tune\" once per turn.",
+  "setNumbers": [
+   "SDBT-EN024"
+  ],
+  "property": "Normal"
+ },
+ {
+  "id": "12580477",
+  "konamiId": 4343,
+  "name": "Raigeki",
+  "cardType": "Spell",
+  "text": "Destroy all monsters your opponent controls.",
+  "setNumbers": [
+   "SDBT-EN025"
+  ],
+  "property": "Normal"
+ },
+ {
+  "id": "18144506",
+  "konamiId": 4678,
+  "name": "Harpie's Feather Duster",
+  "cardType": "Spell",
+  "text": "Destroy all Spells and Traps your opponent controls.",
+  "setNumbers": [
+   "SDBT-EN026"
+  ],
+  "property": "Normal"
+ },
+ {
+  "id": "75294187",
+  "konamiId": 18312,
+  "name": "Terrifying Trap Hole Nightmare",
+  "cardType": "Trap",
+  "text": "If your opponent has Special Summoned a monster(s) this turn: Target 1 monster your opponent controls with 2000 or more ATK; destroy it, then if you have a \"Hole\" Normal Trap in your GY, you can banish 1 monster from your opponent's GY. You can only activate 1 \"Terrifying Trap Hole Nightmare\" per turn.",
+  "setNumbers": [
+   "SDBT-EN027"
+  ],
+  "property": "Normal"
+ },
+ {
+  "id": "4206964",
+  "konamiId": 4836,
+  "name": "Trap Hole",
+  "cardType": "Trap",
+  "text": "When your opponent Normal or Flip Summons a monster with 1000 or more ATK: Target that monster; destroy that target.",
+  "setNumbers": [
+   "SDBT-EN028"
+  ],
+  "property": "Normal"
+ },
+ {
+  "id": "29401950",
+  "konamiId": 5400,
+  "name": "Bottomless Trap Hole",
+  "cardType": "Trap",
+  "text": "When your opponent Summons a monster(s) with 1500 or more ATK: Destroy that monster(s) with 1500 or more ATK, and if you do, banish it.",
+  "setNumbers": [
+   "SDBT-EN029"
+  ],
+  "property": "Normal"
+ },
+ {
+  "id": "1005587",
+  "konamiId": 10206,
+  "name": "Void Trap Hole",
+  "cardType": "Trap",
+  "text": "When your opponent Special Summons a monster(s) with 2000 or more ATK: Negate the effects of 1 of those monsters with 2000 or more ATK, and if you do, destroy it.",
+  "setNumbers": [
+   "SDBT-EN030"
+  ],
+  "property": "Normal"
+ },
+ {
+  "id": "29616929",
+  "konamiId": 10680,
+  "name": "Traptrix Trap Hole Nightmare",
+  "cardType": "Trap",
+  "text": "When a monster that was Special Summoned this turn activates its effect on your opponent's field: Negate that effect, and if you do, destroy that card.",
+  "setNumbers": [
+   "SDBT-EN031"
+  ],
+  "property": "Normal"
+ },
+ {
+  "id": "69599136",
+  "konamiId": 12475,
+  "name": "Floodgate Trap Hole",
+  "cardType": "Trap",
+  "text": "When your opponent Summons a monster(s): Change that monster(s) to face-down Defense Position. Monsters changed to face-down Defense Position by this effect cannot change their battle positions.",
+  "setNumbers": [
+   "SDBT-EN032"
+  ],
+  "property": "Normal"
+ },
+ {
+  "id": "31548215",
+  "konamiId": 15064,
+  "name": "Gravedigger's Trap Hole",
+  "cardType": "Trap",
+  "text": "When your opponent activates a monster effect in their hand or GY, or when your opponent's banished monster effect is activated: Negate its effect, and if you do, inflict 2000 damage to your opponent.",
+  "setNumbers": [
+   "SDBT-EN033"
+  ],
+  "property": "Normal"
+ },
+ {
+  "id": "80101899",
+  "konamiId": 13965,
+  "name": "Trap Trick",
+  "cardType": "Trap",
+  "text": "Banish 1 Normal Trap from your Deck, except \"Trap Trick\", and if you do, Set 1 card with the same name directly from your Deck. It can be activated this turn. You can only activate 1 Trap Card for the rest of this turn after this card resolves. You can only activate 1 \"Trap Trick\" per turn.",
+  "setNumbers": [
+   "SDBT-EN034"
+  ],
+  "property": "Normal"
+ },
+ {
+  "id": "98827725",
+  "konamiId": 12267,
+  "name": "The Phantom Knights of Shade Brigandine",
+  "cardType": "Trap",
+  "text": "Special Summon this card in Defense Position as a Normal Monster (Warrior/DARK/Level 4/ATK 0/DEF 300). (This card is NOT treated as a Trap.) If you have no Traps in your GY, you can activate this card the turn it was Set. You can only activate 1 \"The Phantom Knights of Shade Brigandine\" per turn.",
+  "setNumbers": [
+   "SDBT-EN035"
+  ],
+  "property": "Normal"
+ },
+ {
+  "id": "12444060",
+  "konamiId": 11101,
+  "name": "Artifact Sanctum",
+  "cardType": "Trap",
+  "text": "Special Summon 1 \"Artifact\" monster from your Deck. If this card in its owner's possession is destroyed by an opponent's card: You can target 1 card on the field; destroy that target. You can only activate 1 \"Artifact Sanctum\" per turn. You cannot conduct your Battle Phase the turn you activate this card.",
+  "setNumbers": [
+   "SDBT-EN036"
+  ],
+  "property": "Normal"
+ },
+ {
+  "id": "3734202",
+  "konamiId": 11408,
+  "name": "Naturia Sacred Tree",
+  "cardType": "Trap",
+  "text": "If this card is sent to the GY: Add 1 \"Naturia\" card from your Deck to your hand, except \"Naturia Sacred Tree\". You can only use 1 of the following effects of \"Naturia Sacred Tree\" per turn, and only once that turn.\n● You can Tribute 1 EARTH Insect monster; Special Summon 1 Level 4 or lower EARTH Plant monster from your Deck.\n● You can Tribute 1 EARTH Plant monster; Special Summon 1 Level 4 or lower EARTH Insect monster from your Deck.",
+  "setNumbers": [
+   "SDBT-EN037"
+  ],
+  "property": "Continuous"
+ },
+ {
+  "id": "15693423",
+  "konamiId": 13293,
+  "name": "Evenly Matched",
+  "cardType": "Trap",
+  "text": "At the end of the Battle Phase, if your opponent controls more cards than you do: You can make your opponent banish cards from their field face-down so they control the same number of cards as you do. If you control no cards, you can activate this card from your hand.",
+  "setNumbers": [
+   "SDBT-EN038"
+  ],
+  "property": "Normal"
+ },
+ {
+  "id": "6511113",
+  "konamiId": 12026,
+  "name": "Traptrix Rafflesia",
+  "cardType": "Monster",
+  "text": "2 Level 4 monsters\nUnaffected by Trap effects while it has material. \"Traptrix\" monsters you control, except \"Traptrix Rafflesia\", cannot be destroyed by battle or card effects. Your opponent cannot target \"Traptrix\" monsters you control, except \"Traptrix Rafflesia\", with card effects. Once per turn (Quick Effect): You can detach 1 material from this card and send 1 \"Hole\" Normal Trap that meets its activation conditions from your Deck to the GY; this effect becomes that Trap Card's effect when that card is activated.",
+  "setNumbers": [
+   "SDBT-EN039"
+  ],
+  "race": "Plant",
+  "monsterTypes": [
+   "Xyz",
+   "Effect"
+  ],
+  "attribute": "EARTH",
+  "level": null,
+  "atk": 300,
+  "def": 2500,
+  "rank": 4,
+  "materials": "2 Level 4 monsters"
+ },
+ {
+  "id": "59071624",
+  "konamiId": 15031,
+  "name": "Traptrix Allomerus",
+  "cardType": "Monster",
+  "text": "2+ Level 4 monsters / Unaffected by Trap effects while it has material. You can only use each of the following effects of \"Traptrix Allomerus\" once per turn.\n● You can detach 2 materials from this card; Special Summon 1 Level 4 Insect or Plant monster from your GY.\n● If an opponent's monster(s) leaves the field because of your card effect, and is now in the GY or banished (except during the Damage Step): You can detach 1 material from this card, then target 1 of them; Special Summon it to your field.",
+  "setNumbers": [
+   "SDBT-EN040"
+  ],
+  "race": "Insect",
+  "monsterTypes": [
+   "Xyz",
+   "Effect"
+  ],
+  "attribute": "EARTH",
+  "level": null,
+  "atk": 2200,
+  "def": 600,
+  "rank": 4
+ },
+ {
+  "id": "952523",
+  "konamiId": 16007,
+  "name": "Traptrix Cularia",
+  "cardType": "Monster",
+  "text": "2 Insect and/or Plant monsters\nThis Link Summoned card is unaffected by Trap effects. You can only use each of the following effects of \"Traptrix Cularia\" once per turn. After you activate a \"Hole\" Normal Trap Card, you can Set it instead of sending it to the GY. During your End Phase: You can target 1 \"Traptrix\" monster in your GY; Special Summon it in Defense Position.",
+  "setNumbers": [
+   "SDBT-EN041"
+  ],
+  "race": "Plant",
+  "monsterTypes": [
+   "Link",
+   "Effect"
+  ],
+  "attribute": "EARTH",
+  "level": null,
+  "atk": 1800,
+  "def": null,
+  "linkArrows": [
+   "B",
+   "R"
+  ],
+  "linkRating": 2,
+  "materials": "2 Insect and/or Plant monsters"
+ },
+ {
+  "id": "1688285",
+  "konamiId": 18313,
+  "name": "Traptrix Pinguicula",
+  "cardType": "Monster",
+  "text": "2 Level 4 monsters\nWhile this card has material, it is unaffected by Trap effects and the activated effects of other monsters with the same Type as this card's material. You can only use each of the following effects of \"Traptrix Pinguicula\" once per turn. You can detach 1 material from this card; add 1 \"Traptrix\" monster from your Deck to your hand. If a monster(s) owned by your opponent is sent to the GY, or banished, by a card effect (except during the Damage Step): You can attach 1 of those monsters to this card as material.",
+  "setNumbers": [
+   "SDBT-EN042"
+  ],
+  "race": "Plant",
+  "monsterTypes": [
+   "Xyz",
+   "Effect"
+  ],
+  "attribute": "EARTH",
+  "level": null,
+  "atk": 2500,
+  "def": 300,
+  "rank": 4,
+  "materials": "2 Level 4 monsters"
+ },
+ {
+  "id": "48183890",
+  "konamiId": 18314,
+  "name": "Traptrix Atypus",
+  "cardType": "Monster",
+  "text": "2+ monsters, including an Insect or Plant monster\nThis Link Summoned card is unaffected by Trap effects. All \"Traptrix\" monsters you control gain 1000 ATK while you have a Normal Trap in your GY. Once per turn: You can target face-up cards your opponent controls, up to the number of Insect and Plant monsters you control; negate their effects (until the end of this turn), then you can apply this effect.\n ● Banish 1 Normal Trap from your GY, and if you do, destroy 1 of those targeted face-up cards.",
+  "setNumbers": [
+   "SDBT-EN043"
+  ],
+  "race": "Insect",
+  "monsterTypes": [
+   "Link",
+   "Effect"
+  ],
+  "attribute": "EARTH",
+  "level": null,
+  "atk": 1800,
+  "def": null,
+  "linkArrows": [
+   "L",
+   "B",
+   "R"
+  ],
+  "linkRating": 3,
+  "materials": "2+ monsters, including an Insect or Plant monster"
+ },
+ {
+  "id": "73639099",
+  "konamiId": 14203,
+  "name": "Traptrix Sera",
+  "cardType": "Monster",
+  "text": "1 non-Link \"Traptrix\" monster\nThis Link Summoned card is unaffected by Trap effects. You can only use each of the following effects of \"Traptrix Sera\" once per turn, and not during the Damage Step.\n● If a Normal Trap Card is activated: You can Special Summon 1 \"Traptrix\" monster from your Deck with a different name than the cards you control.\n● If your other \"Traptrix\" monster's effect is activated: You can Set 1 \"Hole\" Normal Trap directly from the Deck.",
+  "setNumbers": [
+   "SDBT-EN044"
+  ],
+  "race": "Plant",
+  "monsterTypes": [
+   "Link",
+   "Effect"
+  ],
+  "attribute": "EARTH",
+  "level": null,
+  "atk": 800,
+  "def": null,
+  "linkArrows": [
+   "B"
+  ],
+  "linkRating": 1,
+  "materials": "1 non-Link \"Traptrix\" monster"
+ },
+ {
+  "id": "82738277",
+  "konamiId": 13069,
+  "name": "Traptrix Mantis",
+  "cardType": "Monster",
+  "text": "Unaffected by the effects of \"Hole\" Normal Traps. When this card is Normal Summoned: You can add 1 \"Traptrix\" monster from your Deck to your hand. Once per turn (Quick Effect): You can target 1 Set Spell/Trap you control; return that target to the hand, then you can Set 1 Spell/Trap from your hand.",
+  "setNumbers": [
+   "SDBT-EN045"
+  ],
+  "race": "Insect",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "EARTH",
+  "level": 4,
+  "atk": 1500,
+  "def": 1300
+ },
+ {
+  "id": "74577599",
+  "konamiId": 18315,
+  "name": "Traptrix Holeutea",
+  "cardType": "Trap",
+  "text": "You can activate this card the turn it was Set, by discarding 1 Normal Trap. Special Summon this card in Defense Position as a Normal Monster (Plant/EARTH/Level 4/ATK 400/DEF 2400). (This card is NOT treated as a Trap.) You can banish this card from your GY, then target 1 \"Traptrix\" monster in your GY; Special Summon it. You can only use 1 \"Traptrix Holeutea\" effect per turn, and only once that turn.",
+  "setNumbers": [
+   "SDBT-EN046"
+  ],
+  "property": "Normal"
  },
  {
   "id": "32710364",
@@ -826,7 +1547,8 @@
   "cardType": "Monster",
   "text": "When a card or effect is activated that includes any of these effects (Quick Effect): You can discard this card; negate that effect.\n● Add a card from the Deck to the hand.\n● Special Summon from the Deck.\n● Send a card from the Deck to the GY.\nYou can only use this effect of \"Ash Blossom & Joyous Spring\" once per turn.",
   "setNumbers": [
-   "SDCB-EN014"
+   "SDCB-EN014",
+   "SDBT-EN014"
   ],
   "race": "Zombie",
   "monsterTypes": [
@@ -1229,5 +1951,791 @@
    "SDCB-EN046"
   ],
   "property": "Normal"
+ },
+ {
+  "id": "62991792",
+  "konamiId": 19014,
+  "name": "Soul Resonator",
+  "cardType": "Monster",
+  "text": "If this card is Normal or Special Summoned: You can add 1 Level 4 or lower Fiend monster from your Deck to your hand, except \"Soul Resonator\", also you cannot Special Summon monsters from the Extra Deck for the rest of this turn, except DARK Synchro Monsters. If a card(s) you control would be destroyed by card effect, while you control \"Red Dragon Archfiend\" or a Synchro Monster that mentions it, you can banish this card from your GY instead. You can only use each effect of \"Soul Resonator\" once per turn.",
+  "setNumbers": [
+   "SDCK-EN001"
+  ],
+  "race": "Fiend",
+  "monsterTypes": [
+   "Tuner",
+   "Effect"
+  ],
+  "attribute": "FIRE",
+  "level": 3,
+  "atk": 500,
+  "def": 200
+ },
+ {
+  "id": "98396890",
+  "konamiId": 19015,
+  "name": "Vision Resonator",
+  "cardType": "Monster",
+  "text": "If a Level 5 or higher DARK monster is on the field, you can Special Summon this card (from your hand). You can only Special Summon \"Vision Resonator\" once per turn this way. If this card is sent to the GY: You can add 1 Spell/Trap that mentions \"Red Dragon Archfiend\" from your Deck to your hand. You can only use this effect of \"Vision Resonator\" once per turn.",
+  "setNumbers": [
+   "SDCK-EN002"
+  ],
+  "race": "Fiend",
+  "monsterTypes": [
+   "Tuner",
+   "Effect"
+  ],
+  "attribute": "DARK",
+  "level": 2,
+  "atk": 400,
+  "def": 400
+ },
+ {
+  "id": "25784595",
+  "konamiId": 19016,
+  "name": "Bone Archfiend",
+  "cardType": "Monster",
+  "text": "If this card is in your hand or GY: You can send 1 other card from your hand or field to the GY; Special Summon this card, also you cannot Special Summon monsters from the Extra Deck for the rest of this turn, except DARK Dragon Synchro Monsters. You can target 1 face-up monster you control that has a Level; send 1 Fiend Tuner from your hand or Deck to the GY, and if you do, increase or decrease that monster's Level by 1. You can only use each effect of \"Bone Archfiend\" once per turn.",
+  "setNumbers": [
+   "SDCK-EN003"
+  ],
+  "race": "Fiend",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "DARK",
+  "level": 4,
+  "atk": 1800,
+  "def": 0
+ },
+ {
+  "id": "97021916",
+  "konamiId": 7708,
+  "name": "Dark Resonator",
+  "cardType": "Monster",
+  "text": "The first time this card would be destroyed by battle each turn, it is not destroyed.",
+  "setNumbers": [
+   "SDCK-EN004"
+  ],
+  "race": "Fiend",
+  "monsterTypes": [
+   "Tuner",
+   "Effect"
+  ],
+  "attribute": "DARK",
+  "level": 3,
+  "atk": 1300,
+  "def": 300
+ },
+ {
+  "id": "5780210",
+  "konamiId": 9090,
+  "name": "Creation Resonator",
+  "cardType": "Monster",
+  "text": "If you control a Level 8 or higher Synchro Monster, you can Special Summon this card (from your hand).",
+  "setNumbers": [
+   "SDCK-EN005"
+  ],
+  "race": "Fiend",
+  "monsterTypes": [
+   "Tuner",
+   "Effect"
+  ],
+  "attribute": "WIND",
+  "level": 3,
+  "atk": 800,
+  "def": 600
+ },
+ {
+  "id": "77360173",
+  "konamiId": 12062,
+  "name": "Synkron Resonator",
+  "cardType": "Monster",
+  "text": "If a Synchro Monster is on the field, you can Special Summon this card (from your hand). You can only Special Summon \"Synkron Resonator\" once per turn this way. If this card is sent from the field to the GY: You can target 1 \"Resonator\" monster in your GY, except \"Synkron Resonator\"; add it to your hand.",
+  "setNumbers": [
+   "SDCK-EN006"
+  ],
+  "race": "Fiend",
+  "monsterTypes": [
+   "Tuner",
+   "Effect"
+  ],
+  "attribute": "DARK",
+  "level": 1,
+  "atk": 100,
+  "def": 100
+ },
+ {
+  "id": "40975574",
+  "konamiId": 12061,
+  "name": "Red Resonator",
+  "cardType": "Monster",
+  "text": "When this card is Normal Summoned: You can Special Summon 1 Level 4 or lower monster from your hand. When this card is Special Summoned: You can target 1 face-up monster on the field; gain LP equal to its ATK. You can only use this effect of \"Red Resonator\" once per turn.",
+  "setNumbers": [
+   "SDCK-EN007"
+  ],
+  "race": "Fiend",
+  "monsterTypes": [
+   "Tuner",
+   "Effect"
+  ],
+  "attribute": "FIRE",
+  "level": 2,
+  "atk": 600,
+  "def": 200
+ },
+ {
+  "id": "34761841",
+  "konamiId": 15003,
+  "name": "Crimson Resonator",
+  "cardType": "Monster",
+  "text": "If you control no monsters: You can Special Summon this card from your hand. If the only other monster you control is exactly 1 DARK Dragon Synchro Monster: You can Special Summon up to 2 \"Resonator\" monsters from your hand or Deck, except \"Crimson Resonator\". You can only use each effect of \"Crimson Resonator\" once per turn. You cannot Special Summon monsters from the Extra Deck, except DARK Dragon Synchro Monsters, the turn you activate either of this card's effects.",
+  "setNumbers": [
+   "SDCK-EN008"
+  ],
+  "race": "Fiend",
+  "monsterTypes": [
+   "Tuner",
+   "Effect"
+  ],
+  "attribute": "DARK",
+  "level": 2,
+  "atk": 800,
+  "def": 300
+ },
+ {
+  "id": "54343893",
+  "konamiId": 7991,
+  "name": "Vice Dragon",
+  "cardType": "Monster",
+  "text": "If only your opponent controls a monster, you can Special Summon this card (from your hand), but its original ATK/DEF become halved.",
+  "setNumbers": [
+   "SDCK-EN009"
+  ],
+  "race": "Dragon",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "DARK",
+  "level": 5,
+  "atk": 2000,
+  "def": 2400
+ },
+ {
+  "id": "19665973",
+  "konamiId": 8617,
+  "name": "Battle Fader",
+  "cardType": "Monster",
+  "text": "When an opponent's monster declares a direct attack: You can Special Summon this card from your hand, then end the Battle Phase. If Summoned this way, banish it when it leaves the field.",
+  "setNumbers": [
+   "SDCK-EN010"
+  ],
+  "race": "Fiend",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "DARK",
+  "level": 1,
+  "atk": 0,
+  "def": 0
+ },
+ {
+  "id": "14886469",
+  "konamiId": 12060,
+  "name": "Red Sprinter",
+  "cardType": "Monster",
+  "text": "When this card is Normal or Special Summoned while you control no other monsters: You can Special Summon 1 Level 3 or lower Fiend Tuner from your hand or GY. You can only use this effect of \"Red Sprinter\" once per turn.",
+  "setNumbers": [
+   "SDCK-EN011"
+  ],
+  "race": "Fiend",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "FIRE",
+  "level": 4,
+  "atk": 1700,
+  "def": 1200
+ },
+ {
+  "id": "45313993",
+  "konamiId": 12413,
+  "name": "Red Warg",
+  "cardType": "Monster",
+  "text": "When you Normal Summon a \"Resonator\" monster: You can Special Summon this card from your hand, but its ATK becomes halved.",
+  "setNumbers": [
+   "SDCK-EN012"
+  ],
+  "race": "Fiend",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "FIRE",
+  "level": 6,
+  "atk": 1400,
+  "def": 2200
+ },
+ {
+  "id": "52589809",
+  "konamiId": 12893,
+  "name": "Wandering King Wildwind",
+  "cardType": "Monster",
+  "text": "If you control a Fiend Tuner with 1500 or less ATK, you can Special Summon this card (from your hand). If Summoned this way, you cannot Special Summon monsters from the Extra Deck for the rest of this turn, except Synchro Monsters. During your Main Phase, except the turn this card was sent to the GY: You can banish this card from your GY; add 1 Fiend Tuner with 1500 or less ATK from your Deck to your hand.",
+  "setNumbers": [
+   "SDCK-EN013"
+  ],
+  "race": "Fiend",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "DARK",
+  "level": 4,
+  "atk": 1700,
+  "def": 1300
+ },
+ {
+  "id": "6901008",
+  "konamiId": 9717,
+  "name": "Phantom King Hydride",
+  "cardType": "Monster",
+  "text": "If you use this card you control as Synchro Material, you can treat it as a non-Tuner.",
+  "setNumbers": [
+   "SDCK-EN014"
+  ],
+  "race": "Fiend",
+  "monsterTypes": [
+   "Tuner",
+   "Effect"
+  ],
+  "attribute": "DARK",
+  "level": 3,
+  "atk": 1500,
+  "def": 300
+ },
+ {
+  "id": "35058857",
+  "konamiId": 9051,
+  "name": "Magical King Moonstar",
+  "cardType": "Monster",
+  "text": "Cannot be used as Synchro Material, except for the Synchro Summon of a DARK Synchro Monster. If you control a Tuner, you can Special Summon this card (from your hand). If this card is Normal or Special Summoned: You can target 1 other face-up monster you control or in your GY; until the end of this turn, this card's Level becomes the same as that monster's, also you cannot Special Summon, except by Synchro Summon.",
+  "setNumbers": [
+   "SDCK-EN015"
+  ],
+  "race": "Fiend",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "DARK",
+  "level": 3,
+  "atk": 900,
+  "def": 600
+ },
+ {
+  "id": "60990740",
+  "konamiId": 11642,
+  "name": "Absolute King Back Jack",
+  "cardType": "Monster",
+  "text": "During your opponent's turn (Quick Effect): You can banish this card from the GY; excavate the top card of your Deck, and if it is a Normal Trap, Set it to your field. Otherwise, send it to the GY. That Set card can be activated during this turn. If this card is sent to the GY: You can look at 3 cards from the top of your Deck, then place them on the top of the Deck in any order. You can only use each effect of \"Absolute King Back Jack\" once per turn.",
+  "setNumbers": [
+   "SDCK-EN016"
+  ],
+  "race": "Fiend",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "DARK",
+  "level": 1,
+  "atk": 0,
+  "def": 0
+ },
+ {
+  "id": "77336644",
+  "konamiId": 8007,
+  "name": "Red Dragon Archfiend/Assault Mode",
+  "cardType": "Monster",
+  "text": "Cannot be Normal Summoned/Set. Must be Special Summoned with \"Assault Mode Activate\". After damage calculation, if this card attacked: Destroy all other monsters on the field. When this card on the field is destroyed: You can target 1 \"Red Dragon Archfiend\" in your GY; Special Summon that target.",
+  "setNumbers": [
+   "SDCK-EN017"
+  ],
+  "race": "Dragon",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "DARK",
+  "level": 10,
+  "atk": 3500,
+  "def": 2500
+ },
+ {
+  "id": "3431737",
+  "konamiId": 8022,
+  "name": "Assault Beast",
+  "cardType": "Monster",
+  "text": "You can discard this card to the GY; add 1 \"Assault Mode Activate\" from your Deck to your hand.",
+  "setNumbers": [
+   "SDCK-EN018"
+  ],
+  "race": "Beast-Warrior",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "EARTH",
+  "level": 4,
+  "atk": 1900,
+  "def": 1200
+ },
+ {
+  "id": "74644400",
+  "konamiId": 14260,
+  "name": "Psi-Reflector",
+  "cardType": "Monster",
+  "text": "If this card is Normal or Special Summoned: You can add 1 \"Assault Mode Activate\" or 1 card that mentions it from your Deck to your hand, except \"Psi-Reflector\". You can reveal 1 \"Assault Mode Activate\" in your hand, then target 1 monster in your GY that mentions it, except \"Psi-Reflector\"; Special Summon it, and if you do, increase its Level by up to 4. You can only use each effect of \"Psi-Reflector\" once per turn.",
+  "setNumbers": [
+   "SDCK-EN019"
+  ],
+  "race": "Psychic",
+  "monsterTypes": [
+   "Tuner",
+   "Effect"
+  ],
+  "attribute": "DARK",
+  "level": 1,
+  "atk": 400,
+  "def": 300
+ },
+ {
+  "id": "78275321",
+  "konamiId": 8631,
+  "name": "Fire Ant Ascator",
+  "cardType": "Monster",
+  "text": "When this card is destroyed by battle and sent to the GY: You can target 1 Level 5 monster in your GY; Special Summon that target, but its effects are negated, also send it to the GY during the End Phase of this turn.",
+  "setNumbers": [
+   "SDCK-EN020"
+  ],
+  "race": "Insect",
+  "monsterTypes": [
+   "Tuner",
+   "Effect"
+  ],
+  "attribute": "EARTH",
+  "level": 3,
+  "atk": 700,
+  "def": 1300
+ },
+ {
+  "id": "71821687",
+  "konamiId": 14592,
+  "name": "Ascator, Dawnwalker",
+  "cardType": "Monster",
+  "text": "You can discard 1 card; Special Summon this card from your hand in Defense Position, then you can Special Summon 1 \"Fire Ant Ascator\" from your hand or Deck. You cannot Special Summon monsters from the Extra Deck the turn you activate this effect, except Synchro Monsters. You can only use this effect of \"Ascator, Dawnwalker\" once per turn.",
+  "setNumbers": [
+   "SDCK-EN021"
+  ],
+  "race": "Spellcaster",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "EARTH",
+  "level": 5,
+  "atk": 2300,
+  "def": 1500
+ },
+ {
+  "id": "70711847",
+  "konamiId": 13979,
+  "name": "Danger! Nessie!",
+  "cardType": "Monster",
+  "text": "You can reveal this card in your hand; your opponent randomly chooses 1 card from your entire hand, then you discard the chosen card. Then, if the discarded card was not \"Danger! Nessie!\", Special Summon 1 \"Danger! Nessie!\" from your hand, and if you do, draw 1 card. If this card is discarded: You can add 1 \"Danger!\" card from your Deck to your hand, except \"Danger! Nessie!\". You can only use this effect of \"Danger! Nessie!\" once per turn.",
+  "setNumbers": [
+   "SDCK-EN022"
+  ],
+  "race": "Aqua",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "DARK",
+  "level": 7,
+  "atk": 1600,
+  "def": 2800
+ },
+ {
+  "id": "16209941",
+  "konamiId": 13980,
+  "name": "Danger! Chupacabra!",
+  "cardType": "Monster",
+  "text": "You can reveal this card in your hand; your opponent randomly chooses 1 card from your entire hand, then you discard the chosen card. Then, if the discarded card was not \"Danger! Chupacabra!\", Special Summon 1 \"Danger! Chupacabra!\" from your hand, and if you do, draw 1 card. If this card is discarded: You can target 1 \"Danger!\" monster in your GY, except \"Danger! Chupacabra!\"; Special Summon it. You can only use this effect of \"Danger! Chupacabra!\" once per turn.",
+  "setNumbers": [
+   "SDCK-EN023"
+  ],
+  "race": "Fiend",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "DARK",
+  "level": 4,
+  "atk": 1500,
+  "def": 400
+ },
+ {
+  "id": "78010363",
+  "konamiId": 4580,
+  "name": "Witch of the Black Forest",
+  "cardType": "Monster",
+  "text": "If this card is sent from the field to the GY: Add 1 monster with 1500 or less DEF from your Deck to your hand, but you cannot activate cards, or the effects of cards, with that name for the rest of this turn. You can only use this effect of \"Witch of the Black Forest\" once per turn.",
+  "setNumbers": [
+   "SDCK-EN024"
+  ],
+  "race": "Spellcaster",
+  "monsterTypes": [
+   "Effect"
+  ],
+  "attribute": "DARK",
+  "level": 4,
+  "atk": 1100,
+  "def": 1200
+ },
+ {
+  "id": "51779204",
+  "konamiId": 19017,
+  "name": "Absolute Powerforce",
+  "cardType": "Spell",
+  "text": "Target 1 \"Red Dragon Archfiend\" you control; if that monster you control battles an opponent's monster this turn, apply these effects until the end of the Damage Step.\n● It gains 1000 ATK.\n● Your opponent cannot activate cards or effects.\n● If it attacks a Defense Position monster, inflict piercing battle damage to your opponent.\n● Any battle damage your opponent takes from that battle is doubled.",
+  "setNumbers": [
+   "SDCK-EN025"
+  ],
+  "property": "Quick-Play"
+ },
+ {
+  "id": "98173209",
+  "konamiId": 19018,
+  "name": "Crimson Gaia",
+  "cardType": "Spell",
+  "text": "During your Main Phase: You can add 1 \"Red Dragon Archfiend\" or 1 card that mentions it from your Deck or GY to your hand, except \"Crimson Gaia\". When your \"Red Dragon Archfiend\" declares an attack: You can change all monsters your opponent controls to face-down Defense Position. If a monster(s) on the field is destroyed by battle or card effect: You can Special Summon 1 \"Red Dragon Archfiend\" from your GY. You can only use each effect of \"Crimson Gaia\" once per turn.",
+  "setNumbers": [
+   "SDCK-EN026"
+  ],
+  "property": "Continuous"
+ },
+ {
+  "id": "15576074",
+  "konamiId": 9347,
+  "name": "Resonator Engine",
+  "cardType": "Spell",
+  "text": "Target 2 \"Resonator\" monsters in your GY; add 1 Level 4 monster from your Deck to your hand, and if you do, return those targets to the Deck.",
+  "setNumbers": [
+   "SDCK-EN027"
+  ],
+  "property": "Normal"
+ },
+ {
+  "id": "23008320",
+  "konamiId": 9518,
+  "name": "Resonator Call",
+  "cardType": "Spell",
+  "text": "Add 1 \"Resonator\" monster from your Deck to your hand.",
+  "setNumbers": [
+   "SDCK-EN028"
+  ],
+  "property": "Normal"
+ },
+ {
+  "id": "8559524",
+  "konamiId": 15048,
+  "name": "Resonator Command",
+  "cardType": "Spell",
+  "text": "Discard 1 \"Resonator\" monster; add 1 Level 4 or lower Fiend monster from your Deck to your hand. You can only activate 1 \"Resonator Command\" per turn.",
+  "setNumbers": [
+   "SDCK-EN029"
+  ],
+  "property": "Quick-Play"
+ },
+ {
+  "id": "10723472",
+  "konamiId": 14979,
+  "name": "Burning Soul",
+  "cardType": "Spell",
+  "text": "If you control a Level 8 or higher Synchro Monster: Add 1 card from your GY to your hand, except \"Burning Soul\", then, immediately after this effect resolves, Synchro Summon using monsters you control as material. For the rest of this turn after this card resolves, your opponent cannot target Synchro Monsters on the field with card effects. You can only activate 1 \"Burning Soul\" per turn.",
+  "setNumbers": [
+   "SDCK-EN030"
+  ],
+  "property": "Quick-Play"
+ },
+ {
+  "id": "49238328",
+  "konamiId": 14144,
+  "name": "Pot of Extravagance",
+  "cardType": "Spell",
+  "text": "At the start of your Main Phase 1: Banish 3 or 6 random face-down cards from your Extra Deck, face-down; draw 1 card for every 3 cards banished. For the rest of this turn after this card resolves, you cannot draw any cards by card effects.",
+  "setNumbers": [
+   "SDCK-EN031"
+  ],
+  "property": "Normal"
+ },
+ {
+  "id": "24662957",
+  "konamiId": 19019,
+  "name": "Fiendish Golem",
+  "cardType": "Trap",
+  "text": "Target 1 monster on the field with 2000 or more ATK; banish it (until the End Phase of the next turn), then if you activated this card while you controlled \"Red Dragon Archfiend\" or a Synchro Monster that mentions it, you can Set 1 \"Fiendish Chain\" directly from your Deck or GY.",
+  "setNumbers": [
+   "SDCK-EN032"
+  ],
+  "property": "Normal"
+ },
+ {
+  "id": "50056656",
+  "konamiId": 19020,
+  "name": "Red Zone",
+  "cardType": "Trap",
+  "text": "When your opponent activates a card or effect while you control \"Red Dragon Archfiend\" or a Synchro Monster that mentions it: You can target 1 card on the field; destroy it. You can target 1 of your banished DARK Dragon Synchro Monsters; Special Summon it. You can only use each effect of \"Red Zone\" once per turn.",
+  "setNumbers": [
+   "SDCK-EN033"
+  ],
+  "property": "Continuous"
+ },
+ {
+  "id": "27503418",
+  "konamiId": 12657,
+  "name": "King's Synchro",
+  "cardType": "Trap",
+  "text": "When your opponent's monster declares an attack on a Synchro Monster you control: Negate the attack, then you can apply the rest of this card's effect. Banish that Synchro Monster you control and 1 Tuner from your GY, and if you do, Special Summon from your Extra Deck 1 Synchro Monster whose Level equals the total Levels the banished monsters had. (This is treated as a Synchro Summon.)",
+  "setNumbers": [
+   "SDCK-EN034"
+  ],
+  "property": "Normal"
+ },
+ {
+  "id": "5376159",
+  "konamiId": 15060,
+  "name": "Red Reign",
+  "cardType": "Trap",
+  "text": "If you control a Level 8 or higher Synchro Monster: Banish all monsters on the field, except the monster(s) with the highest Level, also the remaining face-up monsters on the field are unaffected by other card effects, except their own, until the end of this turn. If a DARK Dragon Synchro Monster is Synchro Summoned to your field while this card is in your GY: You can add this card to your hand. You can only use this effect of \"Red Reign\" once per turn.",
+  "setNumbers": [
+   "SDCK-EN035"
+  ],
+  "property": "Normal"
+ },
+ {
+  "id": "68490573",
+  "konamiId": 17251,
+  "name": "Time to Stand Up",
+  "cardType": "Trap",
+  "text": "If a Dragon Synchro Monster is on the field: Special Summon up to 2 monsters, that are \"Resonator\" monsters and/or Level 1 Dragon monsters, from your Deck. When a monster effect is activated, while you control a Level 10 or higher DARK Dragon Synchro Monster: You can banish this card from your GY; negate that effect, and if you do, 1 Synchro Monster you control gains 2000 ATK until the end of the next turn. You can only use each effect of \"Time to Stand Up\" once per turn.",
+  "setNumbers": [
+   "SDCK-EN036"
+  ],
+  "property": "Normal"
+ },
+ {
+  "id": "84298614",
+  "konamiId": 10983,
+  "name": "Powerful Rebirth",
+  "cardType": "Trap",
+  "text": "Activate this card by targeting 1 Level 4 or lower monster in your GY; Special Summon that target. Increase its Level by 1 and ATK/DEF by 100. When that monster is destroyed, destroy this card.",
+  "setNumbers": [
+   "SDCK-EN038"
+  ],
+  "property": "Continuous"
+ },
+ {
+  "id": "80280737",
+  "konamiId": 8058,
+  "name": "Assault Mode Activate",
+  "cardType": "Trap",
+  "text": "Tribute 1 Synchro Monster; Special Summon 1 \"/Assault Mode\" monster, whose name includes the Tributed monster's name, from your Deck in Attack Position.",
+  "setNumbers": [
+   "SDCK-EN039"
+  ],
+  "property": "Normal"
+ },
+ {
+  "id": "63086455",
+  "konamiId": 17480,
+  "name": "Terrors of the Overroot",
+  "cardType": "Trap",
+  "text": "Target 1 card your opponent controls and 1 card in their GY; send that card on the field to the GY, and if you do, Set the other card from the GY to your opponent's field. You can only activate 1 \"Terrors of the Overroot\" per turn.",
+  "setNumbers": [
+   "SDCK-EN040"
+  ],
+  "property": "Normal"
+ },
+ {
+  "id": "80666118",
+  "konamiId": 11990,
+  "name": "Scarlight Red Dragon Archfiend",
+  "cardType": "Monster",
+  "text": "1 Tuner + 1+ non-Tuner monsters\nThis card's name becomes \"Red Dragon Archfiend\" while on the field or in the GY. Once per turn: You can destroy as many other Special Summoned Effect Monsters on the field as possible with ATK less than or equal to this card's, then inflict 500 damage to your opponent for each monster destroyed.",
+  "setNumbers": [
+   "SDCK-EN041"
+  ],
+  "race": "Dragon",
+  "monsterTypes": [
+   "Synchro",
+   "Effect"
+  ],
+  "attribute": "DARK",
+  "level": 8,
+  "atk": 3000,
+  "def": 2500,
+  "materials": "1 Tuner + 1 or more non-Tuner monsters"
+ },
+ {
+  "id": "9753964",
+  "konamiId": 12078,
+  "name": "Hot Red Dragon Archfiend Abyss",
+  "cardType": "Monster",
+  "text": "1 Tuner + 1 non-Tuner DARK Dragon Synchro Monster\n(Quick Effect): You can target 1 face-up card your opponent controls; negate its effects until the end of this turn. When this card inflicts battle damage to your opponent: You can target 1 Tuner in your GY; Special Summon it in Defense Position. You can only use each effect of \"Hot Red Dragon Archfiend Abyss\" once per turn.",
+  "setNumbers": [
+   "SDCK-EN042"
+  ],
+  "race": "Dragon",
+  "monsterTypes": [
+   "Synchro",
+   "Effect"
+  ],
+  "attribute": "DARK",
+  "level": 9,
+  "atk": 3200,
+  "def": 2500,
+  "materials": "1 Tuner + 1 non-Tuner DARK Dragon-Type Synchro Monster"
+ },
+ {
+  "id": "36857073",
+  "konamiId": 12079,
+  "name": "Hot Red Dragon Archfiend Bane",
+  "cardType": "Monster",
+  "text": "1 Tuner + 1 non-Tuner DARK Dragon Synchro Monster\nYou can Tribute 1 monster, then target 1 \"Red Dragon Archfiend\" monster in your GY; Special Summon it. When this card inflicts battle damage to your opponent: You can Special Summon 2 Tuners with the same Level (1 from your Deck and 1 from your GY) in Defense Position. You can only use each effect of \"Hot Red Dragon Archfiend Bane\" once per turn.",
+  "setNumbers": [
+   "SDCK-EN043"
+  ],
+  "race": "Dragon",
+  "monsterTypes": [
+   "Synchro",
+   "Effect"
+  ],
+  "attribute": "DARK",
+  "level": 10,
+  "atk": 3500,
+  "def": 3000,
+  "materials": "1 Tuner + 1 non-Tuner DARK Dragon-Type Synchro Monster"
+ },
+ {
+  "id": "99585850",
+  "konamiId": 14957,
+  "name": "Red Supernova Dragon",
+  "cardType": "Monster",
+  "text": "3 Tuners + 1+ non-Tuner Synchro Monsters\nMust first be Synchro Summoned. Gains 500 ATK for each Tuner in your GY. Cannot be destroyed by an opponent's card effects. Once per turn, when your opponent's monster effect is activated, or when an opponent's monster declares an attack (Quick Effect): You can activate this effect; banish this card, also banish all cards your opponent controls. Once per turn, during your next End Phase after this card was banished by its own effect: Special Summon this banished card.",
+  "setNumbers": [
+   "SDCK-EN044"
+  ],
+  "race": "Dragon",
+  "monsterTypes": [
+   "Synchro",
+   "Effect"
+  ],
+  "attribute": "DARK",
+  "level": 12,
+  "atk": 4000,
+  "def": 3000,
+  "materials": "3 Tuners + 1 or more non-Tuner Synchro Monster"
+ },
+ {
+  "id": "70902743",
+  "konamiId": 7735,
+  "name": "Red Dragon Archfiend",
+  "cardType": "Monster",
+  "text": "1 Tuner + 1+ non-Tuner monsters\nAfter damage calculation, if this card attacked an opponent's Defense Position monster: Destroy all Defense Position monsters your opponent controls. Once per turn, during your End Phase: Destroy all other monsters you control that did not declare an attack this turn. This card must be face-up on the field to activate and to resolve this effect.",
+  "setNumbers": [
+   "SDCK-EN045"
+  ],
+  "race": "Dragon",
+  "monsterTypes": [
+   "Synchro",
+   "Effect"
+  ],
+  "attribute": "DARK",
+  "level": 8,
+  "atk": 3000,
+  "def": 2000,
+  "materials": "1 Tuner + 1 or more non-Tuner monsters"
+ },
+ {
+  "id": "97489701",
+  "konamiId": 9119,
+  "name": "Red Nova Dragon",
+  "cardType": "Monster",
+  "text": "2 Tuners + \"Red Dragon Archfiend\"\nGains 500 ATK for each Tuner in your GY. Cannot be destroyed by an opponent's card effects. When an opponent's monster declares an attack: You can target the attacking monster; banish this card, and if you do, negate that attack. Once per turn, during the End Phase, if this card was banished by its effect this turn: Special Summon this banished card.",
+  "setNumbers": [
+   "SDCK-EN046"
+  ],
+  "race": "Dragon",
+  "monsterTypes": [
+   "Synchro",
+   "Effect"
+  ],
+  "attribute": "DARK",
+  "level": 12,
+  "atk": 3500,
+  "def": 3000,
+  "materials": "2 Tuners + \"Red Dragon Archfiend\""
+ },
+ {
+  "id": "62242678",
+  "konamiId": 12080,
+  "name": "Hot Red Dragon Archfiend King Calamity",
+  "cardType": "Monster",
+  "text": "2 Tuners + 1 non-Tuner DARK Dragon Synchro Monster\nWhen this card is Synchro Summoned: You can activate this effect; for the rest of this turn, your opponent cannot activate cards or effects on the field. Your opponent cannot activate cards or effects in response to this effect's activation. If this card destroys a monster by battle: Inflict damage to your opponent equal to that monster's original ATK. If this card in its owner's possession is destroyed by an opponent's card: You can target 1 Level 8 or lower DARK Dragon Synchro Monster in your GY; Special Summon it.",
+  "setNumbers": [
+   "SDCK-EN047"
+  ],
+  "race": "Dragon",
+  "monsterTypes": [
+   "Synchro",
+   "Effect"
+  ],
+  "attribute": "DARK",
+  "level": 12,
+  "atk": 4000,
+  "def": 3500,
+  "materials": "2 Tuners + 1 non-Tuner DARK Dragon-Type Synchro Monster"
+ },
+ {
+  "id": "66141736",
+  "konamiId": 12695,
+  "name": "Red Rising Dragon",
+  "cardType": "Monster",
+  "text": "1 Fiend Tuner + 1+ non-Tuner monsters\nWhen this card is Synchro Summoned: You can target 1 \"Resonator\" monster in your GY; Special Summon it. You cannot Special Summon monsters from the Extra Deck the turn you activate this effect, except DARK Dragon Synchro Monsters. During your Main Phase, except the turn this card was sent to the GY: You can banish this card from your GY, then target 2 Level 1 \"Resonator\" monsters in your GY; Special Summon both.",
+  "setNumbers": [
+   "SDCK-EN048"
+  ],
+  "race": "Dragon",
+  "monsterTypes": [
+   "Synchro",
+   "Effect"
+  ],
+  "attribute": "DARK",
+  "level": 6,
+  "atk": 2100,
+  "def": 1600
+ },
+ {
+  "id": "87451661",
+  "konamiId": 19021,
+  "name": "Scarred Dragon Archfiend",
+  "cardType": "Monster",
+  "text": "1 Tuner + 1+ non-Tuner DARK monsters\nThis card's name becomes \"Red Dragon Archfiend\" while on the field or in the GY. If this card is sent from the Monster Zone to the GY: You can Special Summon 1 \"Red Dragon Archfiend\" from your Extra Deck (this is treated as a Synchro Summon), then, if this card was sent to the GY as Synchro Material for a DARK Dragon Synchro Monster, you can destroy all Attack Position monsters your opponent controls. You can only use this effect of \"Scarred Dragon Archfiend\" once per turn.",
+  "setNumbers": [
+   "SDCK-EN049"
+  ],
+  "race": "Dragon",
+  "monsterTypes": [
+   "Synchro",
+   "Effect"
+  ],
+  "attribute": "DARK",
+  "level": 8,
+  "atk": 3000,
+  "def": 2500,
+  "materials": "1 Tuner + 1 or more non-Tuner DARK monsters"
  }
 ]

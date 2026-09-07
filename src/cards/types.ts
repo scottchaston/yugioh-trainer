@@ -23,6 +23,8 @@ export type MonsterTypeMarker =
   | 'Union'
   | 'Toon';
 
+export type LinkArrow = 'TL' | 'T' | 'TR' | 'L' | 'R' | 'BL' | 'B' | 'BR';
+
 export type Attribute = 'LIGHT' | 'DARK' | 'EARTH' | 'WATER' | 'FIRE' | 'WIND' | 'DIVINE';
 
 export interface CardDefinition {
@@ -41,6 +43,11 @@ export interface CardDefinition {
   level?: number;
   atk?: number;
   def?: number;
+  /** Xyz Monsters have a Rank instead of a Level. */
+  rank?: number;
+  /** Link Monsters: number of Link Arrows and their directions. */
+  linkRating?: number;
+  linkArrows?: LinkArrow[];
   pendulumScale?: number;
   pendulumEffect?: string;
   materials?: string;
