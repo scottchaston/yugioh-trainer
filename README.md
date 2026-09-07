@@ -87,9 +87,32 @@ it, and two people can duel each other from different places.
 * **Music**: an optional looping "duel theme" in the spirit of the anime soundtracks (composed and played by
   the app itself, no copyrighted recordings). It gets more intense during the Battle Phase. Turn it on/off
   and set the volume in Settings.
+* **Choosing cards**: whenever a card asks you to pick from your Deck, Graveyard or hand, every option has a
+  **read card** link that shows its Level/Rank/Link, ATK/DEF and full effect right inside the prompt (and in the
+  Card details panel), so you can compare the choices before confirming. The same works in RESPONSE AVAILABLE windows.
+* **End of the Duel**: the loser's screen cracks and shatters to a falling sting, then the winner gets a crown,
+  golden rays, confetti and a fanfare. Online, each player only sees their own outcome.
 * **Settings**: reveal all hands/face-down cards (learning mode), pause at the quieter
-  phase windows, board perspective (turn player at the bottom by default), animations, sound effects,
-  background music and its volume.
+  phase windows, board perspective (turn player at the bottom by default), animations, sound effects with their own
+  volume slider (0–200%, with a "test" dragon roar), background music and its volume.
+
+## On a phone or tablet
+
+The page adapts to small screens: the board is shrunk to fit the width of the screen, and the turn checklist,
+decisions, card details and log stack underneath it. When a decision comes up the page scrolls to it; tapping a card
+shows its name in a bar at the bottom with a **Details** button that jumps to the full card text and its actions.
+Landscape orientation gives the board more room. Pinch-zoom works if you want to read a card on the board itself.
+
+**Installing it as an app (free, no app store):** the site is a Progressive Web App. Open
+https://scottchaston.github.io/yugioh-trainer/ in the phone's browser, then:
+
+* **iPhone / iPad (Safari):** tap the Share button, then **Add to Home Screen**.
+* **Android (Chrome):** tap the ⋮ menu, then **Add to Home screen** / **Install app**.
+
+That puts a "Duel Table" icon on the home screen which opens full-screen without the browser bars, keeps working
+offline for shared-screen Duels (online play still needs a connection), and updates itself whenever a new version is
+published. There is nothing to pay and nothing to submit to an app store. A "real" store app would cost money
+(Apple charges a yearly developer fee) and would offer nothing this does not.
 
 ## Playing online with a friend
 

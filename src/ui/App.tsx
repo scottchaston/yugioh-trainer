@@ -9,8 +9,10 @@ import { currentSession } from '../net/session';
 import { ConnectionOverlay, OnlineLobby, UndoRequestModal, leaveOnline, type LobbyMode } from './Online';
 import { Board } from './Board';
 import { FxLayer } from './FxLayer';
+import { DuelEnd } from './DuelEnd';
+import { getCard } from '../cards';
 import { ParticleCanvas } from './Particles';
-import { setSoundEnabled, unlockAudio } from './sound';
+import { playCreature, setSfxVolume, setSoundEnabled, unlockAudio } from './sound';
 import { setMusicIntensity, setMusicVolume, startMusic, stopMusic } from './music';
 import { Inspector } from './Inspector';
 import { LogPanel } from './LogPanel';
@@ -60,6 +62,29 @@ export function App() {
   const [showHelp, setShowHelp] = useState(false);
   const [showSuggest, setShowSuggest] = useState(false);
   const boardWrapRef = useRef<HTMLDivElement | null>(null);
+  // Phones: zoom the board so all seven columns fit the screen width (the sidebar stacks underneath).
+  const [boardZoom, setBoardZoom] = useState(1);
+  useEffect(() => {
+    const el = boardWrapRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const BOARD_WIDTH = 736;
+    const update = () => {
+      const w = el.clientWidth - 12;
+      setBoardZoom(window.innerWidth <= 900 && w < BOARD_WIDTH ? Math.max(0.4, w / BOARD_WIDTH) : 1);
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [rawView]);
+  // Phones: bring a new decision into view (the panels sit under the board there).
+  const promptRef = useRef<HTMLDivElement | null>(null);
+  const inspectorRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!fullPrompt || window.innerWidth > 900) return;
+    const target = fullPrompt.type === 'selectZone' ? boardWrapRef.current : promptRef.current;
+    target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [fullPrompt]);
 
   useEffect(() => {
     setPromptSelection([]);
@@ -68,6 +93,9 @@ export function App() {
   useEffect(() => {
     setSoundEnabled(store.settings.sound);
   }, [store.settings.sound]);
+  useEffect(() => {
+    setSfxVolume(store.settings.sfxVolume);
+  }, [store.settings.sfxVolume]);
   const [audioUnlocked, setAudioUnlocked] = useState(false);
   useEffect(() => {
     const unlock = () => {
@@ -176,6 +204,7 @@ export function App() {
         setSelectedUid(uid);
         return;
       }
+      setSelectedUid(uid);
       setPromptSelection((sel) => {
         if (sel.includes(uid)) return sel.filter((x) => x !== uid);
         if (sel.length >= prompt.max) return prompt.max === 1 ? [uid] : sel;
@@ -291,6 +320,7 @@ export function App() {
               {prompt.type === 'selectCards' && prompt.cards.some((u) => view.cards[u] && ['monster', 'spellTrap', 'field', 'extraMonster'].includes(view.cards[u].zone)) && <span className="banner-hint"> · highlighted cards can be clicked on the board</span>}
             </div>
           )}
+          <div className="board-scale" style={boardZoom < 1 ? { zoom: boardZoom } : undefined}>
           <Board
             view={view}
             bottom={bottom}
@@ -304,23 +334,11 @@ export function App() {
             onPileClick={(player, pile) => setPileModal({ player, pile })}
             animations={store.settings.animations}
           />
+          </div>
           <FxLayer view={view} enabled={store.settings.animations} container={boardWrapRef} />
           <ParticleCanvas container={boardWrapRef} enabled={store.settings.animations} />
           {view.winner !== null && (
-            <div className="modal-backdrop">
-              <div className="modal winner">
-                <h2>{view.players[view.winner].name} wins the Duel!</h2>
-                <p>{view.winReason}</p>
-                <div className="prompt-buttons">
-                  <button className="btn" onClick={() => undo()} disabled={!canUndo}>
-                    {online ? 'Ask to undo the last action' : 'Undo last action'}
-                  </button>
-                  <button className="btn btn-primary" onClick={endDuel}>
-                    {online ? 'Leave the Duel' : 'New Duel'}
-                  </button>
-                </div>
-              </div>
-            </div>
+            <DuelEnd view={view} me={online ? me! : null} animations={store.settings.animations} online={!!online} canUndo={canUndo} onUndo={() => undo()} onEnd={endDuel} />
           )}
           {store.notice && (
             <div className={`notice notice-${store.notice.kind}`}>
@@ -367,11 +385,13 @@ export function App() {
             />
           )}
           {prompt && (
+            <div ref={promptRef} className="prompt-anchor">
             <PromptPanel
               view={view}
               prompt={prompt}
               selection={promptSelection}
               onToggleCard={onCardClick}
+              onInspect={(uid) => setSelectedUid(uid)}
               onConfirmCards={() => answer({ cards: promptSelection })}
               onOption={(id) => answer({ option: id })}
               onActivate={(uid, effectId) => answer({ activation: { uid, effectId } })}
@@ -379,11 +399,25 @@ export function App() {
               onCancel={() => cancelPending()}
               onUndo={() => undo()}
             />
+            </div>
           )}
+          <div ref={inspectorRef} className="inspector-anchor">
           <Inspector view={view} uid={selectedUid} hidden={selectedHidden} actions={selectedActions} revealHint={!online} onAction={runAction} disabledBecausePending={!!fullPrompt} />
+          </div>
           <LogPanel view={view} />
         </aside>
       </div>
+      {selectedCard && !selectedHidden && (
+        <div className="mobile-cardbar">
+          <span className="mobile-cardbar-name">{getCard(selectedCard.cardId).name}</span>
+          <button className="btn btn-primary" onClick={() => inspectorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
+            Details
+          </button>
+          <button className="btn" onClick={() => setSelectedUid(null)} aria-label="Close">
+            ✕
+          </button>
+        </div>
+      )}
       {pileModal && (
         <PileModal
           view={view}
@@ -443,6 +477,11 @@ export function App() {
                 <b>Sound effects</b>
                 <br />
                 <small>Synthesised sounds: dragon roars, tiger snarls, sword swings, chains, chimes, blasts, damage...</small>
+                <br />
+                <input type="range" min={0} max={2} step={0.05} value={store.settings.sfxVolume} onChange={(e) => updateSettings({ sfxVolume: Number(e.target.value) })} /> volume ({Math.round(store.settings.sfxVolume * 100)}%){' '}
+                <button type="button" className="btn btn-link" onClick={(e) => { e.preventDefault(); playCreature('dragon', 'attack'); }}>
+                  test (dragon roar)
+                </button>
               </span>
             </label>
             <label className="setting">
