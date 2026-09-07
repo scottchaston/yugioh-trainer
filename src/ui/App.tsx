@@ -10,6 +10,8 @@ import { ConnectionOverlay, OnlineLobby, UndoRequestModal, leaveOnline, type Lob
 import { Board } from './Board';
 import { FxLayer } from './FxLayer';
 import { DuelEnd } from './DuelEnd';
+import { computerSeat, installComputerOpponent, onAiThinking, undoAgainstComputer } from '../ai/controller';
+import { DIFFICULTIES } from '../ai';
 import { getCard } from '../cards';
 import { ParticleCanvas } from './Particles';
 import { playCreature, setSfxVolume, setSoundEnabled, unlockAudio } from './sound';
@@ -93,6 +95,16 @@ export function App() {
   useEffect(() => {
     setSoundEnabled(store.settings.sound);
   }, [store.settings.sound]);
+  // Computer opponent: plays its seat from the store; the flag drives the "thinking" banner.
+  const [aiThinking, setAiThinking] = useState(false);
+  useEffect(() => {
+    installComputerOpponent();
+    return onAiThinking(setAiThinking);
+  }, []);
+  const computer = !online ? computerSeat() : null;
+  const aiSeat: PlayerId | null = computer ? computer.seat : null;
+  const human: PlayerId = aiSeat === 0 ? 1 : 0;
+  const doUndo = () => (aiSeat !== null ? undoAgainstComputer() : undo());
   useEffect(() => {
     setSfxVolume(store.settings.sfxVolume);
   }, [store.settings.sfxVolume]);
@@ -123,7 +135,7 @@ export function App() {
     const h = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
         e.preventDefault();
-        undo();
+        doUndo();
       }
       if (e.key === 'Escape') {
         setSelectedUid(null);
@@ -172,7 +184,16 @@ export function App() {
     }
     return (
       <Setup
-        onStart={(cfg) => newGame({ players: [{ name: cfg.names[0] || 'Player 1', deckId: cfg.decks[0] }, { name: cfg.names[1] || 'Player 2', deckId: cfg.decks[1] }], firstPlayer: cfg.first, seed: cfg.seed })}
+        onStart={(cfg) =>
+          newGame({
+            players: [
+              { name: cfg.names[0] || 'Player 1', deckId: cfg.decks[0] },
+              { name: cfg.ai ? `Computer (${DIFFICULTIES.find((d) => d.id === cfg.ai)?.label ?? cfg.ai})` : cfg.names[1] || 'Player 2', deckId: cfg.decks[1], ai: cfg.ai },
+            ],
+            firstPlayer: cfg.first,
+            seed: cfg.seed,
+          })
+        }
         onOnline={(m) => setLobby(m)}
       />
     );
@@ -180,10 +201,11 @@ export function App() {
 
   const me = seat;
   // Online, only questions for this seat are shown as questions; the rest is "waiting for…".
-  const prompt = online && fullPrompt && fullPrompt.player !== me ? null : fullPrompt;
+  const computerActing = aiSeat !== null && view.winner === null && (fullPrompt ? fullPrompt.player === aiSeat : view.turnPlayer === aiSeat);
+  const prompt = online && fullPrompt && fullPrompt.player !== me ? null : aiSeat !== null && fullPrompt && fullPrompt.player === aiSeat ? null : fullPrompt;
   const waiting = online ? (isGuest ? (remote?.waiting ?? null) : waitingText(rawView!, fullPrompt, me!)) : null;
   const actingPlayer: PlayerId = fullPrompt ? fullPrompt.player : view.turnPlayer;
-  const bottom: PlayerId = online ? me! : store.settings.perspective === 'auto' ? actingPlayer : store.settings.perspective === 'turn' ? view.turnPlayer : store.settings.perspective;
+  const bottom: PlayerId = online ? me! : aiSeat !== null ? human : store.settings.perspective === 'auto' ? actingPlayer : store.settings.perspective === 'turn' ? view.turnPlayer : store.settings.perspective;
   const revealAll = online ? false : store.settings.revealAll;
   const canUndo = online ? !online.undoRequest && (isGuest ? !!remote?.canUndo : store.history.length > 1 || !!store.pending) && online.status === 'playing' : store.history.length > 1 || !!store.pending;
   const endDuel = () => {
@@ -267,7 +289,7 @@ export function App() {
               <button
                 key={t}
                 className={`btn ${a.legal ? (t === 'END_TURN' ? 'btn-warn' : 'btn-primary') : 'btn-disabled'}`}
-                disabled={!!prompt}
+                disabled={!!prompt || computerActing}
                 onClick={() => runAction(a)}
                 title={a.legal ? a.rule : a.reason}
               >
@@ -275,7 +297,7 @@ export function App() {
               </button>
             );
           })}
-          <button className={`btn btn-teach${whatCanIDo ? ' active' : ''}`} onClick={() => setWhatCanIDo(!whatCanIDo)} disabled={!!prompt}>
+          <button className={`btn btn-teach${whatCanIDo ? ' active' : ''}`} onClick={() => setWhatCanIDo(!whatCanIDo)} disabled={!!prompt || computerActing}>
             What can I do?
           </button>
           <button className={`btn btn-strategy${showSuggest ? ' active' : ''}`} onClick={() => setShowSuggest(!showSuggest)} title="Optional strategy ideas (not rules)">
@@ -284,7 +306,7 @@ export function App() {
           <button className="btn" onClick={() => setShowHelp(true)} title="Beginner rules reference">
             Rules help
           </button>
-          <button className="btn" onClick={() => undo()} title={online ? 'Ask your opponent to allow an undo' : 'Undo (Ctrl+Z)'} disabled={!canUndo}>
+          <button className="btn" onClick={doUndo} title={online ? 'Ask your opponent to allow an undo' : aiSeat !== null ? 'Take back your last move (Ctrl+Z)' : 'Undo (Ctrl+Z)'} disabled={!canUndo}>
             {online ? 'Ask to undo' : 'Undo'}
           </button>
           {!online && (
@@ -307,6 +329,11 @@ export function App() {
       )}
       <div className="main">
         <div className="board-wrap" ref={boardWrapRef}>
+          {computerActing && (
+            <div className="decision-banner waiting-banner computer-banner">
+              {aiThinking ? 'COMPUTER — thinking…' : `COMPUTER — ${view.players[aiSeat!].name} is playing`}
+            </div>
+          )}
           {waiting && !prompt && (
             <div className="decision-banner waiting-banner">
               WAITING — <b>{waiting.text}</b>
@@ -338,7 +365,7 @@ export function App() {
           <FxLayer view={view} enabled={store.settings.animations} container={boardWrapRef} />
           <ParticleCanvas container={boardWrapRef} enabled={store.settings.animations} />
           {view.winner !== null && (
-            <DuelEnd view={view} me={online ? me! : null} animations={store.settings.animations} online={!!online} canUndo={canUndo} onUndo={() => undo()} onEnd={endDuel} />
+            <DuelEnd view={view} me={online ? me! : aiSeat !== null ? human : null} animations={store.settings.animations} online={!!online} canUndo={canUndo} onUndo={doUndo} onEnd={endDuel} />
           )}
           {store.notice && (
             <div className={`notice notice-${store.notice.kind}`}>
@@ -368,7 +395,7 @@ export function App() {
           {showSuggest && (
             <SuggestPanel
               view={view}
-              player={online ? me! : prompt ? prompt.player : view.turnPlayer}
+              player={online ? me! : aiSeat !== null ? human : prompt ? prompt.player : view.turnPlayer}
               prompt={prompt}
               suggestions={isGuest ? (online.suggestions ?? []) : undefined}
               onAct={(sg) => {
@@ -397,7 +424,7 @@ export function App() {
               onActivate={(uid, effectId) => answer({ activation: { uid, effectId } })}
               onPass={() => answer({ activation: null })}
               onCancel={() => cancelPending()}
-              onUndo={() => undo()}
+              onUndo={doUndo}
             />
             </div>
           )}
@@ -494,7 +521,7 @@ export function App() {
                 <input type="range" min={0} max={0.6} step={0.02} value={store.settings.musicVolume} onChange={(e) => updateSettings({ musicVolume: Number(e.target.value) })} /> volume
               </span>
             </label>
-            {!online && (
+            {!online && aiSeat === null && (
             <label className="setting">
               <span>
                 <b>Board perspective</b>

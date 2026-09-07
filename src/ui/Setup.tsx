@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { DECKS } from '../cards/decks';
 import type { PlayerId } from '../engine';
+import { DIFFICULTIES, type Difficulty } from '../ai';
 import { useHostSave, type LobbyMode } from './Online';
 
 interface Props {
-  onStart: (cfg: { names: [string, string]; decks: [string, string]; first: PlayerId; seed?: number }) => void;
+  onStart: (cfg: { names: [string, string]; decks: [string, string]; first: PlayerId; seed?: number; ai?: Difficulty }) => void;
   onOnline: (mode: LobbyMode) => void;
 }
 
@@ -14,6 +15,7 @@ export function Setup({ onStart, onOnline }: Props) {
   const [names, setNames] = useState<[string, string]>(['Player 1', 'Player 2']);
   const [decks, setDecks] = useState<[string, string]>([DECKS[0].id, DECKS[1].id]);
   const [first, setFirst] = useState<PlayerId | 'coin'>('coin');
+  const [opponent, setOpponent] = useState<'human' | Difficulty>('human');
   const [coinResult, setCoinResult] = useState<PlayerId | null>(null);
 
   const flip = () => {
@@ -24,7 +26,7 @@ export function Setup({ onStart, onOnline }: Props) {
   const start = () => {
     const f: PlayerId = first === 'coin' ? (coinResult ?? ((Math.random() < 0.5 ? 0 : 1) as PlayerId)) : first;
     const seedParam = new URLSearchParams(window.location.search).get('seed');
-    onStart({ names, decks, first: f, seed: seedParam ? Number(seedParam) : undefined });
+    onStart({ names, decks, first: f, seed: seedParam ? Number(seedParam) : undefined, ai: opponent === 'human' ? undefined : opponent });
   };
 
   return (
@@ -35,13 +37,29 @@ export function Setup({ onStart, onOnline }: Props) {
         <div className="setup-grid">
           {([0, 1] as PlayerId[]).map((p) => (
             <div key={p} className="setup-player">
-              <h3>Player {p + 1}</h3>
+              <h3>{p === 1 && opponent !== 'human' ? 'Computer opponent' : `Player ${p + 1}`}</h3>
+              {p === 1 && (
+                <label>
+                  Opponent
+                  <select value={opponent} onChange={(e) => setOpponent(e.target.value as 'human' | Difficulty)} data-testid="opponent">
+                    <option value="human">Another person (shares this screen)</option>
+                    {DIFFICULTIES.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        Computer – {d.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              {p === 1 && opponent !== 'human' && <p className="muted small">{DIFFICULTIES.find((d) => d.id === opponent)?.description}</p>}
+              {(p === 0 || opponent === 'human') && (
+                <label>
+                  Name
+                  <input value={names[p]} onChange={(e) => setNames(p === 0 ? [e.target.value, names[1]] : [names[0], e.target.value])} />
+                </label>
+              )}
               <label>
-                Name
-                <input value={names[p]} onChange={(e) => setNames(p === 0 ? [e.target.value, names[1]] : [names[0], e.target.value])} />
-              </label>
-              <label>
-                Deck
+                {p === 1 && opponent !== 'human' ? "Computer's deck" : 'Deck'}
                 <select value={decks[p]} onChange={(e) => setDecks(p === 0 ? [e.target.value, decks[1]] : [decks[0], e.target.value])}>
                   {DECKS.map((d) => (
                     <option key={d.id} value={d.id}>

@@ -96,6 +96,24 @@ it, and two people can duel each other from different places.
   phase windows, board perspective (turn player at the bottom by default), animations, sound effects with their own
   volume slider (0–200%, with a "test" dragon roar), background music and its volume.
 
+## Practising alone against the computer
+
+On the setup screen, set **Opponent** for Player 2 to **Computer – Easy / Medium / Hard** and pick the deck it
+plays. The computer takes its turns by itself (a purple "COMPUTER — thinking…" banner shows while it decides), and
+you still get every response window on its turn: your Set Traps and hand traps work exactly as against a person.
+Its hand and face-down cards stay hidden unless you turn on "Reveal all".
+
+* **Easy** plays loosely: random Summons, attacks without much thought, rarely uses Traps. Good for learning the flow.
+* **Medium** looks one move ahead: it tries every legal move in a private copy of the Duel (the rules engine is
+  deterministic), scores the result, and picks a good one with some randomness.
+* **Hard** does the same without randomness and with a sharper evaluation: it Sets monsters when outclassed,
+  keeps Traps for real threats, attacks only when the battle is worth it, and squeezes value out of its effects.
+
+The computer never cheats: it does not look at your hand or your face-down cards, and when it looks ahead it
+assumes you will not respond. It plays by the same rules engine and the same buttons you do, so anything it does
+is legal and appears in the log like any other move. **Undo** during or after its turn takes you back to your own
+last decision (its moves in between are undone too).
+
 ## On a phone or tablet
 
 The page adapts to small screens: the board is shrunk to fit the width of the screen, and the turn checklist,
