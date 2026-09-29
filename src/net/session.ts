@@ -77,6 +77,31 @@ function writeHostSave(save: HostSave | null): void {
   }
 }
 
+/** The host's lobby (room code, name, deck, first-player choice) so a reload or a suspended phone tab can re-open it. */
+export interface LobbySave {
+  code: string;
+  me: PlayerInfo;
+  first: PlayerId | 'coin';
+  savedAt: number;
+}
+const LOBBY_KEY = 'ygo-trainer-online-lobby';
+export function loadLobbySave(): LobbySave | null {
+  try {
+    const raw = localStorage.getItem(LOBBY_KEY);
+    return raw ? (JSON.parse(raw) as LobbySave) : null;
+  } catch {
+    return null;
+  }
+}
+export function writeLobbySave(save: LobbySave | null): void {
+  try {
+    if (save) localStorage.setItem(LOBBY_KEY, JSON.stringify(save));
+    else localStorage.removeItem(LOBBY_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Host
 // ---------------------------------------------------------------------------
@@ -105,10 +130,16 @@ export class HostSession implements Session {
       undo: () => this.requestUndo(),
     });
     this.unsubscribe = subscribe(() => this.afterChange());
+    this.saveLobby();
+  }
+
+  private saveLobby(): void {
+    if (!this.playing) writeLobbySave({ code: this.code, me: this.me, first: this.first, savedAt: Date.now() });
   }
 
   /** Resume a saved Duel (after the host reloaded the page). The guest re-joins with the same code. */
   resume(save: HostSave): void {
+    writeLobbySave(null);
     this.me = save.me;
     this.guest = save.guest;
     restoreDuel(save.duel);
@@ -119,11 +150,13 @@ export class HostSession implements Session {
   setMe(me: PlayerInfo): void {
     this.me = me;
     this.sendLobby();
+    this.saveLobby();
   }
 
   setFirst(first: PlayerId | 'coin'): void {
     this.first = first;
     this.sendLobby();
+    this.saveLobby();
   }
 
   attach(t: AnyTransport): void {
@@ -259,6 +292,7 @@ export class HostSession implements Session {
     if (!this.guest || this.playing) return;
     const first: PlayerId = this.first === 'coin' ? ((Math.random() < 0.5 ? 0 : 1) as PlayerId) : this.first;
     this.playing = true;
+    writeLobbySave(null);
     newGame({ players: [{ name: this.me.name || 'Player 1', deckId: this.me.deckId }, { name: this.guest.name || 'Player 2', deckId: this.guest.deckId }], firstPlayer: first, seed: this.seed });
     updateOnline({ status: 'playing' });
     this.send({ t: 'start', seat: GUEST_SEAT, players: [this.me, this.guest] });
@@ -290,6 +324,7 @@ export class HostSession implements Session {
     this.unsubscribe?.();
     setInterceptor(null);
     writeHostSave(null);
+    writeLobbySave(null);
     current = null;
     clearGame();
     setOnline(null);

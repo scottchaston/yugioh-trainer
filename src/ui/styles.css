@@ -427,3 +427,12 @@ button { font: inherit; }
 
 /* Computer opponent */
 .computer-banner { background: #5b3fd6; color: #fff; }
+
+/* Compact response window */
+.prompt-compact { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; }
+.prompt-compact-text { display: flex; flex-direction: column; gap: 4px; font-size: 13.5px; }
+.prompt-compact-buttons { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+@media (max-width: 900px) {
+  .prompt-anchor:has(.prompt-compact) { position: fixed; left: 8px; right: 8px; bottom: 8px; z-index: 45; }
+  .prompt-compact { box-shadow: 0 10px 40px rgba(0,0,0,.8); max-height: 45vh; overflow: auto; }
+}

@@ -76,6 +76,8 @@ export interface Settings {
   musicVolume: number;
   /** Sound-effects loudness (1 = normal, up to 2). */
   sfxVolume: number;
+  /** Response windows first ask "you could respond, want to see the options?" instead of showing them all. */
+  compactResponses: boolean;
 }
 
 export interface StoreState {
@@ -103,7 +105,7 @@ export function setInterceptor(i: Interceptor | null): void {
   interceptor = i;
 }
 
-const defaultSettings: Settings = { askAtPhaseWindows: false, revealAll: false, perspective: 'turn', animations: true, sound: true, music: true, musicVolume: 0.22, sfxVolume: 1 };
+const defaultSettings: Settings = { askAtPhaseWindows: false, revealAll: false, perspective: 'turn', animations: true, sound: true, music: true, musicVolume: 0.22, sfxVolume: 1, compactResponses: true };
 
 let store: StoreState = { history: [], pending: null, settings: loadSettings(), notice: null, config: null, online: null };
 const listeners = new Set<Listener>();
@@ -169,7 +171,7 @@ export function committedState(s: StoreState = store): GameState | null {
 function describeAction(a: Action, state: GameState): string {
   const name = (uid: string) => {
     const c = state.cards[uid];
-    return c ? getCard(c.cardId).name : '?';
+    return c ? (c.token ? c.token.name : getCard(c.cardId).name) : '?';
   };
   const who = 'player' in a ? state.players[a.player].name : '';
   switch (a.type) {

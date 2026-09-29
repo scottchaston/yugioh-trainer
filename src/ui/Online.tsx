@@ -6,10 +6,22 @@ import { useEffect, useRef, useState } from 'react';
 import { DECKS } from '../cards/decks';
 import type { PlayerId } from '../engine';
 import { GuestSession, HostSession, currentSession, loadHostSave, type HostSave } from '../net/session';
-import { describePeerError, joinRoom, newRoomCode, normalizeCode, openRoom } from '../net/peer';
-import { useStore, updateOnline } from '../state/store';
+import type { PlayerInfo } from '../net/protocol';
+import { describePeerError, joinRoom, newRoomCode, normalizeCode, openRoom, type RoomStatus } from '../net/peer';
+import { getStore, useStore, updateOnline } from '../state/store';
 
-export type LobbyMode = { mode: 'host' } | { mode: 'join'; code?: string } | { mode: 'resume'; save: HostSave };
+export type LobbyMode =
+  /** Host a room; with a code (and the earlier name/deck/first choice) when re-opening a room after a reload. */
+  | { mode: 'host'; code?: string; me?: PlayerInfo; first?: PlayerId | 'coin' }
+  | { mode: 'join'; code?: string }
+  | { mode: 'resume'; save: HostSave };
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** Share the join link with the phone's share sheet when available (keeps this page open, unlike switching apps). */
+export function canShare(): boolean {
+  return typeof navigator !== 'undefined' && typeof navigator.share === 'function';
+}
 
 let peerCleanup: (() => void) | null = null;
 
@@ -33,6 +45,22 @@ export async function reconnectGuest(): Promise<void> {
   } catch (e) {
     updateOnline({ status: 'disconnected', error: describePeerError(e) });
   }
+}
+
+/** Guest: keep trying to reach the host for a while (their phone may have put the page to sleep). */
+let autoRetry: ReturnType<typeof setTimeout> | null = null;
+export function scheduleGuestRetry(attempt: number): void {
+  if (autoRetry || attempt > 12) return;
+  autoRetry = setTimeout(async () => {
+    autoRetry = null;
+    const s = currentSession();
+    if (!s || s.role !== 'guest' || useStoreSnapshot().online?.status !== 'disconnected') return;
+    await reconnectGuest();
+    if (useStoreSnapshot().online?.status === 'disconnected') scheduleGuestRetry(attempt + 1);
+  }, 5000);
+}
+function useStoreSnapshot() {
+  return getStore();
 }
 
 export function joinLink(code: string): string {
@@ -67,9 +95,11 @@ function PlayerForm({ name, deckId, onChange, disabled }: { name: string; deckId
 export function OnlineLobby({ lobby, onBack }: { lobby: LobbyMode; onBack: () => void }) {
   const store = useStore();
   const online = store.online;
-  const [me, setMe] = useState({ name: lobby.mode === 'resume' ? lobby.save.me.name : lobby.mode === 'host' ? 'Player 1' : 'Player 2', deckId: lobby.mode === 'resume' ? lobby.save.me.deckId : DECKS[0].id });
-  const [first, setFirst] = useState<PlayerId | 'coin'>('coin');
+  const [me, setMe] = useState<PlayerInfo>(lobby.mode === 'resume' ? lobby.save.me : lobby.mode === 'host' && lobby.me ? lobby.me : { name: lobby.mode === 'host' ? 'Player 1' : 'Player 2', deckId: DECKS[0].id });
+  const [first, setFirst] = useState<PlayerId | 'coin'>(lobby.mode === 'host' && lobby.first !== undefined ? lobby.first : 'coin');
   const [code, setCode] = useState(lobby.mode === 'join' ? normalizeCode(lobby.code ?? '') : '');
+  const [roomStatus, setRoomStatus] = useState<RoomStatus>('open');
+  const [joinAttempt, setJoinAttempt] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -79,11 +109,11 @@ export function OnlineLobby({ lobby, onBack }: { lobby: LobbyMode; onBack: () =>
   useEffect(() => {
     if (lobby.mode === 'join' || started.current) return;
     started.current = true;
-    const roomCode = lobby.mode === 'resume' ? lobby.save.code : newRoomCode();
+    const roomCode = lobby.mode === 'resume' ? lobby.save.code : lobby.mode === 'host' && lobby.code ? lobby.code : newRoomCode();
     const session = new HostSession(roomCode, me, first);
     if (lobby.mode === 'resume') session.resume(lobby.save);
     setBusy(true);
-    openRoom(roomCode, (t) => session.attach(t))
+    openRoom(roomCode, (t) => session.attach(t), setRoomStatus)
       .then((peer) => {
         peerCleanup = () => peer.close();
         setBusy(false);
@@ -118,15 +148,36 @@ export function OnlineLobby({ lobby, onBack }: { lobby: LobbyMode; onBack: () =>
     setError(null);
     setBusy(true);
     const guest = new GuestSession(c, me);
-    try {
-      const { transport, close } = await joinRoom(c);
-      peerCleanup = close;
-      guest.attach(transport);
-    } catch (e) {
-      setError(describePeerError(e));
-      leaveOnline();
+    // The host's page may be asleep for a moment (a phone showing the share sheet or another app): keep trying.
+    for (let attempt = 1; attempt <= 8; attempt++) {
+      setJoinAttempt(attempt);
+      try {
+        const { transport, close } = await joinRoom(c);
+        peerCleanup = close;
+        guest.attach(transport);
+        break;
+      } catch (e) {
+        const type = (e as { type?: string })?.type;
+        if ((type === 'peer-unavailable' || String((e as Error)?.message ?? '').startsWith('Timed out')) && attempt < 8) {
+          setError(`No Duel is answering with code ${c} yet. The host's page may be in the background; retrying (${attempt}/8)…`);
+          await sleep(4000);
+          continue;
+        }
+        setError(describePeerError(e));
+        leaveOnline();
+        break;
+      }
     }
+    setJoinAttempt(0);
     setBusy(false);
+  };
+
+  const share = async () => {
+    try {
+      await navigator.share({ title: 'Yu-Gi-Oh! Practice Table', text: `Join my Duel with room code ${online?.code ?? ''}`, url: joinLink(online?.code ?? '') });
+    } catch {
+      /* cancelled */
+    }
   };
 
   const back = () => {
@@ -160,11 +211,21 @@ export function OnlineLobby({ lobby, onBack }: { lobby: LobbyMode; onBack: () =>
                 <div className="room-code">{online.code}</div>
                 <div className="room-link">
                   <input readOnly value={joinLink(online.code)} onFocus={(e) => e.target.select()} />
+                  {canShare() && (
+                    <button className="btn btn-primary" onClick={share}>
+                      Share link
+                    </button>
+                  )}
                   <button className="btn" onClick={copy}>
                     {copied ? 'Copied!' : 'Copy link'}
                   </button>
                 </div>
-                <p className="muted small">Send the code or the link to your opponent. They open the link (or press "Join a duel" and type the code).</p>
+                <p className="muted small">
+                  Send the code or the link to your opponent. They open the link (or press "Join a duel" and type the code).
+                  {canShare() ? ' On a phone, use Share so this page stays open. ' : ' '}
+                  If you do leave this page, just come back (or reload): the room re-opens with the same code.
+                </p>
+                {roomStatus === 'reconnecting' && <p className="error-text small">Reconnecting to the connection service… your opponent can still join once this clears.</p>}
               </div>
             )}
             <div className="setup-grid">
@@ -220,7 +281,7 @@ export function OnlineLobby({ lobby, onBack }: { lobby: LobbyMode; onBack: () =>
                   Room code
                   <input value={code} placeholder="e.g. DRAGON-4821" disabled={!!online} onChange={(e) => setCode(e.target.value.toUpperCase())} onKeyDown={(e) => e.key === 'Enter' && join()} />
                 </label>
-                {status === 'connecting' && <p className="muted">Connecting…</p>}
+                {status === 'connecting' && <p className="muted">{joinAttempt > 1 ? `Connecting (attempt ${joinAttempt})…` : 'Connecting…'}</p>}
                 {status === 'lobby' && (
                   <p>
                     Connected to <b>{opponent?.name}</b>. Waiting for them to start the Duel…
@@ -252,6 +313,10 @@ export function OnlineLobby({ lobby, onBack }: { lobby: LobbyMode; onBack: () =>
 export function ConnectionOverlay({ onLeave }: { onLeave: () => void }) {
   const store = useStore();
   const o = store.online;
+  const disconnectedGuest = !!o && o.role === 'guest' && o.status === 'disconnected';
+  useEffect(() => {
+    if (disconnectedGuest) scheduleGuestRetry(1);
+  }, [disconnectedGuest]);
   if (!o || o.status === 'playing' || o.status === 'lobby' || o.status === 'waiting') return null;
   return (
     <div className="modal-backdrop">
@@ -259,6 +324,7 @@ export function ConnectionOverlay({ onLeave }: { onLeave: () => void }) {
         <h2>{o.status === 'connecting' ? 'Reconnecting…' : 'Connection lost'}</h2>
         <p>{o.error ?? ''}</p>
         {o.role === 'host' && <p className="muted small">The Duel is saved on this screen. Your opponent can re-join with the code {o.code}; nothing is lost.</p>}
+        {o.role === 'guest' && o.status === 'disconnected' && <p className="muted small">Trying again automatically every few seconds (the host's phone may have put the page to sleep).</p>}
         <div className="prompt-buttons">
           {o.role === 'guest' && o.status !== 'connecting' && (
             <button className="btn btn-primary" onClick={() => reconnectGuest()}>

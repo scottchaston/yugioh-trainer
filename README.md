@@ -46,7 +46,10 @@ it, and two people can duel each other from different places.
   **Why not?** link that explains the rule.
 * Press **What can I do?** to highlight every legal move for the turn player.
 * When the other player can respond (a Set Trap, a Quick-Play Spell, Honest…), the table
-  pauses with **RESPONSE AVAILABLE**; that player picks a card or declines.
+  pauses with **RESPONSE AVAILABLE**. By default it asks briefly first: "you could activate Trap Hole now,
+  respond?" with **Yes, show options**, **Not now** and **Skip this turn** (declines the remaining windows of
+  that turn, but attacks still ask). On a phone this question is a small bar at the bottom, so the board stays
+  where it is. Settings → "Ask briefly before showing response options" turns the full list back on.
 * **Undo** (or Ctrl+Z) reverses the last step, including individual choices inside an
   action. **Rewind** jumps back to any earlier point.
 * Click a Graveyard, Banished pile or Extra Deck to look through it. Extra Deck monsters such as
@@ -141,6 +144,11 @@ Open the app, and under **Play online with a friend**:
 3. The friend opens the link (or presses **Join a duel** and types the code), picks a name and deck, and
    presses **Join**.
 4. The host sees the friend appear, chooses who goes first, and presses **Start Duel**.
+
+**On a phone:** press **Share link** to send the invitation with the phone's share sheet without leaving the
+page. If you do switch apps (or the page reloads), just come back: the room re-opens with the same code, and a
+friend who tried to join meanwhile keeps retrying for about half a minute. The same applies mid-Duel: the host's
+page keeps the Duel, and the guest reconnects automatically.
 
 During the Duel each player sees only their own hand and their own decisions. When the other player is
 deciding, a grey **WAITING** banner says what they are doing ("Guesty is choosing: Choose a Monster Zone…",

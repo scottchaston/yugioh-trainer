@@ -315,12 +315,11 @@ function decideAnswer(committed: GameState, pending: PendingLike, me: PlayerId, 
     return { kind: 'answer', answer: a, label: describeAnswer(prompt, a, g) };
   }
   const cands = candidateAnswers(committed, prompt, me);
-  if (cands.length === 1) return { kind: 'answer', answer: cands[0], label: describeAnswer(prompt, cands[0], g) };
-  let best = cands[0];
+  let best: Answer | null = null;
   let bestScore = -Infinity;
   cands.forEach((a, i) => {
     const end = rollout(committed, pending.action, [...pending.answers, a], me);
-    if (!end) return;
+    if (!end) return; // the engine refused this answer (or it leads nowhere): never send it
     let sc = evaluate(end, me, level) + noise(level, rng);
     // Responding costs a card: only do it when it clearly pays (hard) or seems to pay (medium).
     if (prompt.type === 'fastEffects' && i > 0) sc -= level === 'hard' ? 0.35 : 0.15;
@@ -329,6 +328,11 @@ function decideAnswer(committed: GameState, pending: PendingLike, me: PlayerId, 
       best = a;
     }
   });
+  if (!best) {
+    // None of the candidates worked: use the cheap heuristic answer if the engine accepts it, else the minimum.
+    const quick = quickAnswer(committed, prompt, me);
+    best = rollout(committed, pending.action, [...pending.answers, quick], me) ? quick : opponentDefault(prompt);
+  }
   return { kind: 'answer', answer: best, label: describeAnswer(prompt, best, g) };
 }
 
@@ -381,7 +385,7 @@ function scoreActions(state: GameState, legal: LegalActionInfo[], me: PlayerId, 
     if (!end) continue;
     let delta = evaluate(end, me, level) - now;
     // Setting a Normal Spell face-down only delays it: small penalty so activation is preferred.
-    if (a.action.type === 'SET_SPELL_TRAP') {
+    if (a.action.type === 'SET_SPELL_TRAP' && !g.card(a.action.uid).token) {
       const d = getCard(g.card(a.action.uid).cardId);
       if (d.cardType === 'Spell' && d.property !== 'Quick-Play') delta -= 0.5;
     }

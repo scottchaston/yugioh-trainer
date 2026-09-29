@@ -21,7 +21,7 @@ const pickZone = async (n) => { await page.waitForSelector('.zone-selectable'); 
 const settle = async () => {
   for (let i = 0; i < 8; i++) {
     await page.waitForTimeout(250);
-    if (await page.$('.prompt-response')) { await page.click('text=Decline (do not respond)'); continue; }
+    if (await page.$('.prompt-response')) { await page.click('.prompt-response .btn-decline'); continue; }
     const dont = await page.$('.btn-option:has-text("Do not activate")');
     if (dont) { await dont.click(); continue; }
     break;

@@ -21,7 +21,7 @@ await page.waitForSelector('.board');
 const settle = async () => {
   for (let i = 0; i < 8; i++) {
     await page.waitForTimeout(250);
-    if (await page.$('.prompt-response')) { await page.click('text=Decline (do not respond)'); continue; }
+    if (await page.$('.prompt-response')) { await page.click('.prompt-response .btn-decline'); continue; }
     const dont = await page.$('.btn-option:has-text("Do not activate")');
     if (dont) { await dont.click(); continue; }
     if (await page.$('.zone-selectable')) { await page.click('.zone-selectable >> nth=0'); continue; }
@@ -30,9 +30,21 @@ const settle = async () => {
     break;
   }
 };
-// Human turn 1: Normal Summon Myrmeleo, end turn.
+// Human turn 1: Normal Summon Myrmeleo, search a "Hole" Trap with its effect, Set it, end turn.
 await page.locator('button.btn-teach').click();
 await page.locator('.teach-list .btn-primary', { hasText: 'Normal Summon: Traptrix Myrmeleo' }).first().click();
+await page.waitForSelector('.zone-selectable');
+await page.click('.zone-selectable >> nth=0');
+await page.waitForSelector('.option-list .btn-option');
+await page.click('.option-list .btn-option:not(:has-text("Do not activate"))');
+await page.waitForSelector('.pick-grid');
+await page.locator('.pick-item .card').first().click();
+await page.click('.prompt .btn-primary:has-text("Confirm")');
+await settle();
+await page.locator('button.btn-teach').click();
+const setTrap = page.locator('.teach-list .btn-primary', { hasText: /^Set: .*(Hole|Nightmare)/ }).first();
+console.log('set trap:', await setTrap.textContent());
+await setTrap.click();
 await settle();
 await page.click('text=End Turn');
 // The computer's turn: the banner shows, the human's controls are disabled, then it becomes the human's turn again.
@@ -41,16 +53,37 @@ console.log('banner:', await page.$eval('.computer-banner', (e) => e.textContent
 console.log('End Turn disabled during computer turn:', await page.$eval('button:has-text("End Turn")', (b) => b.disabled));
 await page.waitForTimeout(1500);
 await page.screenshot({ path: `${dir}/s02-computer-turn.png` });
-// Human response windows during the computer's turn must be answered by the human: decline them.
+// Human response windows during the computer's turn: the compact question appears first (the board stays
+// in view). Expand it once to see the options, then use "Skip this turn" so it does not ask again this turn.
+let compactSeen = 0;
+let expanded = false;
 for (let i = 0; i < 60; i++) {
-  if (await page.$('.prompt-response')) { await page.click('text=Decline (do not respond)'); await page.waitForTimeout(300); continue; }
+  if (await page.$('.prompt-compact')) {
+    compactSeen++;
+    if (!expanded) {
+      await page.screenshot({ path: `${dir}/s02b-compact-response.png` });
+      await page.click('.prompt-compact .btn-show');
+      await page.waitForSelector('.response-option');
+      await page.screenshot({ path: `${dir}/s02c-expanded-response.png` });
+      expanded = true;
+      await page.click('.prompt-response .btn-decline');
+    } else if (await page.$('.prompt-compact .btn-skip')) {
+      await page.click('.prompt-compact .btn-skip');
+    } else {
+      // Attack windows never offer "skip": answer them one by one.
+      await page.click('.prompt-compact .btn-decline');
+    }
+    await page.waitForTimeout(300);
+    continue;
+  }
+  if (await page.$('.prompt-response')) { await page.click('.prompt-response .btn-decline'); await page.waitForTimeout(300); continue; }
   const label = await page.$eval('.turn-player', (e) => e.textContent).catch(() => '');
   const banner = await page.$('.computer-banner');
   if (!banner && label.startsWith('Player 1')) break;
   await page.waitForTimeout(500);
 }
 const turn = await page.$eval('.turn-label', (e) => e.textContent);
-console.log('after computer turn:', turn, await page.$eval('.turn-player', (e) => e.textContent));
+console.log('after computer turn:', turn, await page.$eval('.turn-player', (e) => e.textContent), '| compact response windows seen:', compactSeen);
 await page.screenshot({ path: `${dir}/s03-back-to-human.png` });
 const logText = await page.$$eval('.log-entry', (els) => els.map((e) => e.textContent));
 const computerLines = logText.filter((l) => l.includes('Computer'));

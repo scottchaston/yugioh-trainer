@@ -39,7 +39,7 @@ const helpers = (page) => ({
   settle: async () => {
     for (let i = 0; i < 8; i++) {
       await page.waitForTimeout(300);
-      if (await page.$('.prompt-response')) { await page.click('text=Decline (do not respond)'); continue; }
+      if (await page.$('.prompt-response')) { await page.click('.prompt-response .btn-decline'); continue; }
       const dont = await page.$('.btn-option:has-text("Do not activate")');
       if (dont) { await dont.click(); continue; }
       break;
@@ -58,6 +58,13 @@ console.log('room code:', code);
 await host.fill('.setup-player input[value="Player 1"]', 'Hosty').catch(() => {});
 await host.click('text=Host (Hosty) first').catch(async () => host.click('text=Host (Player 1) first'));
 await host.screenshot({ path: `${dir}/online01-host-lobby.png` });
+
+// --- The host reloads (a phone putting the tab to sleep, or a refresh): the same room re-opens by itself.
+await host.reload();
+await host.waitForSelector('.room-code', { timeout: 30000 });
+const codeAfterReload = (await host.textContent('.room-code')).trim();
+console.log('host lobby after reload:', codeAfterReload === code ? 'same code' : `DIFFERENT (${code} -> ${codeAfterReload})`);
+await host.waitForFunction(() => !document.body.textContent.includes('Reconnecting to the connection service'), null, { timeout: 30000 });
 
 // --- Guest joins with the link
 await guest.goto(`http://localhost:5173/?join=${code}&${PEER}`);
@@ -105,10 +112,10 @@ for (let i = 0; i < 12; i++) {
     guestGotWindow = true;
     hostWaitingText = await host.textContent('.waiting-banner').catch(() => null);
     await guest.screenshot({ path: `${dir}/online05-guest-response.png` });
-    await guest.click('text=Decline (do not respond)');
+    await guest.click('.prompt-response .btn-decline');
     continue;
   }
-  if (await host.$('.prompt-response')) { await host.click('text=Decline (do not respond)'); continue; }
+  if (await host.$('.prompt-response')) { await host.click('.prompt-response .btn-decline'); continue; }
   const dont = (await host.$('.btn-option:has-text("Do not activate")')) || (await guest.$('.btn-option:has-text("Do not activate")'));
   if (dont) { await dont.click(); continue; }
   if (await guest.$('.turn-player:has-text("Guesty")')) break;

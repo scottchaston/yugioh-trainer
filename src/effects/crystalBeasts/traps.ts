@@ -195,7 +195,8 @@ registerScript({
       },
     },
   ],
-  modifyStats: (g, self, target) => (self.zone === 'spellTrap' && self.faceUp && target.controller === self.controller && isCBMonsterCard(g, target.uid) ? { atk: g.stats(target.uid).originalDef } : null),
+  // "Original DEF" is the printed DEF: reading it through g.stats() here would call this hook again forever.
+  modifyStats: (g, self, target) => (self.zone === 'spellTrap' && self.faceUp && target.controller === self.controller && isCBMonsterCard(g, target.uid) ? { atk: g.def(target.uid).def ?? 0 } : null),
 });
 
 // ---------------------------------------------------------------------------
