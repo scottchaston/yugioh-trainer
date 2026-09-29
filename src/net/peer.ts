@@ -94,28 +94,118 @@ export function describePeerError(e: unknown): string {
   }
 }
 
-/** Open a room: resolves once the code is registered; every guest connection is handed to onConnection. */
-export function openRoom<Out, In>(code: string, onConnection: (t: Transport<Out, In>) => void): Promise<HostPeer> {
+export type RoomStatus = 'open' | 'reconnecting';
+
+const FATAL_PEER_ERRORS = new Set(['browser-incompatible', 'invalid-id', 'invalid-key', 'ssl-unavailable', 'disconnected']);
+
+/**
+ * Open a room: resolves once the code is registered; every guest connection is handed to onConnection.
+ * The registration is kept alive: if the signalling server drops us (phones suspend background tabs;
+ * networks change) we reconnect, and if our previous registration is still lingering on the server
+ * after a reload we retry until it expires. onStatus reports 'reconnecting' / 'open'.
+ */
+export function openRoom<Out, In>(code: string, onConnection: (t: Transport<Out, In>) => void, onStatus?: (s: RoomStatus) => void): Promise<HostPeer> {
   return new Promise((resolve, reject) => {
-    const peer = new Peer(peerIdFor(code), peerOptions());
-    let ready = false;
-    peer.on('open', () => {
-      ready = true;
-      resolve({ code, close: () => peer.destroy() });
-    });
-    peer.on('connection', (conn) => {
-      conn.on('open', () => onConnection(wrap<Out, In>(conn)));
-    });
-    peer.on('error', (e) => {
-      if (!ready) {
-        peer.destroy();
-        reject(e);
+    let peer: Peer | null = null;
+    let closed = false;
+    let resolved = false;
+    let attempts = 0;
+    let retry: ReturnType<typeof setTimeout> | null = null;
+
+    const later = (fn: () => void, ms: number) => {
+      if (closed || retry) return;
+      retry = setTimeout(() => {
+        retry = null;
+        if (!closed) fn();
+      }, ms);
+    };
+    const fail = (e: unknown) => {
+      closed = true;
+      peer?.destroy();
+      reject(e);
+    };
+    const recreate = () => {
+      attempts++;
+      onStatus?.('reconnecting');
+      later(create, 3000);
+    };
+    const create = () => {
+      if (closed) return;
+      const p = new Peer(peerIdFor(code), peerOptions());
+      peer = p;
+      p.on('open', () => {
+        attempts = 0;
+        onStatus?.('open');
+        if (!resolved) {
+          resolved = true;
+          resolve({ code, close });
+        }
+      });
+      p.on('connection', (conn) => {
+        conn.on('open', () => onConnection(wrap<Out, In>(conn)));
+      });
+      p.on('disconnected', () => {
+        // Lost the signalling server (not the opponent): reconnect so new guests can still find us.
+        if (closed || p.destroyed) return;
+        onStatus?.('reconnecting');
+        later(() => {
+          if (p.destroyed) recreate();
+          else {
+            try {
+              p.reconnect();
+            } catch {
+              recreate();
+            }
+          }
+        }, 1500);
+      });
+      p.on('close', () => {
+        if (!closed && peer === p) recreate();
+      });
+      p.on('error', (e) => {
+        const type = (e as { type?: string }).type ?? '';
+        if (type === 'unavailable-id') {
+          // Our earlier registration (a reloaded or suspended page) has not expired on the server yet.
+          if (!resolved && attempts >= 40) return fail(e);
+          p.destroy();
+          recreate();
+          return;
+        }
+        if (type === 'network' || type === 'server-error' || type === 'socket-error' || type === 'socket-closed') {
+          if (!resolved && attempts >= 10) return fail(e);
+          if (p.destroyed) recreate();
+          else onStatus?.('reconnecting');
+          return;
+        }
+        if (FATAL_PEER_ERRORS.has(type) && !resolved) return fail(e);
+        // Anything else (a single guest's connection failing, etc.) does not close the room.
+      });
+    };
+    const close = () => {
+      closed = true;
+      if (retry) clearTimeout(retry);
+      peer?.destroy();
+    };
+    const wake = () => {
+      if (closed || !peer) return;
+      if (peer.destroyed) recreate();
+      else if (peer.disconnected) {
+        onStatus?.('reconnecting');
+        try {
+          peer.reconnect();
+        } catch {
+          recreate();
+        }
       }
-    });
-    peer.on('disconnected', () => {
-      // Lost the signalling server (not the opponent): reconnect so new guests can still find us.
-      if (!peer.destroyed) peer.reconnect();
-    });
+    };
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') wake();
+      });
+      window.addEventListener('pageshow', wake);
+      window.addEventListener('online', wake);
+    }
+    create();
   });
 }
 

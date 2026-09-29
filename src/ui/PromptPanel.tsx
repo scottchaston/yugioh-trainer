@@ -25,6 +25,40 @@ function CardSummary({ def, onClose }: { def: CardDefinition; onClose: () => voi
   );
 }
 
+/**
+ * The short form of a response window: "you could respond with X — want to see the options?".
+ * Keeps the board in view (on phones it is a bar at the bottom) until the player asks for details.
+ */
+export function CompactResponse({ view, prompt, onDecline, onShow, onSkipTurn }: { view: GameState; prompt: Extract<Prompt, { type: 'fastEffects' }>; onDecline: () => void; onShow: () => void; onSkipTurn: () => void }) {
+  const player = view.players[prompt.player].name;
+  const names = [...new Set(prompt.options.map((o) => defOf(view.cards[o.uid]).name))];
+  const attack = prompt.windowKind === 'attack' || prompt.windowKind === 'damage';
+  return (
+    <div className="prompt prompt-response prompt-compact">
+      <div className="prompt-compact-text">
+        <span className="prompt-badge">RESPONSE AVAILABLE</span>
+        <div>
+          <b>{player}</b>, you could activate <b>{names.join(', ')}</b> now
+          {prompt.context ? <span className="muted"> ({prompt.context})</span> : null}. Respond?
+        </div>
+      </div>
+      <div className="prompt-compact-buttons">
+        <button className="btn btn-primary btn-show" onClick={onShow}>
+          Yes, show options
+        </button>
+        <button className="btn btn-decline" onClick={onDecline}>
+          Not now
+        </button>
+        {!attack && (
+          <button className="btn btn-link btn-skip" onClick={onSkipTurn} title="Decline the remaining response windows this turn. Attacks still ask.">
+            Skip this turn
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 interface Props {
   view: GameState;
   prompt: Prompt;
@@ -81,7 +115,7 @@ export function PromptPanel({ view, prompt, selection, onToggleCard, onInspect, 
         </div>
         {previewDef && <CardSummary def={previewDef} onClose={() => setPreview(null)} />}
         <div className="prompt-buttons">
-          <button className="btn" onClick={onPass}>
+          <button className="btn btn-decline" onClick={onPass}>
             Decline (do not respond)
           </button>
           <button className="btn btn-link" onClick={onUndo}>

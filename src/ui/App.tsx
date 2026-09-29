@@ -7,6 +7,7 @@ import { answer, cancelPending, clearGame, committedState, currentView, dispatch
 import { redactState, waitingText } from '../net/view';
 import { currentSession } from '../net/session';
 import { ConnectionOverlay, OnlineLobby, UndoRequestModal, leaveOnline, type LobbyMode } from './Online';
+import { loadHostSave, loadLobbySave } from '../net/session';
 import { Board } from './Board';
 import { FxLayer } from './FxLayer';
 import { DuelEnd } from './DuelEnd';
@@ -19,7 +20,7 @@ import { setMusicIntensity, setMusicVolume, startMusic, stopMusic } from './musi
 import { Inspector } from './Inspector';
 import { LogPanel } from './LogPanel';
 import { PileModal } from './PileModal';
-import { PromptPanel } from './PromptPanel';
+import { CompactResponse, PromptPanel } from './PromptPanel';
 import { Setup } from './Setup';
 import { CardArt } from './art';
 import { ChainStack, HelpModal, SuggestPanel, TurnChecklist } from './TeachPanels';
@@ -52,7 +53,11 @@ export function App() {
   const view = useMemo(() => (online && !isGuest && rawView ? redactState(rawView, online.seat, fullPrompt) : rawView), [online, isGuest, rawView, fullPrompt]);
   const [lobby, setLobby] = useState<LobbyMode | null>(() => {
     const join = new URLSearchParams(window.location.search).get('join');
-    return join ? { mode: 'join', code: join } : null;
+    if (join) return { mode: 'join', code: join };
+    // A host whose page was reloaded (or put to sleep by a phone) gets the same room back.
+    const saved = loadLobbySave();
+    if (saved && !loadHostSave() && Date.now() - saved.savedAt < 45 * 60 * 1000) return { mode: 'host', code: saved.code, me: saved.me, first: saved.first };
+    return null;
   });
   const [selectedUid, setSelectedUid] = useState<string | null>(null);
   const [promptSelection, setPromptSelection] = useState<string[]>([]);
@@ -82,11 +87,25 @@ export function App() {
   // Phones: bring a new decision into view (the panels sit under the board there).
   const promptRef = useRef<HTMLDivElement | null>(null);
   const inspectorRef = useRef<HTMLDivElement | null>(null);
+  // Response windows: ask briefly first ("you could respond, see the options?") unless expanded or turned off.
+  const [responseExpanded, setResponseExpanded] = useState(false);
+  useEffect(() => setResponseExpanded(false), [fullPrompt]);
+  const compactResponse = !!fullPrompt && fullPrompt.type === 'fastEffects' && store.settings.compactResponses && !responseExpanded;
+  // "Skip this turn": decline the remaining windows of this turn for that player (attacks still ask).
+  const [skipResponses, setSkipResponses] = useState<{ turn: number; player: PlayerId } | null>(null);
+  useEffect(() => {
+    if (!fullPrompt || fullPrompt.type !== 'fastEffects' || !skipResponses || !rawView) return;
+    if (skipResponses.turn !== rawView.turn || skipResponses.player !== fullPrompt.player) return;
+    if (fullPrompt.windowKind === 'attack' || fullPrompt.windowKind === 'damage') return;
+    if (online && fullPrompt.player !== seat) return;
+    answer({ activation: null });
+  }, [fullPrompt, skipResponses, rawView, online, seat]);
   useEffect(() => {
     if (!fullPrompt || window.innerWidth > 900) return;
+    if (fullPrompt.type === 'fastEffects' && store.settings.compactResponses && !responseExpanded) return;
     const target = fullPrompt.type === 'selectZone' ? boardWrapRef.current : promptRef.current;
     target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, [fullPrompt]);
+  }, [fullPrompt, responseExpanded, store.settings.compactResponses]);
 
   useEffect(() => {
     setPromptSelection([]);
@@ -342,7 +361,7 @@ export function App() {
           {prompt && (
             <div className={`decision-banner${prompt.type === 'fastEffects' ? ' decision-response' : ''}`}>
               {prompt.type === 'fastEffects' ? 'RESPONSE AVAILABLE — ' : 'DECISION — '}
-              <b>{online ? 'You' : view.players[prompt.player].name}</b>: {prompt.type === 'fastEffects' ? 'you may respond (see the panel on the right)' : prompt.title}
+              <b>{online ? 'You' : view.players[prompt.player].name}</b>: {prompt.type === 'fastEffects' ? 'you may respond (see the RESPONSE box)' : prompt.title}
               {prompt.type === 'selectZone' && <span className="banner-hint"> · the highlighted zones are on {view.players[prompt.player].name}'s side ({prompt.player === bottom ? 'bottom' : 'top'} of the board)</span>}
               {prompt.type === 'selectCards' && prompt.cards.some((u) => view.cards[u] && ['monster', 'spellTrap', 'field', 'extraMonster'].includes(view.cards[u].zone)) && <span className="banner-hint"> · highlighted cards can be clicked on the board</span>}
             </div>
@@ -411,7 +430,21 @@ export function App() {
               onClose={() => setShowSuggest(false)}
             />
           )}
-          {prompt && (
+          {prompt && prompt.type === 'fastEffects' && compactResponse && (
+            <div ref={promptRef} className="prompt-anchor">
+              <CompactResponse
+                view={view}
+                prompt={prompt}
+                onDecline={() => answer({ activation: null })}
+                onShow={() => setResponseExpanded(true)}
+                onSkipTurn={() => {
+                  setSkipResponses({ turn: view.turn, player: prompt.player });
+                  answer({ activation: null });
+                }}
+              />
+            </div>
+          )}
+          {prompt && !(prompt.type === 'fastEffects' && compactResponse) && (
             <div ref={promptRef} className="prompt-anchor">
             <PromptPanel
               view={view}
@@ -434,9 +467,9 @@ export function App() {
           <LogPanel view={view} />
         </aside>
       </div>
-      {selectedCard && !selectedHidden && (
+      {selectedCard && !selectedHidden && !(prompt && compactResponse) && (
         <div className="mobile-cardbar">
-          <span className="mobile-cardbar-name">{getCard(selectedCard.cardId).name}</span>
+          <span className="mobile-cardbar-name">{defOf(selectedCard).name}</span>
           <button className="btn btn-primary" onClick={() => inspectorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
             Details
           </button>
@@ -482,6 +515,14 @@ export function App() {
               </span>
             </label>
             )}
+            <label className="setting">
+              <input type="checkbox" checked={store.settings.compactResponses} onChange={(e) => updateSettings({ compactResponses: e.target.checked })} />
+              <span>
+                <b>Ask briefly before showing response options.</b>
+                <br />
+                <small>When a Set card could be activated, a one-line question appears first ("you could activate Trap Hole now, respond?") with Yes / Not now / Skip this turn. Turn this off to always see the full list of options at once.</small>
+              </span>
+            </label>
             {!online && (
             <label className="setting">
               <input type="checkbox" checked={store.settings.revealAll} onChange={(e) => updateSettings({ revealAll: e.target.checked })} />

@@ -119,6 +119,27 @@ response windows, logs everything, and supports Undo. Accuracy over feature coun
   background music + volume), winner screen.
 * Single-file build: `npm run build:single` → `dist/single/practice-table.html`.
 
+## Robustness round (computer stalls, phone hosting, response prompts)
+* Two real crashes found by a store-level fuzz (`tests/ai-store.test.ts`, 60 Duels with `AI_FUZZ=60`): describing an
+  action that involves a Token threw "Unknown card id TOKEN" (`describeAction` and the phone card bar now use the
+  token's name), and Crystal Brilliance's `modifyStats` read `g.stats()` from inside the stats hook (infinite
+  recursion; it now reads the printed DEF). Either one froze the computer opponent mid-turn.
+* `src/ai/controller.ts` is self-healing: decisions are wrapped in try/catch with a fallback (end turn / Main Phase 2
+  / decline / first option), moves that make no progress and answers the engine refuses are remembered per state and
+  not retried, a 2-second watchdog re-arms lost timers (phones pause them), `visibilitychange` re-schedules, and
+  after six failures a notice tells the player. `aiTrace` keeps the last 40 computer decisions for bug reports.
+  `decideAnswer` only sends answers whose rollout the engine accepted.
+* Hosting on phones: the host lobby is saved (`ygo-trainer-online-lobby`) and re-opened with the same code on reload
+  (`App` initial lobby state, up to 45 minutes; cleared when the Duel starts, on Leave, or on Resume).
+  `openRoom` keeps the registration alive: reconnects on `disconnected`, recreates the Peer when the server still
+  holds the old id (`unavailable-id`, retried every 3 s), wakes on `visibilitychange` / `pageshow` / `online`, and
+  reports 'reconnecting' to the lobby. Guests retry `peer-unavailable` joins 8 times (4 s apart) and, mid-Duel, the
+  connection overlay retries every 5 s up to 12 times. A **Share link** button uses the Web Share API.
+* Response windows: `CompactResponse` (in `PromptPanel.tsx`) asks first; `App` tracks `responseExpanded` and a
+  per-turn `skipResponses` (attack and damage windows are never skipped). Setting `compactResponses` (default on).
+  On phones the compact prompt is fixed at the bottom (`.prompt-anchor:has(.prompt-compact)`), and no auto-scroll
+  happens for it. e2e scripts click `.prompt-response .btn-decline`; `scenario.mjs` expands before activating Kunai.
+
 ## Computer opponent (`src/ai`)
 * `player.ts`: `aiDecide(committed, pending, seat, level)` returns either an action or an answer to the prompt
   addressed to the computer. It only ever chooses among `getLegalActions()` and the engine's prompts. Medium and

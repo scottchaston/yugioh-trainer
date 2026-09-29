@@ -8,7 +8,7 @@ const errors = [];
 const settle = async (page) => {
   for (let i = 0; i < 8; i++) {
     await page.waitForTimeout(250);
-    if (await page.$('.prompt-response')) { await page.click('text=Decline (do not respond)'); continue; }
+    if (await page.$('.prompt-response')) { await page.click('.prompt-response .btn-decline'); continue; }
     const dont = await page.$('.btn-option:has-text("Do not activate")');
     if (dont) { await dont.click(); continue; }
     if (await page.$('.zone-selectable')) { await page.click('.zone-selectable >> nth=0'); continue; }

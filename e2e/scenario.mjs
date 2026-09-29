@@ -14,7 +14,7 @@ const clickAction = async (text) => {
   await page.waitForTimeout(250);
   // Clear any response window / optional trigger that is still open before choosing the next action.
   for (let i = 0; i < 6; i++) {
-    if (await page.$('.prompt-response')) { await page.click('text=Decline (do not respond)'); await page.waitForTimeout(300); continue; }
+    if (await page.$('.prompt-response')) { await page.click('.prompt-response .btn-decline'); await page.waitForTimeout(300); continue; }
     const dont = await page.$('.btn-option:has-text("Do not activate")');
     if (dont) { await dont.click(); await page.waitForTimeout(300); continue; }
     break;
@@ -31,11 +31,11 @@ await clickAction('Set: Kunai with Chain'); await pickZone(0);
 await clickAction('Set: Compulsory Evacuation Device'); await pickZone(0);
 await page.waitForTimeout(1200);
 await page.click('text=End Turn'); await page.waitForTimeout(400);
-if (await page.$('.prompt-response')) await page.click('text=Decline (do not respond)');
+if (await page.$('.prompt-response')) await page.click('.prompt-response .btn-decline');
 await page.waitForTimeout(1500);
 await clickAction('Normal Summon: Crystal Beast Emerald Tortoise'); await pickZone(2);
 await page.waitForSelector('.prompt-response');
-await page.click('text=Decline (do not respond)');
+await page.click('.prompt-response .btn-decline');
 await page.waitForTimeout(1200);
 await page.click('text=Enter Battle Phase'); await page.waitForTimeout(600);
 await clickAction('Attack: Crystal Beast Emerald Tortoise');
@@ -47,19 +47,20 @@ await page.screenshot({ path: `${dir}/fx02b-attack-impact.png` });
 for (let i = 0; i < 6; i++) {
   const resp = await page.$('.prompt-response');
   if (resp && (await resp.innerText()).includes('Kunai')) break;
-  if (resp) { await page.click('text=Decline (do not respond)'); await page.waitForTimeout(400); continue; }
+  if (resp) { await page.click('.prompt-response .btn-decline'); await page.waitForTimeout(400); continue; }
   const dont = await page.$('.btn-option:has-text("Do not activate")');
   if (dont) { await dont.click(); await page.waitForTimeout(400); continue; }
   await page.waitForTimeout(300);
 }
 await page.waitForSelector('.prompt-response');
+if (await page.$('.prompt-compact')) { await page.click('.prompt-compact .btn-show'); await page.waitForSelector('.response-option'); }
 await page.click('.response-option:has-text("Kunai") button.btn-primary');
 await page.waitForTimeout(300);
 await page.click('.btn-option:has-text("both")');
 await page.waitForTimeout(600);
 await page.screenshot({ path: `${dir}/fx03-trap.png` });
 await page.waitForTimeout(1200);
-if (await page.$('.prompt-response')) await page.click('text=Decline (do not respond)');
+if (await page.$('.prompt-response')) await page.click('.prompt-response .btn-decline');
 await page.waitForTimeout(500);
 await page.screenshot({ path: `${dir}/fx04-after.png` });
 console.log(await page.$$eval('.log-entry', (els) => els.map((e) => e.textContent).slice(-6)).then((l) => l.join('\n')));
